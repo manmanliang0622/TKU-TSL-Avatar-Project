@@ -1,0 +1,23 @@
+# --- 機密資訊 ---
+.env
+
+# --- Python 快取檔 ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- 虛擬環境 ---
+venv/
+env/
+.venv/
+
+# --- 大型暫存訓練資料 (由程式動態生成即可) ---
+X.npy
+y.npy
+
+# --- VS Code 設定檔 ---
+.vscode/
+*.code-workspace
+
+# 💡 註：妳的 models/tsl_model.pth 和 .csv 檔可以傳，
+# 但如果未來模型檔超過 100MB，GitHub 會拒絕上傳喔！

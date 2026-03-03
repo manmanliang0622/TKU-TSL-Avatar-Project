@@ -1,0 +1,25 @@
+# --- 網頁前端與雲端視訊串流 (新增) ---
+streamlit
+streamlit-webrtc
+
+# --- 核心 AI、影像處理與視覺化 ---
+mediapipe==0.10.9
+opencv-python-headless
+pandas
+numpy
+matplotlib
+
+# --- 深度學習框架與硬體加速 ---
+torch
+torchvision
+torchaudio
+transformers
+bitsandbytes
+accelerate
+
+# --- 環境與 API 管理 ---
+python-dotenv
+google-generativeai
+
+# --- 自動化監控功能 ---
+watchdog

@@ -1,0 +1,68 @@
+# === 1. 安全性與環境變數 (最重要！防止 Token 外洩) ===
+.env
+.venv
+env/
+venv/
+ENV/
+*.env.local
+*.env.resource
+
+# === 2. Python 相關 (快取與編譯檔) ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+.pytest_cache/
+.mypy_cache/
+
+# === 3. Unity 相關 (這些資料夾很大，且會由 Unity 自動生成) ===
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[MemoryCaptures]/
+
+# Unity 產生的專案檔 (組員下載後 Unity 會自己產)
+*.csproj
+*.unitypackage
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+*.IDB
+
+# === 4. 大型數據與模型 (建議不要上傳 GitHub，改放 Google Drive) ===
+*.pth
+*.onnx
+*.weights
+*.h5
+# 如果妳的數據集很大，也可以把 csv 排除
+# refined_data/*.csv
+
+# === 5. 作業系統與 IDE 暫存 ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
