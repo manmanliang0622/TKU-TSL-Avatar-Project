@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>基於 LLM 的雙向手語虛擬人翻譯系統</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="hero">
+        <div>
+          <p class="tag">LLM Taiwan Sign Language System</p>
+          <h1>基於 LLM 進行手語翻譯的雙向虛擬人物系統</h1>
+          <p class="desc">
+            本系統提供兩大功能畫面：手語辨識轉文字，以及文字生成虛擬人物手語動畫。
+          </p>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="mini-tag">畫面一</p>
+              <h2>雙向虛擬人物辨識</h2>
+            </div>
+            <button id="recognizeBtn" class="btn primary">開始辨識</button>
+          </div>
+
+          <div class="recognition-wrap">
+            <div class="camera-box">
+              <div class="scan-line"></div>
+              <div class="avatar-silhouette">
+                <div class="head"></div>
+                <div class="body"></div>
+                <div class="arm left"></div>
+                <div class="arm right"></div>
+              </div>
+              <div class="camera-label">虛擬人物 / 攝影機輸入畫面</div>
+            </div>
+
+            <div class="status-box">
+              <h3>辨識狀態</h3>
+              <p id="recognitionStatus">待機中</p>
+              <div class="progress">
+                <div id="progressBar" class="progress-bar"></div>
+              </div>
+              <small>此區可後續串接 webcam、MediaPipe、骨架偵測與 LLM 翻譯模型</small>
+            </div>
+          </div>
+
+          <div class="result-box">
+            <label for="recognizedText">辨識文字結果</label>
+            <textarea id="recognizedText" readonly>尚未開始辨識，請按下「開始辨識」。</textarea>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="mini-tag">畫面二</p>
+              <h2>文字生成虛擬人物手語</h2>
+            </div>
+            <button id="generateBtn" class="btn secondary">播放手語</button>
+          </div>
+
+          <div class="generation-wrap">
+            <div class="text-side">
+              <label for="inputText">輸入中文文字</label>
+              <textarea id="inputText">您好，歡迎使用基於 LLM 的台灣手語翻譯系統。</textarea>
+
+              <div class="preset-list">
+                <button class="btn ghost preset" data-text="您好，歡迎使用基於 LLM 的台灣手語翻譯系統。">問候語</button>
+                <button class="btn ghost preset" data-text="今天下午三點要開會，請準時參加。">通知語</button>
+                <button class="btn ghost preset" data-text="請問洗手間在哪裡？謝謝。">問答語</button>
+              </div>
+
+              <div class="llm-card">
+                <h3>LLM 翻譯結果</h3>
+                <pre id="llmResult"></pre>
+              </div>
+            </div>
+
+            <div class="avatar-side">
+              <canvas id="avatarCanvas" width="480" height="480"></canvas>
+              <p id="avatarStatus" class="avatar-status">虛擬人物待命中</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

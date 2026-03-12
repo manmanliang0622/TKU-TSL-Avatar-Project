@@ -1,26 +1,36 @@
-# 🤟 淡江大學行政服務：台灣手語雙向轉譯系統 (TKU-TSL-Avatar-Project)
+# 基於 LLM 的雙向手語虛擬人翻譯系統
 
-本專案旨在利用 AI 技術實現行政窗口與聽障朋友的無障礙溝通。透過 MediaPipe 提取手勢特徵，並對接到 SMPL-X 標準虛擬人模型，實現高精確度的手語動作重定向。
+這是一個可直接用 VS Code 開啟的前端展示版本，包含兩大畫面：
 
-## 📂 專案架構 (Project Structure)
-- `core/`: 核心邏輯（Gemini 翻譯介接、模型載入器）
-- `scripts/`: 自動化工具（`csv_to_unity.py` 數據監控與轉換器）
-- `refined_data/`: 預處理後的骨架座標數據 (CSV)
-- `unity_data/`: 提供給 Unity 讀取的動作腳本 (JSON, 符合 SMPL-X 規格)
-- `app.py`: 基於 Streamlit 的前端展示網頁
+1. 雙向虛擬人物辨識與辨識文字
+2. 文字生成虛擬人物手語
 
-## 🛠️ 技術棧 (Tech Stack)
-- **視覺處理**: MediaPipe Hands / DWPose
-- **NLP 翻譯**: Google Gemini 2.5 Flash (針對淡江行政情境優化)
-- **3D 驅動**: Unity Engine + SMPL-X Model Standard
-- **開發語言**: Python 3.10+ (支援雙 GPU 並行運算)
+## 使用方式
 
-## 🚀 快速上手 (Quick Start)
-1. **建立虛擬環境**: `python -m venv tsl_env`
-2. **啟動環境**: `tsl_env\Scripts\activate`
-3. **安裝依賴**: `pip install -r requirements.txt`
-4. **設定環境變數**: 
-   請手動建立 `.env` 檔案並加入以下資訊：
-   ```text
-   GEMINI_API_KEY=你的金鑰
-   HF_TOKEN=你的HuggingFaceToken
+1. 用 VS Code 開啟此資料夾
+2. 直接用瀏覽器開啟 `index.html`
+3. 或使用 VS Code 的 Live Server 執行
+
+## 功能說明
+
+- 左側畫面：
+  - 模擬虛擬人物手語辨識
+  - 顯示辨識進度
+  - 輸出辨識後的中文文字
+
+- 右側畫面：
+  - 輸入中文句子
+  - 使用 LLM 翻譯概念生成手語動作流程
+  - 用 Canvas 模擬虛擬人物手語播放
+
+## 後續可擴充
+
+- 串接 webcam 即時影像
+- 串接 MediaPipe 骨架辨識
+- 串接 OpenAI API 或本地 LLM
+- 改接 3D 虛擬人物模型
+- 匯入真實台灣手語動作資料集
+
+## 注意
+
+目前版本為專題展示 prototype，重點是畫面完整、流程清楚、可展示雙向翻譯概念。
