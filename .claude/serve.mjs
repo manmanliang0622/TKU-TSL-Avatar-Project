@@ -12,6 +12,9 @@ const MIME = {
   ".webp": "image/webp",
   ".png": "image/png",
   ".json": "application/json",
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
+  ".jpg": "image/jpeg",
 };
 
 createServer(async (req, res) => {
