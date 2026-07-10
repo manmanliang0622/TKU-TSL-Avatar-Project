@@ -417,6 +417,7 @@ h2{
 
 /* ---------- PREVIEW ---------- */
 .preview-box{
+  position:relative;
   margin-top:18px;
   border:1.5px dashed var(--line);
   border-radius:16px;
@@ -425,6 +426,16 @@ h2{
   display:flex;align-items:center;justify-content:center;
   background:rgba(35,33,30,.02);
 }
+.landmark-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.hands-badge{
+  position:absolute;left:10px;bottom:10px;
+  padding:4px 12px;border-radius:999px;
+  background:rgba(35,33,30,.78);color:#fff;
+  font-size:12px;letter-spacing:.05em;
+  pointer-events:none;
+}
+.hands-badge[data-state="active"]{background:rgba(226,84,63,.88);}
+.hands-badge[data-state="loading"]{animation:blink 1.2s ease-in-out infinite;}
 .preview-box video{width:100%;display:block;max-height:260px;background:#000;}
 .preview-box.is-dragover{border-color:var(--coral);border-style:solid;background:rgba(226,84,63,.05);}
 .empty-preview{
