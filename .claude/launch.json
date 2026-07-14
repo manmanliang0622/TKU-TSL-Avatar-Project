@@ -5,7 +5,8 @@
       "name": "signbridge",
       "runtimeExecutable": "node",
       "runtimeArgs": [".claude/serve.mjs"],
-      "port": 8742
+      "port": 8742,
+      "autoPort": true
     }
   ]
 }

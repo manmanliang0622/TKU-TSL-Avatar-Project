@@ -206,7 +206,7 @@ Response: { "sentence": "我要喝水" }
 
 4. **關鍵點序列 buffer（訓練與推論共用的資料格式，一開始就定好）**：
    ```
-   每幀特徵 = 左手 21 點 + 右手 21 點，每點 (x, y, z)，缺手補 0 → 126 維
+   每幀特徵 v2 = 178 維：[0..125] 左手 21 點 + 右手 21 點，每點 (x, y, z)，缺手補 0；[126..177] 臉部 52 個 blendshape 分數（FaceLandmarker，表情帶語法用），缺臉補 0
    正規化：每隻手以手腕(第0點)為原點平移，再除以「手腕到中指根部(第9點)」距離
    取樣：固定 25 fps（用時間戳重取樣，不依賴螢幕更新率）
    ```
@@ -216,13 +216,13 @@ Response: { "sentence": "我要喝水" }
 ### 驗收標準
 - [ ] 攝影機畫面上骨架即時跟手動，順暢（≥ 20 fps）
 - [ ] 上傳影片也能逐幀畫骨架
-- [ ] console 可 dump 出正規化後的 126 維序列 JSON
+- [ ] console 可 dump 出正規化後的 178 維序列 JSON（v2）
 - [ ] 手機瀏覽器也能跑（MediaPipe wasm 支援）
 
 ### 常見坑
 - **HTTPS 必須**：`getUserMedia` 只在 https 或 localhost 可用——部署到 Pages 後自然沒問題。
 - `detectForVideo` 的時間戳必須嚴格遞增，影片 seek 時要注意。
-- 若之後發現只有手部特徵不夠（台灣手語有表情、位置語意），升級成 `HolisticLandmarker`（臉 + 姿態 + 雙手）——**但升級後訓練資料要重錄或重抽，所以第 4 步的格式版本號要留欄位**。
+- 臉部特徵已內建（v2 = 手部 126 維 + 臉部 blendshape 52 維，FaceLandmarker 與 HandLandmarker 並行）。官方 `HolisticLandmarker` 的 Web 版模型權重尚不完整，不採用。**特徵格式一旦再變動就要升版本號，且訓練資料要重錄或重抽。**
 
 ---
 
@@ -236,7 +236,7 @@ Response: { "sentence": "我要喝水" }
 1. **定詞彙表 v1（20–50 詞）**：從生成頁常用句子涵蓋的詞開始（我、你、好、水、喝、要、吃、飯、謝謝、廁所、哪裡、幫忙…）。存成 `labels.json`，前後端與訓練程式共用。
 
 2. **做錄製工具**：加一個隱藏頁 `collect.html`（不放進導覽列與 sitemap），複用階段 3 的抽取程式碼：
-   - 選詞 → 按錄製 → 打一次手語 → 自動存 `{ label, version, fps, frames[[126]...] }` JSON
+   - 選詞 → 按錄製 → 打一次手語 → 自動存 `{ label, version, fps, frames[[178]...] }` JSON
    - 下載成檔案或直接 POST 到收集用的簡易後端
    - 顯示「該詞已錄 n 段」計數器
    - **每段 1–3 秒、一段只含一個詞**（v1 做孤立詞分類，不做連續手語）
@@ -245,9 +245,9 @@ Response: { "sentence": "我要喝水" }
 
 4. **訓練（Python）**：
    ```python
-   # 模型：輸入 (T=75幀, 126)，padding + masking
+   # 模型：輸入 (T=75幀, 178)，padding + masking
    model = keras.Sequential([
-       keras.layers.Masking(mask_value=0.0, input_shape=(75, 126)),
+       keras.layers.Masking(mask_value=0.0, input_shape=(75, 178)),
        keras.layers.Bidirectional(keras.layers.LSTM(128, return_sequences=True)),
        keras.layers.Bidirectional(keras.layers.LSTM(64)),
        keras.layers.Dense(64, activation="relu"),
@@ -366,7 +366,7 @@ Response: { "sentence": "我要喝水" }
 | 風險 | 備案 |
 |---|---|
 | 生成模型拿不到或整合太難 | 退回「每詞預錄影片串播」：找人錄詞彙表每個詞的手語短片，後端只做語序轉換 + 回傳影片清單，前端無縫接（契約已相容） |
-| 辨識準確率上不去 | 縮小詞彙表、增加錄製者、換 HolisticLandmarker 加臉部/姿態特徵 |
+| 辨識準確率上不去 | 縮小詞彙表、增加錄製者、必要時加姿態（PoseLandmarker）特徵 |
 | GPU 費用太高 | HF Spaces 設自動休眠；demo 場次前手動喚醒 |
 | 訓練人力不足 | 詞彙表先砍到 10–15 個 demo 必用詞，流程跑通比涵蓋率重要 |
 
