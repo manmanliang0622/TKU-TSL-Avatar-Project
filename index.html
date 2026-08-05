@@ -24,7 +24,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script type="application/ld+json">
 {
@@ -63,12 +63,10 @@
     <a href="#home" aria-current="page">首頁</a>
     <a href="#recognition">手語辨識</a>
     <a href="#generation">手語生成</a>
-    <a href="#favorites">收藏</a>
-    <a href="#history">最近紀錄</a>
   </nav>
   <div class="nav-actions">
-    <button type="button" class="kbd-help-btn" id="kbdHelpBtn" aria-label="鍵盤快捷鍵說明" title="鍵盤快捷鍵">?</button>
-    <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="primaryNav" aria-label="開啟選單">
+    <button type="button" class="icon-btn kbd-help-btn" id="kbdHelpBtn" aria-label="鍵盤快捷鍵說明" title="鍵盤快捷鍵">?</button>
+    <button type="button" class="icon-btn nav-toggle" id="navToggle" aria-expanded="false" aria-controls="primaryNav" aria-label="開啟選單">
       <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
     </button>
   </div>
@@ -102,7 +100,7 @@
     <p class="sub">手譯橋將手語即時轉換為文字，也把文字化為手語動畫。聽人與聾人之間的每一段對話，都能被完整理解、完整看見。</p>
     <div class="ctas">
       <a class="btn-primary" href="#recognition">手語 → 文字 <span class="arr">→</span></a>
-      <a class="btn-ghost" href="#generation"><span class="play">▶</span> 文字 → 手語</a>
+      <a class="btn-ghost" href="#generation"><span class="play"><svg width="9" height="10" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><polygon points="0,0 10,6 0,12"/></svg></span> 文字 → 手語</a>
     </div>
   </div>
 
@@ -118,6 +116,7 @@
 <!-- ======== RECOGNITION ======== -->
 <section class="page-section app-page" id="recognition" hidden aria-labelledby="rec-title">
   <div class="page-title">
+    <span class="page-num" aria-hidden="true">2</span>
     <p class="eyebrow">SIGN TO TEXT</p>
     <h2 id="rec-title">辨識手語語序，<span class="accent">轉換台灣口語</span></h2>
   </div>
@@ -193,6 +192,7 @@
 <!-- ======== GENERATION ======== -->
 <section class="page-section app-page" id="generation" hidden aria-labelledby="gen-title">
   <div class="page-title">
+    <span class="page-num" aria-hidden="true">3</span>
     <p class="eyebrow">TEXT TO SIGN</p>
     <h2 id="gen-title">輸入口語，<span class="accent">轉換手語語序</span>並播放</h2>
   </div>
@@ -213,7 +213,6 @@
 
       <div class="action-row">
         <button type="button" class="btn-primary" id="generateSign">轉成手語</button>
-        <button type="button" class="btn-outline" id="playAvatar">▶ 重新播放</button>
         <button type="button" class="btn-ghost" id="clearText">清除</button>
       </div>
 
@@ -231,11 +230,9 @@
       </div>
 
       <div class="result-block">
-        <div class="result-block-header">
-          <span class="result-tag">台灣手語語序</span>
-          <button type="button" class="fav-btn" id="favBtn" aria-label="收藏此句子">☆ 收藏</button>
-        </div>
-        <div class="token-row" id="generationTokens"></div>
+        <span class="result-tag">台灣手語語序</span>
+        <div class="token-row token-row-interactive" id="generationTokens" aria-label="手語詞卡；點擊任一詞卡可單獨播放該動作"></div>
+        <p class="token-hint">點擊任一詞卡，可直接播放該詞動作</p>
       </div>
 
       <div class="avatar-wrap" aria-label="虛擬人播放區">
@@ -252,11 +249,25 @@
             <div class="avatar-arm avatar-arm-r" aria-hidden="true"></div>
           </div>
         </div>
-        <div class="speed-row" aria-label="播放速度">
-          <span class="speed-label">速度</span>
-          <button type="button" class="speed-btn" data-speed="1400" aria-pressed="false">慢</button>
-          <button type="button" class="speed-btn is-active" data-speed="850" aria-pressed="true">普通</button>
-          <button type="button" class="speed-btn" data-speed="450" aria-pressed="false">快</button>
+        <div class="player-toolbar">
+          <div class="playback-controls" aria-label="播放控制">
+            <button type="button" class="player-btn player-btn-primary" id="startPlayback">
+              <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><polygon points="0,0 10,6 0,12"/></svg>
+              <span>開始播放</span>
+            </button>
+            <button type="button" class="player-btn" id="pausePlayback" disabled>
+              <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="3" height="12" rx="1"/><rect x="7" y="0" width="3" height="12" rx="1"/></svg>
+              <span>暫停</span>
+            </button>
+          </div>
+          <div class="speed-row" role="group" aria-label="播放速率">
+            <span class="speed-label">播放速率</span>
+            <button type="button" class="speed-btn" data-rate="0.25" aria-pressed="false">0.25×</button>
+            <button type="button" class="speed-btn" data-rate="0.5" aria-pressed="false">0.5×</button>
+            <button type="button" class="speed-btn" data-rate="0.75" aria-pressed="false">0.75×</button>
+            <button type="button" class="speed-btn is-active" data-rate="1" aria-pressed="true">1×</button>
+            <button type="button" class="speed-btn" data-rate="1.5" aria-pressed="false">1.5×</button>
+          </div>
         </div>
         <div class="meta-row">
           <div class="meta-item">
@@ -274,113 +285,18 @@
   </div>
 </section>
 
-<!-- ======== FAVORITES ======== -->
-<section class="page-section app-page" id="favorites" hidden aria-labelledby="fav-title">
-  <div class="page-title">
-    <p class="eyebrow">FAVORITES</p>
-    <h2 id="fav-title">收藏的<span class="accent">句子</span></h2>
-  </div>
-
-  <div class="workspace-grid">
-    <article class="panel">
-      <h3 class="panel-title">收藏句子</h3>
-      <div class="field-row" id="favSearchRow" hidden>
-        <label for="favSearch">搜尋收藏</label>
-        <input id="favSearch" type="search" placeholder="輸入關鍵字篩選">
-      </div>
-      <div class="undo-bar" id="favUndoBar" hidden>
-        <span id="favUndoText"></span>
-        <button type="button" class="link-btn" id="favUndoBtn">復原</button>
-      </div>
-      <ul class="plain-list fav-list" id="favoritesList">
-        <li class="empty-item">尚無收藏</li>
-      </ul>
-    </article>
-
-    <article class="panel">
-      <div class="panel-head">
-        <h3 class="panel-title">手語播放</h3>
-        <span class="status-dot" id="favAvatarStatus" data-state="idle">等待選擇</span>
-      </div>
-
-      <div class="result-block">
-        <span class="result-tag">選取句子</span>
-        <p id="favSelectedSentence" class="spoken-text">—</p>
-      </div>
-
-      <div class="result-block">
-        <span class="result-tag">台灣手語語序</span>
-        <div class="token-row" id="favTokens"></div>
-      </div>
-
-      <div class="avatar-wrap">
-        <div class="avatar-stage">
-          <div class="avatar-figure avatar-figure-alt" id="favAvatarFigure">
-            <div class="avatar-head">
-              <div class="avatar-hair" aria-hidden="true"></div>
-              <div class="avatar-bun" aria-hidden="true"></div>
-              <div class="avatar-eye avatar-eye-l" aria-hidden="true"></div>
-              <div class="avatar-eye avatar-eye-r" aria-hidden="true"></div>
-              <div class="avatar-smile" aria-hidden="true"></div>
-            </div>
-            <div class="avatar-body" aria-hidden="true"></div>
-            <div class="avatar-arm avatar-arm-l" aria-hidden="true"></div>
-            <div class="avatar-arm avatar-arm-r" aria-hidden="true"></div>
-          </div>
-        </div>
-        <div class="speed-row" aria-label="播放速度">
-          <span class="speed-label">速度</span>
-          <button type="button" class="speed-btn fav-speed-btn" data-speed="1400" aria-pressed="false">慢</button>
-          <button type="button" class="speed-btn fav-speed-btn is-active" data-speed="850" aria-pressed="true">普通</button>
-          <button type="button" class="speed-btn fav-speed-btn" data-speed="450" aria-pressed="false">快</button>
-        </div>
-      </div>
-    </article>
-  </div>
-</section>
-
-<!-- ======== HISTORY ======== -->
-<section class="page-section app-page" id="history" hidden aria-labelledby="hist-title">
-  <div class="page-title">
-    <p class="eyebrow">RECENT</p>
-    <h2 id="hist-title">最近辨識與<span class="accent">生成結果</span></h2>
-  </div>
-
-  <div class="workspace-grid">
-    <article class="panel">
-      <div class="panel-head">
-        <h3 class="panel-title">最近辨識結果</h3>
-        <button type="button" class="clear-btn" id="clearRecHistory">清除</button>
-      </div>
-      <ul class="plain-list" id="recognitionHistory">
-        <li class="empty-item">尚無辨識紀錄</li>
-      </ul>
-    </article>
-
-    <article class="panel">
-      <div class="panel-head">
-        <h3 class="panel-title">最近生成結果</h3>
-        <button type="button" class="clear-btn" id="clearGenHistory">清除</button>
-      </div>
-      <ul class="plain-list" id="generationHistory">
-        <li class="empty-item">尚無生成紀錄</li>
-      </ul>
-    </article>
-  </div>
-</section>
-
 </main>
 
 <!-- ======== KEYBOARD HELP ======== -->
 <dialog id="kbdHelp" class="kbd-dialog" aria-labelledby="kbd-title">
   <div class="kbd-head">
     <h3 id="kbd-title">鍵盤快捷鍵</h3>
-    <button type="button" class="kbd-close" id="kbdClose" aria-label="關閉">×</button>
+    <button type="button" class="kbd-close" id="kbdClose" aria-label="關閉"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
   </div>
   <dl class="kbd-list">
-    <div><dt><kbd>1</kbd>–<kbd>5</kbd></dt><dd>切換頁面（首頁／辨識／生成／收藏／紀錄）</dd></div>
+    <div><dt><kbd>1</kbd>–<kbd>3</kbd></dt><dd>切換頁面（首頁／辨識／生成）</dd></div>
     <div><dt><kbd>Enter</kbd></dt><dd>辨識頁：開始辨識；生成頁：轉成手語</dd></div>
-    <div><dt><kbd>Space</kbd></dt><dd>生成頁：播放／暫停虛擬人</dd></div>
+    <div><dt><kbd>Space</kbd></dt><dd>生成頁：開始／暫停播放</dd></div>
     <div><dt><kbd>Esc</kbd></dt><dd>停止播放</dd></div>
     <div><dt><kbd>?</kbd></dt><dd>開啟／關閉此說明</dd></div>
   </dl>

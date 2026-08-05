@@ -89,9 +89,9 @@
 
 // ── Vocabulary Data ──
 const recognitionSamples = {
-  drink:    { signOrder: ["我", "水", "喝", "要"], spokenText: "我要喝水",   confidence: "94%", history: "手語語序：我 / 水 / 喝 / 要 → 口語：我要喝水" },
-  register: { signOrder: ["我", "掛號", "要"],     spokenText: "我要掛號",   confidence: "96%", history: "手語語序：我 / 掛號 / 要 → 口語：我要掛號" },
-  help:     { signOrder: ["請", "我", "幫忙"],     spokenText: "請幫我一下", confidence: "91%", history: "手語語序：請 / 我 / 幫忙 → 口語：請幫我一下" },
+  drink:    { signOrder: ["我", "水", "喝", "要"], spokenText: "我要喝水" },
+  register: { signOrder: ["我", "掛號", "要"],     spokenText: "我要掛號" },
+  help:     { signOrder: ["請", "我", "幫忙"],     spokenText: "請幫我一下" },
 };
 
 const generationSamples = {
@@ -121,13 +121,6 @@ const generationSamples = {
 
 const QUICK_PHRASES = ["你好", "謝謝", "我要喝水", "我要掛號", "請幫我一下", "我不舒服", "我要上課", "多少錢"];
 
-// ── localStorage Keys ──
-const STORAGE_GEN = "tsl_gen_history";
-const STORAGE_REC = "tsl_rec_history";
-const STORAGE_FAV = "tsl_favorites";
-const MAX_HIST = 10;
-const MAX_FAV  = 20;
-
 // ── DOM refs ──
 const previewVideo        = document.querySelector("#previewVideo");
 const previewBox          = document.querySelector("#previewBox");
@@ -137,8 +130,6 @@ const recognitionTokens   = document.querySelector("#recognitionTokens");
 const spokenResult        = document.querySelector("#spokenResult");
 const recognitionStatus   = document.querySelector("#recognitionStatus");
 const cameraMessage       = document.querySelector("#cameraMessage");
-const recognitionHistory  = document.querySelector("#recognitionHistory");
-const generationHistory   = document.querySelector("#generationHistory");
 
 function setRecStatus(text, state = "idle") {
   recognitionStatus.textContent = text;
@@ -154,16 +145,8 @@ const avatarFigure        = document.querySelector("#avatarFigure");
 const videoModeButton     = document.querySelector("#videoModeButton");
 const cameraModeButton    = document.querySelector("#cameraModeButton");
 const quickPhrases         = document.querySelector("#quickPhrases");
-const favBtn               = document.querySelector("#favBtn");
-const favoritesList        = document.querySelector("#favoritesList");
-const favSearchRow         = document.querySelector("#favSearchRow");
-const favSearch            = document.querySelector("#favSearch");
-const favUndoBar           = document.querySelector("#favUndoBar");
-const favUndoText          = document.querySelector("#favUndoText");
-const favAvatarFigure      = document.querySelector("#favAvatarFigure");
-const favAvatarStatus      = document.querySelector("#favAvatarStatus");
-const favSelectedSentence  = document.querySelector("#favSelectedSentence");
-const favTokensEl          = document.querySelector("#favTokens");
+const startPlaybackButton  = document.querySelector("#startPlayback");
+const pausePlaybackButton  = document.querySelector("#pausePlayback");
 
 const recognitionSteps = [
   document.querySelector("#recognitionStep1"),
@@ -177,7 +160,7 @@ let currentGeneratedTokens = generationSamples["我要喝水"];
 let uploadedVideoUrl = null;
 
 // ── Page Navigation ──
-const PAGES        = ["home", "recognition", "generation", "favorites", "history"];
+const PAGES        = ["home", "recognition", "generation"];
 const pageSections = document.querySelectorAll(".page-section");
 const navLinks     = document.querySelectorAll(".links a");
 const navHeader    = document.querySelector(".nav");
@@ -208,13 +191,9 @@ function showPage(id, push = true) {
     showPreview(Boolean(previewVideo.getAttribute("src")));
     cameraMessage.textContent = "已離開辨識頁，攝影機已自動關閉。";
   }
-  if (id !== "generation" && genPlayer.isPlaying()) {
+  if (id !== "generation" && genPlayer.getState() !== "idle") {
     genPlayer.stop();
-    avatarStatus.textContent = "已暫停";
-  }
-  if (id !== "favorites" && favPlayer.isPlaying()) {
-    favPlayer.stop();
-    setFavStatus("已暫停", "idle");
+    avatarStatus.textContent = "已停止";
   }
 
   closeMenu();
@@ -231,7 +210,7 @@ function showPage(id, push = true) {
 // 瀏覽器返回／前進鍵
 window.addEventListener("hashchange", () => {
   const id = location.hash.slice(1);
-  if (PAGES.includes(id)) showPage(id, false);
+  showPage(PAGES.includes(id) ? id : "home", false);
 });
 
 navLinks.forEach(a => {
@@ -259,8 +238,6 @@ document.addEventListener("keydown", e => {
     case "1": showPage("home");        break;
     case "2": showPage("recognition"); break;
     case "3": showPage("generation");  break;
-    case "4": showPage("favorites");   break;
-    case "5": showPage("history");     break;
     case "Enter":
       if (recPage) simulateRecognition();
       if (genPage) updateGeneration();
@@ -268,23 +245,14 @@ document.addEventListener("keydown", e => {
     case " ":
       if (genPage) {
         e.preventDefault();
-        if (genPlayer.isPlaying()) {
-          genPlayer.stop();
-          avatarStatus.textContent = "已暫停";
-        } else {
-          playAvatarSequence();
-        }
+        genPlayer.toggle();
       }
       break;
     case "Escape":
-      if (genPlayer.isPlaying()) {
+      if (genPlayer.getState() !== "idle") {
         genPlayer.stop();
-        avatarStatus.textContent = "已暫停";
+        avatarStatus.textContent = "已停止";
         activeToken.textContent = "--";
-      }
-      if (favPlayer.isPlaying()) {
-        favPlayer.stop();
-        setFavStatus("已暫停", "idle");
       }
       break;
     case "?":
@@ -292,170 +260,6 @@ document.addEventListener("keydown", e => {
       break;
   }
 });
-
-// ── localStorage: History ──
-function saveHistory(key, text) {
-  let arr = [];
-  try { arr = JSON.parse(localStorage.getItem(key) || "[]"); } catch (_) {}
-  arr = arr.filter(t => t !== text);
-  arr.unshift(text);
-  arr = arr.slice(0, MAX_HIST);
-  try { localStorage.setItem(key, JSON.stringify(arr)); } catch (_) {}
-  return arr;
-}
-
-function sentenceFromHistory(text) {
-  const m = text.match(/(?:原句|口語)：([^→]+)/);
-  return m ? m[1].trim() : null;
-}
-
-function renderHistory(listEl, arr, emptyText) {
-  listEl.innerHTML = "";
-  if (!arr.length) { addLi(listEl, emptyText, "empty-item"); return; }
-  arr.forEach(t => {
-    const sentence = sentenceFromHistory(t);
-    if (!sentence) { addLi(listEl, t); return; }
-    const li = document.createElement("li");
-    li.className = "history-item";
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.dataset.sentence = sentence;
-    btn.textContent = t;
-    btn.title = "點一下在生成頁重播";
-    btn.setAttribute("aria-label", `在生成頁重播：${sentence}`);
-    li.appendChild(btn);
-    listEl.appendChild(li);
-  });
-}
-
-function loadHistory() {
-  try {
-    const genArr = JSON.parse(localStorage.getItem(STORAGE_GEN) || "[]");
-    const recArr = JSON.parse(localStorage.getItem(STORAGE_REC) || "[]");
-    if (genArr.length) renderHistory(generationHistory, genArr, "尚無生成紀錄");
-    if (recArr.length) renderHistory(recognitionHistory, recArr, "尚無辨識紀錄");
-  } catch (_) {}
-}
-
-// ── localStorage: Favorites ──
-function getFavorites() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_FAV) || "[]"); } catch (_) { return []; }
-}
-
-function saveFavorites(arr) {
-  try { localStorage.setItem(STORAGE_FAV, JSON.stringify(arr)); } catch (_) {}
-}
-
-function renderFavorites() {
-  const arr = getFavorites();
-  favoritesList.innerHTML = "";
-  favSearchRow.hidden = arr.length < 5;
-  if (!arr.length) {
-    const li = document.createElement("li");
-    li.className = "empty-item";
-    li.innerHTML = `尚無收藏，先把常用句子加入收藏。<button type="button" class="link-btn" data-goto="generation">前往手語生成 →</button>`;
-    favoritesList.appendChild(li);
-    return;
-  }
-  const query = favSearchRow.hidden ? "" : favSearch.value.trim();
-  const shown = query ? arr.filter(t => t.includes(query)) : arr;
-  if (!shown.length) {
-    addLi(favoritesList, `沒有符合「${query}」的收藏`, "empty-item");
-    return;
-  }
-  shown.forEach(text => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <button class="fav-play" data-text="${escHtml(text)}" aria-label="播放 ${escHtml(text)} 的手語">
-        <svg width="9" height="10" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><polygon points="0,0 10,6 0,12"/></svg>
-      </button>
-      <span class="fav-sentence" data-text="${escHtml(text)}">${escHtml(text)}</span>
-      <button class="fav-del" data-text="${escHtml(text)}" aria-label="移除收藏">×</button>`;
-    favoritesList.appendChild(li);
-  });
-}
-
-function updateFavBtnState() {
-  const sentence = textInput.value.trim();
-  const isFav = getFavorites().includes(sentence);
-  favBtn.textContent = isFav ? "★ 已收藏" : "☆ 收藏";
-  favBtn.classList.toggle("is-favorited", isFav);
-}
-
-favBtn?.addEventListener("click", () => {
-  const sentence = textInput.value.trim();
-  if (!sentence) return;
-  let arr = getFavorites();
-  if (arr.includes(sentence)) {
-    arr = arr.filter(t => t !== sentence);
-  } else {
-    arr.unshift(sentence);
-    arr = arr.slice(0, MAX_FAV);
-  }
-  saveFavorites(arr);
-  updateFavBtnState();
-  renderFavorites();
-});
-
-// ── Favorites: 移除後可復原 ──
-let favUndoData  = null;
-let favUndoTimer = null;
-
-function hideFavUndo() {
-  favUndoBar.hidden = true;
-  favUndoData = null;
-}
-
-function showFavUndo(text, index) {
-  favUndoData = { text, index };
-  favUndoText.textContent = `已移除「${text}」`;
-  favUndoBar.hidden = false;
-  clearTimeout(favUndoTimer);
-  favUndoTimer = setTimeout(hideFavUndo, 6000);
-}
-
-document.querySelector("#favUndoBtn")?.addEventListener("click", () => {
-  if (!favUndoData) return;
-  const arr = getFavorites();
-  arr.splice(Math.min(favUndoData.index, arr.length), 0, favUndoData.text);
-  saveFavorites(arr);
-  renderFavorites();
-  updateFavBtnState();
-  hideFavUndo();
-});
-
-favSearch?.addEventListener("input", () => renderFavorites());
-
-favoritesList?.addEventListener("click", e => {
-  // 移除收藏
-  const delBtn = e.target.closest(".fav-del");
-  if (delBtn) {
-    const text = delBtn.dataset.text;
-    const arr = getFavorites();
-    const index = arr.indexOf(text);
-    saveFavorites(arr.filter(t => t !== text));
-    renderFavorites();
-    updateFavBtnState();
-    showFavUndo(text, index);
-    return;
-  }
-
-  // 播放手語：點播放鈕或句子文字 → 在收藏頁右側播放
-  const playTrigger = e.target.closest(".fav-play") || e.target.closest(".fav-sentence");
-  if (playTrigger) {
-    const text = playTrigger.dataset.text;
-    if (!text) return;
-    const tokens = convertToSignOrder(text);
-    favSelectedSentence.textContent = text;
-    renderTokens(favTokensEl, tokens);
-    setFavStatus("準備中", "idle");
-    favPlayer.play(tokens);
-  }
-});
-
-function escHtml(str) {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 // ── Quick Phrases ──
 function renderQuickPhrases() {
@@ -470,76 +274,154 @@ function renderQuickPhrases() {
   });
 }
 
-// ── Favorites Avatar ──
-function setFavStatus(text, state = "idle") {
-  if (!favAvatarStatus) return;
-  favAvatarStatus.textContent = text;
-  favAvatarStatus.dataset.state = state;
-}
-
-// ── Avatar Player（生成頁與收藏頁共用） ──
-function createAvatarPlayer(figure, tokensEl, { onStart, onToken, onDone } = {}) {
+// ── Avatar Player ──
+function createAvatarPlayer(figure, tokensEl, { onState, onToken } = {}) {
+  const BASE_STEP_MS = 850;
   let timer = null;
-  let interval = 850;
-  const isPlaying = () => Boolean(figure?.classList.contains("is-signing"));
+  let tokens = [];
+  let index = 0;
+  let rate = 1;
+  let state = "idle"; // idle | playing | paused | completed
+  let singleToken = false;
 
-  function stop() {
-    clearTimeout(timer);
-    figure?.classList.remove("is-signing");
+  function emitState(next) {
+    state = next;
+    onState?.(state, { index, token: tokens[index], singleToken });
   }
 
-  function play(tokens) {
+  function setGesture(token) {
+    let hash = 0;
+    for (const char of token) hash = (hash + char.codePointAt(0)) % 4;
+    figure.dataset.gesture = String(hash + 1);
+    figure.style.setProperty("--gesture-duration", `${Math.round(1100 / rate)}ms`);
+  }
+
+  function updateHighlight(activeIndex = -1) {
+    tokensEl.querySelectorAll("[data-token-index]").forEach((el, i) => {
+      const active = i === activeIndex;
+      el.classList.toggle("is-highlighted", active);
+      el.setAttribute("aria-pressed", String(active));
+    });
+  }
+
+  function stopAnimation() {
+    clearTimeout(timer);
+    timer = null;
+    figure.classList.remove("is-signing");
+  }
+
+  function step() {
     if (!tokens.length) return;
-    stop();
+    stopAnimation();
+    setGesture(tokens[index]);
+    // 重新加入 class，確保點擊同一詞卡時動畫仍會從頭播放。
+    void figure.offsetWidth;
     figure.classList.add("is-signing");
-    onStart?.();
-    let index = 0;
-    const step = () => {
-      renderTokens(tokensEl, tokens, index);
-      onToken?.(tokens[index]);
-      // 每步重新讀取 interval，速度切換立即生效
-      timer = setTimeout(() => {
-        index += 1;
-        if (index >= tokens.length) {
-          stop();
-          renderTokens(tokensEl, tokens);
-          onDone?.();
-          return;
-        }
-        step();
-      }, interval);
-    };
+    updateHighlight(index);
+    onToken?.(tokens[index]);
+    emitState("playing");
+    timer = setTimeout(() => {
+      stopAnimation();
+      if (singleToken || index >= tokens.length - 1) {
+        updateHighlight(-1);
+        emitState("completed");
+        return;
+      }
+      index += 1;
+      step();
+    }, BASE_STEP_MS / rate);
+  }
+
+  function load(nextTokens) {
+    stopAnimation();
+    tokens = [...nextTokens];
+    index = 0;
+    singleToken = false;
+    updateHighlight(-1);
+    emitState("idle");
+  }
+
+  function play(startIndex = null) {
+    if (!tokens.length) return;
+    if (Number.isInteger(startIndex)) index = Math.max(0, Math.min(startIndex, tokens.length - 1));
+    else if (state === "completed" || state === "idle") index = 0;
+    singleToken = false;
     step();
   }
 
-  return { play, stop, isPlaying, setSpeed(ms) { interval = ms; } };
+  function playToken(tokenIndex) {
+    if (!tokens[tokenIndex]) return;
+    index = tokenIndex;
+    singleToken = true;
+    step();
+  }
+
+  function pause() {
+    if (state !== "playing") return;
+    stopAnimation();
+    emitState("paused");
+  }
+
+  function resume() {
+    if (!tokens.length) return;
+    step();
+  }
+
+  function stop() {
+    stopAnimation();
+    singleToken = false;
+    index = 0;
+    updateHighlight(-1);
+    emitState("idle");
+  }
+
+  function setRate(nextRate) {
+    rate = nextRate;
+    figure.style.setProperty("--gesture-duration", `${Math.round(1100 / rate)}ms`);
+    if (state === "playing") step();
+  }
+
+  function toggle() {
+    if (state === "playing") pause();
+    else if (state === "paused") resume();
+    else play();
+  }
+
+  return { load, play, playToken, pause, resume, stop, setRate, toggle, getState: () => state };
+}
+
+function syncPlaybackControls(state, detail = {}) {
+  const hasTokens = currentGeneratedTokens.length > 0;
+  const playing = state === "playing";
+  startPlaybackButton.disabled = !hasTokens || playing;
+  pausePlaybackButton.disabled = !playing;
+  startPlaybackButton.querySelector("span").textContent = state === "paused" ? "繼續播放" : "開始播放";
+
+  if (state === "playing") avatarStatus.textContent = "播放中";
+  else if (state === "paused") avatarStatus.textContent = "已暫停";
+  else if (state === "completed") {
+    avatarStatus.textContent = detail.singleToken && detail.token ? `「${detail.token}」播放完成` : "播放完成";
+  }
+  else avatarStatus.textContent = "尚未播放";
+  if (state !== "playing" && state !== "paused") activeToken.textContent = "--";
 }
 
 const genPlayer = createAvatarPlayer(avatarFigure, generationTokens, {
-  onStart: () => { avatarStatus.textContent = "播放中"; },
+  onState: syncPlaybackControls,
   onToken: token => { activeToken.textContent = token; },
-  onDone:  () => { avatarStatus.textContent = "播放完成"; activeToken.textContent = "--"; },
 });
 
-const favPlayer = createAvatarPlayer(favAvatarFigure, favTokensEl, {
-  onStart: () => setFavStatus("播放中", "active"),
-  onDone:  () => setFavStatus("播放完成", "done"),
-});
-
-// ── Playback Speed ──
-function bindSpeedButtons(selector, player) {
-  const buttons = document.querySelectorAll(selector);
-  buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      buttons.forEach(b => { b.classList.remove("is-active"); b.setAttribute("aria-pressed", "false"); });
-      btn.classList.add("is-active");
-      btn.setAttribute("aria-pressed", "true");
-      player.setSpeed(parseInt(btn.dataset.speed, 10));
+document.querySelectorAll(".speed-btn[data-rate]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".speed-btn[data-rate]").forEach(b => {
+      const active = b === btn;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-pressed", String(active));
     });
+    genPlayer.setRate(Number(btn.dataset.rate));
+    generationStatus.textContent = `播放速率已調整為 ${btn.textContent}。`;
   });
-}
-bindSpeedButtons(".fav-speed-btn", favPlayer);
-bindSpeedButtons(".speed-btn:not(.fav-speed-btn)", genPlayer);
+});
 
 // ── Helpers ──
 function setPressed(button, pressed) {
@@ -559,11 +441,19 @@ function renderTokens(container, tokens, highlightedIndex = -1) {
   });
 }
 
-function addLi(list, text, cls = "") {
-  const li = document.createElement("li");
-  if (cls) li.className = cls;
-  li.textContent = text;
-  list.appendChild(li);
+function renderGenerationTokens(tokens) {
+  generationTokens.innerHTML = "";
+  tokens.forEach((token, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "token token-button";
+    button.dataset.tokenIndex = String(index);
+    button.style.animationDelay = `${index * 55}ms`;
+    button.textContent = token;
+    button.setAttribute("aria-label", `單獨播放「${token}」的動作`);
+    button.setAttribute("aria-pressed", "false");
+    generationTokens.appendChild(button);
+  });
 }
 
 function resetRecognitionSteps() {
@@ -649,7 +539,6 @@ function simulateRecognition() {
         spokenResult.textContent = sample.spokenText;
         setRecStatus("辨識完成", "done");
         cameraMessage.textContent = "已保留原始手語語序，並整理成口語句子。";
-        renderHistory(recognitionHistory, saveHistory(STORAGE_REC, sample.history), "尚無辨識紀錄");
       }, 700);
     }, 800);
   }, 700);
@@ -672,18 +561,16 @@ function updateGeneration() {
   if (!sentence) {
     generationStatus.textContent = "請先輸入一句口語，例如：你好";
     originalSentence.textContent = "尚未輸入內容";
-    renderTokens(generationTokens, []);
     currentGeneratedTokens = [];
-    updateFavBtnState();
+    renderGenerationTokens([]);
+    genPlayer.load([]);
     return;
   }
   currentGeneratedTokens = convertToSignOrder(sentence);
   originalSentence.textContent = sentence;
-  renderTokens(generationTokens, currentGeneratedTokens);
+  renderGenerationTokens(currentGeneratedTokens);
+  genPlayer.load(currentGeneratedTokens);
   generationStatus.textContent = "已轉成台灣手語語序，自動播放中。";
-  const histText = `原句：${sentence} → 手語語序：${currentGeneratedTokens.join(" / ")}`;
-  renderHistory(generationHistory, saveHistory(STORAGE_GEN, histText), "尚無生成紀錄");
-  updateFavBtnState();
   playAvatarSequence();
 }
 
@@ -692,7 +579,7 @@ function playAvatarSequence() {
     generationStatus.textContent = "請先完成手語語序轉換，再播放虛擬人。";
     return;
   }
-  genPlayer.play(currentGeneratedTokens);
+  genPlayer.play();
 }
 
 // ── Event Listeners ──
@@ -753,21 +640,29 @@ document.querySelector("#resetRecognition").addEventListener("click", () => {
 });
 
 document.querySelector("#generateSign").addEventListener("click", updateGeneration);
-document.querySelector("#playAvatar").addEventListener("click", playAvatarSequence);
+startPlaybackButton.addEventListener("click", () => {
+  if (genPlayer.getState() === "paused") genPlayer.resume();
+  else playAvatarSequence();
+});
+pausePlaybackButton.addEventListener("click", () => genPlayer.pause());
+
+generationTokens.addEventListener("click", e => {
+  const button = e.target.closest("button[data-token-index]");
+  if (!button) return;
+  const index = Number(button.dataset.tokenIndex);
+  genPlayer.playToken(index);
+  generationStatus.textContent = `正在單獨播放「${currentGeneratedTokens[index]}」的動作。`;
+});
 
 document.querySelector("#clearText").addEventListener("click", () => {
   genPlayer.stop();
   textInput.value = "";
   originalSentence.textContent = "尚未輸入內容";
-  renderTokens(generationTokens, []);
-  generationStatus.textContent = "內容已清除，請重新輸入一句口語。";
-  avatarStatus.textContent = "尚未播放";
-  activeToken.textContent = "--";
   currentGeneratedTokens = [];
-  updateFavBtnState();
+  renderGenerationTokens([]);
+  genPlayer.load([]);
+  generationStatus.textContent = "內容已清除，請重新輸入一句口語。";
 });
-
-textInput.addEventListener("input", updateFavBtnState);
 
 // Enter 直接轉換（Shift+Enter 換行）
 textInput.addEventListener("keydown", e => {
@@ -777,47 +672,9 @@ textInput.addEventListener("keydown", e => {
   }
 });
 
-// ── Clear History（按第一下變確認，3 秒內再按才清除） ──
-function armClearButton(btn, onConfirm) {
-  let armedTimer = null;
-  btn.addEventListener("click", () => {
-    if (armedTimer) {
-      clearTimeout(armedTimer);
-      armedTimer = null;
-      btn.textContent = "清除";
-      btn.classList.remove("is-armed");
-      onConfirm();
-      return;
-    }
-    btn.textContent = "確定清除？";
-    btn.classList.add("is-armed");
-    armedTimer = setTimeout(() => {
-      armedTimer = null;
-      btn.textContent = "清除";
-      btn.classList.remove("is-armed");
-    }, 3000);
-  });
-}
-
-armClearButton(document.querySelector("#clearRecHistory"), () => {
-  localStorage.removeItem(STORAGE_REC);
-  renderHistory(recognitionHistory, [], "尚無辨識紀錄");
-});
-armClearButton(document.querySelector("#clearGenHistory"), () => {
-  localStorage.removeItem(STORAGE_GEN);
-  renderHistory(generationHistory, [], "尚無生成紀錄");
-});
-
-// ── 空狀態引導：data-goto 跳頁 ──
-document.addEventListener("click", e => {
-  const goto = e.target.closest("[data-goto]");
-  if (goto) showPage(goto.dataset.goto);
-});
-
 window.addEventListener("beforeunload", () => {
   stopCameraStream();
   genPlayer.stop();
-  favPlayer.stop();
   clearUploadedVideo();
 });
 
@@ -827,23 +684,10 @@ document.querySelector("#kbdHelpBtn")?.addEventListener("click", () => kbdHelp?.
 document.querySelector("#kbdClose")?.addEventListener("click", () => kbdHelp?.close());
 kbdHelp?.addEventListener("click", e => { if (e.target === kbdHelp) kbdHelp.close(); });
 
-// ── History Replay ──
-[recognitionHistory, generationHistory].forEach(list => {
-  list.addEventListener("click", e => {
-    const btn = e.target.closest("button[data-sentence]");
-    if (!btn) return;
-    showPage("generation");
-    textInput.value = btn.dataset.sentence;
-    updateGeneration();
-  });
-});
-
 // ── Init ──
 const initialPage = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
 showPage(initialPage, false);
-loadHistory();
-renderFavorites();
 renderQuickPhrases();
-renderTokens(generationTokens, currentGeneratedTokens);
+renderGenerationTokens(currentGeneratedTokens);
+genPlayer.load(currentGeneratedTokens);
 showPreview(false);
-updateFavBtnState();
