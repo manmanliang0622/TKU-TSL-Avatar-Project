@@ -556,7 +556,34 @@ function convertToSignOrder(sentence) {
   return generationSamples[sentence.trim()] || fallbackGeneration(sentence.trim());
 }
 
-function updateGeneration() {
+// ── 語言模型 API（Gemma 4 QLoRA，中文 → TSL Gloss）──
+// 預設連本機 8018；模型跑在學校 VM，需先開 SSH 通道：
+//   ssh -p 2288 -N -L 8018:localhost:8018 b310ai@<VM 位址>
+// 未連線時自動退回內建對照表，前端仍可展示。
+const GLOSS_API = (localStorage.getItem("glossApi") || "http://127.0.0.1:8018").replace(/\/$/, "");
+let glossApiOnline = null;   // null=未測、true/false=已測
+
+async function translateViaModel(sentence, timeoutMs = 60000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${GLOSS_API}/translate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: sentence }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!Array.isArray(data.gloss) || !data.gloss.length) throw new Error("空結果");
+    glossApiOnline = true;
+    return { tokens: data.gloss, seconds: data.seconds };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function updateGeneration() {
   const sentence = textInput.value.trim();
   if (!sentence) {
     generationStatus.textContent = "請先輸入一句口語，例如：你好";
@@ -566,11 +593,25 @@ function updateGeneration() {
     genPlayer.load([]);
     return;
   }
-  currentGeneratedTokens = convertToSignOrder(sentence);
+
   originalSentence.textContent = sentence;
+  generationStatus.textContent = "語言模型翻譯中…";
+
+  let tokens, note;
+  try {
+    const r = await translateViaModel(sentence);
+    tokens = r.tokens;
+    note = `語言模型（Gemma 4 微調）翻譯完成，耗時 ${r.seconds}s。`;
+  } catch (err) {
+    glossApiOnline = false;
+    tokens = convertToSignOrder(sentence);
+    note = `未連上語言模型（${err.message}），改用內建對照表。`;
+  }
+
+  currentGeneratedTokens = tokens;
   renderGenerationTokens(currentGeneratedTokens);
   genPlayer.load(currentGeneratedTokens);
-  generationStatus.textContent = "已轉成台灣手語語序，自動播放中。";
+  generationStatus.textContent = `${note}`;
   playAvatarSequence();
 }
 
