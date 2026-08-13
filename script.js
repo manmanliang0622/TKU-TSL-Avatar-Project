@@ -141,7 +141,9 @@ const originalSentence    = document.querySelector("#originalSentence");
 const generationStatus    = document.querySelector("#generationStatus");
 const avatarStatus        = document.querySelector("#avatarStatus");
 const activeToken         = document.querySelector("#activeToken");
-const avatarFigure        = document.querySelector("#avatarFigure");
+const avatarStage         = document.querySelector("#avatarStage");
+const avatarCanvas        = document.querySelector("#avatarCanvas");
+const avatarLoading       = document.querySelector("#avatarLoading");
 const videoModeButton     = document.querySelector("#videoModeButton");
 const cameraModeButton    = document.querySelector("#cameraModeButton");
 const quickPhrases         = document.querySelector("#quickPhrases");
@@ -158,6 +160,9 @@ let recognitionTimer = null;
 let currentStream    = null;
 let currentGeneratedTokens = generationSamples["我要喝水"];
 let uploadedVideoUrl = null;
+let generationRequestId = 0;
+let singleTokenRequestId = 0;
+let signAvatarLexicon = null;
 
 // ── Page Navigation ──
 const PAGES        = ["home", "recognition", "generation"];
@@ -191,9 +196,13 @@ function showPage(id, push = true) {
     showPreview(Boolean(previewVideo.getAttribute("src")));
     cameraMessage.textContent = "已離開辨識頁，攝影機已自動關閉。";
   }
-  if (id !== "generation" && genPlayer.getState() !== "idle") {
-    genPlayer.stop();
-    avatarStatus.textContent = "已停止";
+  if (id !== "generation") {
+    generationRequestId += 1;
+    singleTokenRequestId += 1;
+    if (genPlayer.getState() !== "idle") {
+      genPlayer.stop();
+      avatarStatus.textContent = "已停止";
+    }
   }
 
   closeMenu();
@@ -245,7 +254,8 @@ document.addEventListener("keydown", e => {
     case " ":
       if (genPage) {
         e.preventDefault();
-        genPlayer.toggle();
+        if (genPlayer.getState() === "playing" || genPlayer.getState() === "paused") genPlayer.toggle();
+        else playAvatarSequence();
       }
       break;
     case "Escape":
@@ -275,25 +285,94 @@ function renderQuickPhrases() {
 }
 
 // ── Avatar Player ──
-function createAvatarPlayer(figure, tokensEl, { onState, onToken } = {}) {
-  const BASE_STEP_MS = 850;
-  let timer = null;
-  let tokens = [];
-  let index = 0;
-  let rate = 1;
-  let state = "idle"; // idle | playing | paused | completed
-  let singleToken = false;
+const SIGNAVATAR_CONNECT_MESSAGE = "請先啟動 SignAvatar（127.0.0.1:8000）後重新整理頁面。";
+const TSL_MODEL_CONNECT_MESSAGE = "無法連線 v11 翻譯模型（127.0.0.1:8018）；請確認學校主機服務與 SSH tunnel 都在執行。";
 
-  function emitState(next) {
-    state = next;
-    onState?.(state, { index, token: tokens[index], singleToken });
+class TslModelError extends Error {
+  constructor(message, options) {
+    super(message, options);
+    this.name = "TslModelError";
+  }
+}
+
+async function translateWithTslModel(text) {
+  const apiBase = String(window.TSL_MODEL_API_BASE || "").replace(/\/+$/, "");
+  if (!apiBase) throw new TslModelError("尚未設定 TSL_MODEL_API_BASE");
+
+  let response;
+  try {
+    response = await fetch(`${apiBase}/translate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+  } catch (error) {
+    throw new TslModelError(TSL_MODEL_CONNECT_MESSAGE, { cause: error });
   }
 
-  function setGesture(token) {
-    let hash = 0;
-    for (const char of token) hash = (hash + char.codePointAt(0)) % 4;
-    figure.dataset.gesture = String(hash + 1);
-    figure.style.setProperty("--gesture-duration", `${Math.round(1100 / rate)}ms`);
+  let payload;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    throw new TslModelError(`v11 模型回傳的不是有效 JSON（HTTP ${response.status}）`, { cause: error });
+  }
+  if (!response.ok) {
+    throw new TslModelError(payload.error || `v11 模型請求失敗（HTTP ${response.status}）`);
+  }
+
+  const glosses = Array.isArray(payload.glosses)
+    ? payload.glosses
+    : Array.isArray(payload.gloss)
+      ? payload.gloss
+      : [];
+  return {
+    ...payload,
+    glosses,
+    question: payload.question ?? payload.question_type ?? "none",
+    negation: Boolean(payload.negation),
+    unknown: Array.isArray(payload.unknown) ? payload.unknown : [],
+  };
+}
+
+function waitForGlobal(name, timeoutMs = 10000) {
+  return new Promise((resolve, reject) => {
+    const started = performance.now();
+    const check = () => {
+      if (window[name]) {
+        resolve(window[name]);
+        return;
+      }
+      if (performance.now() - started >= timeoutMs) {
+        reject(new Error(`${name} 載入逾時`));
+        return;
+      }
+      setTimeout(check, 40);
+    };
+    check();
+  });
+}
+
+function createAvatarPlayer(canvas, stageEl, tokensEl, { onState, onToken, onError } = {}) {
+  const camera = { yaw: 0, pitch: 0.06, dist: 1.4 };
+  let ready = false;
+  let initPromise = null;
+  let resizeObserver = null;
+  let animationFrame = null;
+  let lastTick = null;
+  let rate = 1;
+  let state = "idle"; // idle | loading | playing | paused | completed | error
+  let playing = false;
+  let sequence = null;
+  let activeRecording = null;
+  let activeSpans = [];
+  let playhead = 0;
+  let singleToken = false;
+  let singleTokenIndex = -1;
+  let lastTokenIndex = -1;
+
+  function emitState(next, detail = {}) {
+    state = next;
+    onState?.(state, { singleToken, ...detail });
   }
 
   function updateHighlight(activeIndex = -1) {
@@ -304,81 +383,202 @@ function createAvatarPlayer(figure, tokensEl, { onState, onToken } = {}) {
     });
   }
 
-  function stopAnimation() {
-    clearTimeout(timer);
-    timer = null;
-    figure.classList.remove("is-signing");
-  }
-
-  function step() {
-    if (!tokens.length) return;
-    stopAnimation();
-    setGesture(tokens[index]);
-    // 重新加入 class，確保點擊同一詞卡時動畫仍會從頭播放。
-    void figure.offsetWidth;
-    figure.classList.add("is-signing");
+  function setActiveToken(index) {
+    if (index === lastTokenIndex) return;
+    lastTokenIndex = index;
     updateHighlight(index);
-    onToken?.(tokens[index]);
-    emitState("playing");
-    timer = setTimeout(() => {
-      stopAnimation();
-      if (singleToken || index >= tokens.length - 1) {
-        updateHighlight(-1);
-        emitState("completed");
-        return;
-      }
-      index += 1;
-      step();
-    }, BASE_STEP_MS / rate);
+    onToken?.(index >= 0 ? currentGeneratedTokens[index] : null);
   }
 
-  function load(nextTokens) {
-    stopAnimation();
-    tokens = [...nextTokens];
-    index = 0;
+  function fitStage() {
+    if (!ready) return;
+    const width = stageEl.clientWidth;
+    const height = stageEl.clientHeight;
+    if (width < 2 || height < 2) return;
+    window.Avatar3D.resize(width, height);
+    window.Avatar3D.setCamera(camera);
+  }
+
+  function tick(now) {
+    animationFrame = requestAnimationFrame(tick);
+    if (!ready) return;
+
+    const dt = lastTick === null ? 1 / 60 : Math.min(0.1, (now - lastTick) / 1000);
+    lastTick = now;
+
+    if (playing && activeRecording?.frames?.length) {
+      const duration = activeRecording.frames[activeRecording.frames.length - 1].timestamp;
+      playhead = Math.min(duration, playhead + dt * rate);
+      window.Avatar3D.updateAt(playhead, dt);
+
+      if (singleToken) {
+        setActiveToken(singleTokenIndex);
+      } else {
+        const activeIndex = activeSpans.findIndex(span => playhead >= span.start && playhead <= span.end);
+        setActiveToken(activeIndex);
+      }
+
+      if (playhead >= duration) {
+        playing = false;
+        setActiveToken(-1);
+        emitState("completed", {
+          token: singleToken ? currentGeneratedTokens[singleTokenIndex] : null,
+        });
+      }
+    }
+
+    window.Avatar3D.setCamera(camera);
+    window.Avatar3D.render();
+  }
+
+  async function boot() {
+    avatarLoading.hidden = false;
+    avatarLoading.textContent = "載入虛擬人…";
+    const apiBase = String(window.SIGNAVATAR_API_BASE || "").replace(/\/+$/, "");
+    const configResponse = await fetch(`${apiBase}/config`, { cache: "no-store" });
+    if (!configResponse.ok) throw new Error(`SignAvatar API ${configResponse.status}`);
+
+    const [, avatar] = await Promise.all([
+      waitForGlobal("Composer"),
+      waitForGlobal("Avatar3D"),
+    ]);
+    await avatar.init(canvas);
+    ready = true;
+    avatar.setCamera(camera);
+    fitStage();
+
+    resizeObserver = new ResizeObserver(fitStage);
+    resizeObserver.observe(stageEl);
+    window.addEventListener("resize", fitStage);
+    document.addEventListener("visibilitychange", () => { lastTick = null; });
+    avatarLoading.hidden = true;
+    if (animationFrame === null) animationFrame = requestAnimationFrame(tick);
+    emitState("idle");
+    return true;
+  }
+
+  function ensureReady() {
+    if (ready) return Promise.resolve(true);
+    if (!initPromise) {
+      emitState("loading");
+      initPromise = boot().catch(error => {
+        initPromise = null;
+        avatarLoading.hidden = false;
+        avatarLoading.textContent = "無法載入虛擬人";
+        onError?.(error);
+        emitState("error");
+        throw error;
+      });
+    }
+    return initPromise;
+  }
+
+  function activateRecording(recording) {
+    activeRecording = recording;
+    playhead = 0;
+    lastTick = null;
+    window.Avatar3D.setMotion(recording.frames);
+    window.Avatar3D.updateAt(0, 1 / 60);
+    window.Avatar3D.render();
+  }
+
+  function setSequence(recording, tokens, spans) {
+    sequence = { recording, tokens: [...tokens], spans: [...spans] };
+    playing = false;
     singleToken = false;
-    updateHighlight(-1);
+    singleTokenIndex = -1;
+    activeSpans = sequence.spans;
+    activateRecording(recording);
+    setActiveToken(-1);
     emitState("idle");
   }
 
-  function play(startIndex = null) {
-    if (!tokens.length) return;
-    if (Number.isInteger(startIndex)) index = Math.max(0, Math.min(startIndex, tokens.length - 1));
-    else if (state === "completed" || state === "idle") index = 0;
+  function play() {
+    if (!ready || !sequence) return false;
+    if (state === "paused" && activeRecording) {
+      resume();
+      return true;
+    }
     singleToken = false;
-    step();
+    singleTokenIndex = -1;
+    activeSpans = sequence.spans;
+    activateRecording(sequence.recording);
+    setActiveToken(0);
+    playing = true;
+    emitState("playing");
+    return true;
   }
 
-  function playToken(tokenIndex) {
-    if (!tokens[tokenIndex]) return;
-    index = tokenIndex;
+  function playSingle(recording, tokenIndex) {
+    if (!ready || !recording) return false;
     singleToken = true;
-    step();
+    singleTokenIndex = tokenIndex;
+    activeSpans = [];
+    activateRecording(recording);
+    setActiveToken(tokenIndex);
+    playing = true;
+    emitState("playing", { token: currentGeneratedTokens[tokenIndex] });
+    return true;
   }
 
   function pause() {
     if (state !== "playing") return;
-    stopAnimation();
+    playing = false;
+    lastTick = null;
     emitState("paused");
   }
 
   function resume() {
-    if (!tokens.length) return;
-    step();
+    if (state !== "paused" || !activeRecording) return;
+    playing = true;
+    lastTick = null;
+    emitState("playing", {
+      token: singleToken ? currentGeneratedTokens[singleTokenIndex] : null,
+    });
   }
 
   function stop() {
-    stopAnimation();
+    playing = false;
+    activeRecording = null;
+    activeSpans = [];
+    playhead = 0;
+    lastTick = null;
     singleToken = false;
-    index = 0;
-    updateHighlight(-1);
+    singleTokenIndex = -1;
+    setActiveToken(-1);
+    if (ready) {
+      if (sequence) {
+        window.Avatar3D.setMotion(sequence.recording.frames);
+        window.Avatar3D.updateAt(0, 1 / 60);
+      } else {
+        window.Avatar3D.resetMotion();
+      }
+      window.Avatar3D.render();
+    }
     emitState("idle");
   }
 
+  function clear() {
+    sequence = null;
+    stop();
+  }
+
+  function setBusy() {
+    playing = false;
+    lastTick = null;
+    setActiveToken(-1);
+    emitState("loading");
+  }
+
+  function setError() {
+    playing = false;
+    lastTick = null;
+    setActiveToken(-1);
+    emitState("error");
+  }
+
   function setRate(nextRate) {
-    rate = nextRate;
-    figure.style.setProperty("--gesture-duration", `${Math.round(1100 / rate)}ms`);
-    if (state === "playing") step();
+    if (Number.isFinite(nextRate) && nextRate > 0) rate = nextRate;
   }
 
   function toggle() {
@@ -387,18 +587,38 @@ function createAvatarPlayer(figure, tokensEl, { onState, onToken } = {}) {
     else play();
   }
 
-  return { load, play, playToken, pause, resume, stop, setRate, toggle, getState: () => state };
+  return {
+    ensureReady,
+    setSequence,
+    play,
+    playSingle,
+    pause,
+    resume,
+    stop,
+    clear,
+    setBusy,
+    setError,
+    setRate,
+    toggle,
+    getState: () => state,
+    hasSequence: () => Boolean(sequence),
+    isReady: () => ready,
+  };
 }
 
 function syncPlaybackControls(state, detail = {}) {
-  const hasTokens = currentGeneratedTokens.length > 0;
+  const hasSequence = genPlayer.hasSequence();
   const playing = state === "playing";
-  startPlaybackButton.disabled = !hasTokens || playing;
+  const busy = state === "loading";
+  const failed = state === "error";
+  startPlaybackButton.disabled = !hasSequence || playing || busy || failed;
   pausePlaybackButton.disabled = !playing;
   startPlaybackButton.querySelector("span").textContent = state === "paused" ? "繼續播放" : "開始播放";
 
   if (state === "playing") avatarStatus.textContent = "播放中";
   else if (state === "paused") avatarStatus.textContent = "已暫停";
+  else if (state === "loading") avatarStatus.textContent = "載入中";
+  else if (state === "error") avatarStatus.textContent = "無法播放";
   else if (state === "completed") {
     avatarStatus.textContent = detail.singleToken && detail.token ? `「${detail.token}」播放完成` : "播放完成";
   }
@@ -406,9 +626,10 @@ function syncPlaybackControls(state, detail = {}) {
   if (state !== "playing" && state !== "paused") activeToken.textContent = "--";
 }
 
-const genPlayer = createAvatarPlayer(avatarFigure, generationTokens, {
+const genPlayer = createAvatarPlayer(avatarCanvas, avatarStage, generationTokens, {
   onState: syncPlaybackControls,
-  onToken: token => { activeToken.textContent = token; },
+  onToken: token => { activeToken.textContent = token || "--"; },
+  onError: () => { generationStatus.textContent = SIGNAVATAR_CONNECT_MESSAGE; },
 });
 
 document.querySelectorAll(".speed-btn[data-rate]").forEach(btn => {
@@ -545,41 +766,144 @@ function simulateRecognition() {
 }
 
 // ── Generation ──
-function fallbackGeneration(sentence) {
-  const cleaned = sentence.replace(/[，。！？\s]/g, "");
-  if (!cleaned) return [];
-  if (cleaned.includes("我要")) return ["我", cleaned.replace("我要", ""), "要"].filter(Boolean);
-  return cleaned.split("").slice(0, 6);
+function computeTokenSpans(tokens, lexicon) {
+  const spans = [];
+  let time = 0;
+  for (const name of tokens) {
+    const entry = lexicon[name];
+    if (!entry) continue;
+    const start = time;
+    time += Math.max(0.1, Number(entry.end || 0) - Number(entry.start || 0));
+    time += 1 / window.Composer.COMPOSE_FPS;
+    spans.push({ name, start, end: time });
+    time += 0.3;
+  }
+  return spans;
 }
 
-function convertToSignOrder(sentence) {
-  return generationSamples[sentence.trim()] || fallbackGeneration(sentence.trim());
+function isSignAvatarConnectionError(error) {
+  const message = String(error?.message || error);
+  return error instanceof TypeError || /SignAvatar|Avatar3D|Composer|fetch|載入|逾時/i.test(message);
 }
 
-function updateGeneration() {
+async function prepareGeneration(sentence, { autoplay = true, announce = true } = {}) {
+  const requestId = ++generationRequestId;
+  singleTokenRequestId += 1;
+  genPlayer.setBusy();
+  if (announce) generationStatus.textContent = "正在連線 SignAvatar 並準備手語動作…";
+
+  try {
+    await genPlayer.ensureReady();
+    if (requestId !== generationRequestId) return false;
+
+    const [lexicon, translated] = await Promise.all([
+      window.Composer.loadLexicon(),
+      translateWithTslModel(sentence),
+    ]);
+    if (requestId !== generationRequestId) return false;
+
+    if (!translated.glosses?.length) {
+      throw new Error("詞庫裡沒有可播放的手語動作");
+    }
+
+    const built = await window.Composer.build(translated.glosses, lexicon, {
+      question: translated.question,
+      negation: translated.negation,
+    });
+    if (requestId !== generationRequestId) return false;
+    if (!built) throw new Error("詞庫裡沒有可播放的手語動作");
+
+    signAvatarLexicon = lexicon;
+    currentGeneratedTokens = [...translated.glosses];
+    originalSentence.textContent = sentence;
+    renderGenerationTokens(currentGeneratedTokens);
+    genPlayer.setSequence(built, currentGeneratedTokens, computeTokenSpans(currentGeneratedTokens, lexicon));
+
+    if (announce) {
+      const unknown = [...new Set(translated.unknown || [])];
+      generationStatus.textContent = unknown.length
+        ? `已轉成台灣手語語序；略過無對應詞彙：${unknown.join("、")}。`
+        : autoplay
+          ? "已轉成台灣手語語序，自動播放中。"
+          : "已轉成台灣手語語序，可以開始播放。";
+    }
+    if (autoplay) genPlayer.play();
+    return true;
+  } catch (error) {
+    if (requestId !== generationRequestId) return false;
+    currentGeneratedTokens = [];
+    renderGenerationTokens([]);
+    genPlayer.clear();
+    genPlayer.setError();
+    generationStatus.textContent = error instanceof TslModelError
+      ? error.message
+      : isSignAvatarConnectionError(error)
+        ? SIGNAVATAR_CONNECT_MESSAGE
+        : `無法生成手語：${error.message}`;
+    return false;
+  }
+}
+
+async function updateGeneration() {
   const sentence = textInput.value.trim();
   if (!sentence) {
+    generationRequestId += 1;
+    singleTokenRequestId += 1;
     generationStatus.textContent = "請先輸入一句口語，例如：你好";
     originalSentence.textContent = "尚未輸入內容";
     currentGeneratedTokens = [];
     renderGenerationTokens([]);
-    genPlayer.load([]);
+    genPlayer.clear();
     return;
   }
-  currentGeneratedTokens = convertToSignOrder(sentence);
   originalSentence.textContent = sentence;
-  renderGenerationTokens(currentGeneratedTokens);
-  genPlayer.load(currentGeneratedTokens);
-  generationStatus.textContent = "已轉成台灣手語語序，自動播放中。";
-  playAvatarSequence();
+  await prepareGeneration(sentence, { autoplay: true, announce: true });
 }
 
-function playAvatarSequence() {
-  if (!currentGeneratedTokens.length) {
+async function playAvatarSequence() {
+  if (genPlayer.getState() === "paused") {
+    genPlayer.resume();
+    return;
+  }
+  if (genPlayer.hasSequence()) {
+    genPlayer.play();
+    return;
+  }
+  const sentence = textInput.value.trim();
+  if (!sentence) {
     generationStatus.textContent = "請先完成手語語序轉換，再播放虛擬人。";
     return;
   }
-  genPlayer.play();
+  await prepareGeneration(sentence, { autoplay: true, announce: true });
+}
+
+async function playGeneratedToken(tokenIndex) {
+  if (!genPlayer.hasSequence() || !signAvatarLexicon) {
+    const prepared = await prepareGeneration(textInput.value.trim(), { autoplay: false, announce: false });
+    if (!prepared) return;
+    tokenIndex = Math.min(tokenIndex, currentGeneratedTokens.length - 1);
+  }
+
+  const token = currentGeneratedTokens[tokenIndex];
+  if (!token) return;
+  const requestId = ++singleTokenRequestId;
+  generationRequestId += 1;
+  genPlayer.setBusy();
+  generationStatus.textContent = `正在準備「${token}」的動作…`;
+
+  try {
+    const built = await window.Composer.build([token], signAvatarLexicon);
+    if (requestId !== singleTokenRequestId) return;
+    if (!built) throw new Error(`詞庫裡找不到「${token}」`);
+    genPlayer.playSingle(built, tokenIndex);
+    generationStatus.textContent = `正在單獨播放「${token}」的動作。`;
+  } catch (error) {
+    if (requestId !== singleTokenRequestId) return;
+    genPlayer.stop();
+    generationStatus.textContent = isSignAvatarConnectionError(error)
+      ? SIGNAVATAR_CONNECT_MESSAGE
+      : `無法播放「${token}」：${error.message}`;
+  }
 }
 
 // ── Event Listeners ──
@@ -650,17 +974,18 @@ generationTokens.addEventListener("click", e => {
   const button = e.target.closest("button[data-token-index]");
   if (!button) return;
   const index = Number(button.dataset.tokenIndex);
-  genPlayer.playToken(index);
-  generationStatus.textContent = `正在單獨播放「${currentGeneratedTokens[index]}」的動作。`;
+  playGeneratedToken(index);
 });
 
 document.querySelector("#clearText").addEventListener("click", () => {
+  generationRequestId += 1;
+  singleTokenRequestId += 1;
   genPlayer.stop();
   textInput.value = "";
   originalSentence.textContent = "尚未輸入內容";
   currentGeneratedTokens = [];
   renderGenerationTokens([]);
-  genPlayer.load([]);
+  genPlayer.clear();
   generationStatus.textContent = "內容已清除，請重新輸入一句口語。";
 });
 
@@ -678,6 +1003,12 @@ window.addEventListener("beforeunload", () => {
   clearUploadedVideo();
 });
 
+window.addEventListener("pagechange", event => {
+  if (event.detail !== "generation" || genPlayer.hasSequence()) return;
+  const sentence = textInput.value.trim();
+  if (sentence) prepareGeneration(sentence, { autoplay: false, announce: false });
+});
+
 // ── Keyboard Help Dialog ──
 const kbdHelp = document.querySelector("#kbdHelp");
 document.querySelector("#kbdHelpBtn")?.addEventListener("click", () => kbdHelp?.showModal());
@@ -686,8 +1017,8 @@ kbdHelp?.addEventListener("click", e => { if (e.target === kbdHelp) kbdHelp.clos
 
 // ── Init ──
 const initialPage = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
-showPage(initialPage, false);
 renderQuickPhrases();
 renderGenerationTokens(currentGeneratedTokens);
-genPlayer.load(currentGeneratedTokens);
+genPlayer.clear();
 showPreview(false);
+showPage(initialPage, false);
