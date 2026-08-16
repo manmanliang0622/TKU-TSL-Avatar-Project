@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignAvatar — 詞庫總覽</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🤟</text></svg>">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #12151a;
+    --line: #232830;
+    --ink: #e8e4d9;
+    --ink-dim: #6f7783;
+    --natural: #4fd8e8;   /* 自然手語 */
+    --signed: #ffb454;    /* 文法手語 */
+    --manual: #6f7783;    /* 手動標註 */
+    --mono: "Berkeley Mono", "JetBrains Mono", "IBM Plex Mono", "SF Mono",
+            ui-monospace, Menlo, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--mono); }
+
+  header {
+    display: flex; align-items: center; gap: 0.9rem;
+    padding: 0.7rem 1.1rem; border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; background: var(--bg); z-index: 5;
+  }
+  header a.back { color: var(--ink-dim); text-decoration: none; }
+  header a.back:hover { color: var(--ink); }
+  header .brand { font-weight: 700; letter-spacing: 0.14em; }
+  header .brand em { color: var(--signed); font-style: normal; }
+  header .sep { color: var(--ink-dim); }
+  header .title { letter-spacing: 0.3em; font-size: 0.8rem; color: var(--ink-dim); }
+  header .spacer { flex: 1; }
+  header a.nav {
+    color: var(--ink-dim); text-decoration: none; font-size: 0.75rem;
+    border: 1px solid var(--line); border-radius: 4px; padding: 0.3rem 0.7rem;
+  }
+  header a.nav:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 1.6rem 1.2rem 4rem; }
+
+  /* ── stat tiles ─────────────────────────────────────── */
+  .tiles {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.9rem;
+  }
+  .tile {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 0.9rem 1rem;
+  }
+  .tile .label { color: var(--ink-dim); font-size: 0.68rem; letter-spacing: 0.18em; }
+  .tile .value { font-size: 1.9rem; font-weight: 700; margin-top: 0.3rem; }
+  .tile .sub { color: var(--ink-dim); font-size: 0.7rem; margin-top: 0.25rem; line-height: 1.6; }
+  .tile .sub b { font-weight: 700; }
+  .tile .sub .n { color: var(--natural); }
+  .tile .sub .s { color: var(--signed); }
+
+  /* composition bar: direct-labeled segments with 2px gaps */
+  #composition { margin-top: 1rem; }
+  #comp-bar { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; }
+  #comp-bar i { display: block; height: 100%; }
+  #comp-legend { display: flex; gap: 1.2rem; margin-top: 0.45rem; flex-wrap: wrap;
+                 color: var(--ink-dim); font-size: 0.72rem; }
+  #comp-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+                     margin-right: 0.35rem; vertical-align: -1px; }
+
+  h2 { font-size: 0.85rem; letter-spacing: 0.25em; color: var(--ink-dim);
+       margin: 2.2rem 0 0.8rem; font-weight: 400; }
+
+  input[type="search"] {
+    width: 100%; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; color: var(--ink); font-family: var(--mono);
+    font-size: 0.9rem; padding: 0.55rem 0.8rem; outline: none; margin-bottom: 0.8rem;
+  }
+  input[type="search"]:focus { border-color: var(--ink-dim); }
+
+  /* word chips */
+  #words { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 4px; padding: 0.25rem 0.55rem;
+    font-size: 0.85rem; cursor: pointer; text-decoration: none; color: var(--ink);
+    display: inline-flex; align-items: center; gap: 0.35rem; background: var(--panel);
+  }
+  .chip:hover { border-color: var(--ink-dim); }
+  .chip .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .chip.more { color: var(--ink-dim); cursor: default; }
+
+  /* sentences */
+  .sent {
+    display: block; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; padding: 0.55rem 0.8rem; margin-bottom: 0.45rem;
+    cursor: pointer; text-decoration: none; color: var(--ink); line-height: 1.7;
+  }
+  .sent:hover { border-color: var(--ink-dim); }
+  .sent .zh { font-size: 0.9rem; }
+  .sent .gl { color: var(--ink-dim); font-size: 0.75rem; }
+  #loading-note { color: var(--ink-dim); letter-spacing: 0.2em; padding: 2rem 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="./" title="回首頁">◂</a>
+  <span class="brand"><em>Sign</em>Avatar</span>
+  <span class="sep">▸</span>
+  <span class="title">詞庫總覽 DATA</span>
+  <span class="spacer"></span>
+  <a class="nav" href="sources.html" style="margin-right:0.4rem">資料來源</a>
+  <a class="nav" href="generate.html">→ 手語生成</a>
+</header>
+
+<main>
+  <div id="loading-note">統計中…</div>
+  <div id="content" style="display:none">
+    <section class="tiles">
+      <div class="tile">
+        <div class="label">可播詞彙</div>
+        <div class="value" id="t-words">–</div>
+        <div class="sub" id="t-words-sub"></div>
+      </div>
+      <div class="tile">
+        <div class="label">平行例句(中文↔gloss)</div>
+        <div class="value" id="t-pairs">–</div>
+        <div class="sub">來源:文化部臺灣手語語料庫</div>
+      </div>
+      <div class="tile">
+        <div class="label">完全可播例句</div>
+        <div class="value" id="t-playable">–</div>
+        <div class="sub">每個 gloss 都在詞庫,點下方例句直接生成</div>
+      </div>
+      <div class="tile">
+        <div class="label">語料影片已萃取</div>
+        <div class="value" id="t-units">–</div>
+        <div class="sub" id="t-units-sub">文化部語料庫單元</div>
+      </div>
+    </section>
+
+    <div id="composition">
+      <div id="comp-bar"></div>
+      <div id="comp-legend"></div>
+    </div>
+
+    <h2>詞彙(點擊即生成)</h2>
+    <input type="search" id="word-q" placeholder="搜尋詞彙…">
+    <div id="words"></div>
+
+    <h2>完全可播例句(點擊即生成)</h2>
+    <input type="search" id="sent-q" placeholder="搜尋例句…">
+    <div id="sents"></div>
+  </div>
+</main>
+
+<script>
+"use strict";
+
+const COLORS = {
+  natural: getComputedStyle(document.documentElement).getPropertyValue("--natural").trim(),
+  signed: getComputedStyle(document.documentElement).getPropertyValue("--signed").trim(),
+  manual: getComputedStyle(document.documentElement).getPropertyValue("--manual").trim(),
+};
+const KIND_LABEL = { natural: "自然手語(語料庫)", signed: "文法手語(教育部)", manual: "手動標註" };
+
+function kindOf(entry) {
+  const src = String((entry && entry.source) || "");
+  if (src.startsWith("moc:")) return "natural";
+  if (src.startsWith("moe:")) return "signed";
+  return "manual";
+}
+
+async function fetchJSON(url, fallback) {
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    return res.ok ? await res.json() : fallback;
+  } catch { return fallback; }
+}
+
+let LEX = {}, PAIRS = [], PLAYABLE = [];
+
+function genLink(text) { return `generate.html?text=${encodeURIComponent(text)}`; }
+
+function renderTiles(manifest) {
+  const kinds = { natural: 0, signed: 0, manual: 0 };
+  for (const k in LEX) kinds[kindOf(LEX[k])]++;
+  document.getElementById("t-words").textContent = Object.keys(LEX).length.toLocaleString();
+  document.getElementById("t-words-sub").innerHTML =
+    `<b class="n">${kinds.natural.toLocaleString()}</b> 自然手語 · ` +
+    `<b class="s">${kinds.signed.toLocaleString()}</b> 文法手語 · ` +
+    `${kinds.manual} 手動`;
+  document.getElementById("t-pairs").textContent = PAIRS.length.toLocaleString();
+  document.getElementById("t-playable").textContent = PLAYABLE.length.toLocaleString();
+  const units = Object.values(manifest).filter(m => m.video_extracted).length;
+  document.getElementById("t-units").textContent = `${units}`;
+  document.getElementById("t-units-sub").textContent = `/ ${Object.keys(manifest).length || 407} 個文化部語料庫單元`;
+
+  // composition bar (direct-labeled legend, 2px gaps between segments)
+  const total = Object.keys(LEX).length || 1;
+  const bar = document.getElementById("comp-bar");
+  const legend = document.getElementById("comp-legend");
+  bar.innerHTML = ""; legend.innerHTML = "";
+  for (const kind of ["natural", "signed", "manual"]) {
+    if (!kinds[kind]) continue;
+    const seg = document.createElement("i");
+    seg.style.width = `${(kinds[kind] / total) * 100}%`;
+    seg.style.background = COLORS[kind];
+    seg.title = `${KIND_LABEL[kind]}: ${kinds[kind]}`;
+    bar.appendChild(seg);
+    const li = document.createElement("span");
+    li.innerHTML = `<span class="sw" style="background:${COLORS[kind]}"></span>` +
+      `${KIND_LABEL[kind]} ${kinds[kind].toLocaleString()}(${Math.round(kinds[kind] / total * 100)}%)`;
+    legend.appendChild(li);
+  }
+}
+
+const WORD_RENDER_CAP = 600;
+function renderWords(query) {
+  const box = document.getElementById("words");
+  box.innerHTML = "";
+  const q = (query || "").trim();
+  const names = Object.keys(LEX).sort((a, b) => a.localeCompare(b, "zh-Hant"));
+  let shown = 0;
+  for (const name of names) {
+    if (q && !name.includes(q)) continue;
+    if (shown >= WORD_RENDER_CAP) {
+      const more = document.createElement("span");
+      more.className = "chip more";
+      more.textContent = "…(搜尋以縮小範圍)";
+      box.appendChild(more);
+      break;
+    }
+    const a = document.createElement("a");
+    a.className = "chip";
+    a.href = genLink(name);
+    a.innerHTML = `<span class="dot" style="background:${COLORS[kindOf(LEX[name])]}"></span>${name}`;
+    box.appendChild(a);
+    shown++;
+  }
+  if (!shown) box.innerHTML = `<span class="chip more">沒有符合的詞</span>`;
+}
+
+const SENT_RENDER_CAP = 60;
+function renderSents(query) {
+  const box = document.getElementById("sents");
+  box.innerHTML = "";
+  const q = (query || "").trim();
+  let shown = 0;
+  for (const p of PLAYABLE) {
+    if (q && !p.text.includes(q) && !p.glosses.some(g => g.includes(q))) continue;
+    if (shown >= SENT_RENDER_CAP) break;
+    const a = document.createElement("a");
+    a.className = "sent";
+    a.href = genLink(p.text);
+    a.innerHTML = `<span class="zh">${p.text}</span><br><span class="gl">${p.glosses.join(" ")}</span>`;
+    box.appendChild(a);
+    shown++;
+  }
+  if (!shown) box.innerHTML = `<span class="chip more">沒有符合的例句</span>`;
+}
+
+async function boot() {
+  const [lex, pairs, manifest] = await Promise.all([
+    fetchJSON("lexicon", {}),
+    fetchJSON("recordings/tsl_pairs.json", []),
+    fetchJSON("recordings/moc_manifest.json", {}),
+  ]);
+  LEX = lex; PAIRS = pairs;
+  PLAYABLE = PAIRS.filter(p => p.glosses.length >= 2 && p.glosses.every(g => g in LEX));
+  renderTiles(manifest);
+  renderWords("");
+  renderSents("");
+  document.getElementById("loading-note").style.display = "none";
+  document.getElementById("content").style.display = "block";
+}
+
+document.getElementById("word-q").addEventListener("input", e => renderWords(e.target.value));
+document.getElementById("sent-q").addEventListener("input", e => renderSents(e.target.value));
+boot();
+</script>
+</body>
+</html>
