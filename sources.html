@@ -15,6 +15,9 @@
     --natural: #4fd8e8;
     --signed: #ffb454;
     --manual: #6f7783;
+    --place: #9d8cff;
+    --dict: #5ecf9a;
+    --new: #f0836a;
     --mono: "Berkeley Mono", "JetBrains Mono", "IBM Plex Mono", "SF Mono",
             ui-monospace, Menlo, monospace;
   }
@@ -135,6 +138,9 @@ function kindOf(entry) {
   const src = String((entry && entry.source) || "");
   if (src.startsWith("moc:")) return "natural";
   if (src.startsWith("moe:")) return "signed";
+  if (src.startsWith("placename:")) return "place";
+  if (src.startsWith("twtsl:")) return "dict";
+  if (src.startsWith("tasli:")) return "new";
   return "manual";
 }
 
@@ -160,6 +166,49 @@ const SOURCES = [
       詞條資料依「政府網站資料開放宣告」使用並註明出處。`,
   },
   {
+    kind: "dict", dot: "var(--dict)",
+    name: "中正大學台灣手語線上辭典(第五版)",
+    url: "https://twtsl.ccu.edu.tw/",
+    lic: { cls: "ok", text: "可訓練可散布;須註明出處" },
+    body: `蔡素娟、戴浩一團隊編纂,約 3,500 詞條的單詞辭典,
+      每個詞條一支影片 + 動作描述 + 同義索引名。詞庫鍵同時收辭典正式名與
+      同義索引名(如「伴」與「陪伴」共用同一支影片),所以詞條數多於影片數。
+      影片檔名為 <code>&lt;id:04d&gt;_&lt;詞&gt;.mp4</code>,詞條標
+      <code>source: twtsl:&lt;id&gt;</code>。
+      <blockquote>引用:蔡素娟等(2026)。中正大學手語語言學台灣研究中心。</blockquote>
+      <b>本來源無逐筆 manifest</b>——出處可由 <code>twtsl:&lt;id&gt;</code>
+      直接回推辭典頁,動作描述存在詞條的 <code>text</code> 欄位。`,
+  },
+  {
+    kind: "new", dot: "var(--new)",
+    name: "臺灣手語新詞數位學習網(新詞)",
+    url: "https://newtsl.taslifamily.org/",
+    lic: { cls: "ok", text: "已取得同意;資料不公開" },
+    body: `社團法人臺灣手語翻譯協會蒐集的「新詞」——時事、品牌、科技、醫療這類
+      辭典來不及收的詞(ChatGPT、台積電、小紅書、載具、AED)。每詞一支詞彙影片
+      + 一支例句影片(掛 YouTube),詞條只收詞彙那支,例句的 id 留在 manifest。
+      <b>括號別名各自成鍵</b>:<code>優步（Uber）</code> 產生「優步」與「Uber」
+      兩個詞條,指向同一支影片。只補缺詞,絕不覆蓋既有詞條。
+      這批的用途是<b>擴充虛擬人講得出的實用詞彙</b>,不是補訓練資料的缺口
+      (實測 518 詞裡只有 1 個命中當時的缺詞清單)。
+      訓練資料一律不對外公開,影片不散布、不入版控,引用須註明出處。`,
+  },
+  {
+    kind: "place", dot: "var(--place)",
+    name: "台灣手語地名網(地名)",
+    url: "https://jung-hsingchang.tw/name/placenames_database.php",
+    lic: { cls: "ok", text: "已取得同意;資料不公開" },
+    body: `張榮興台灣手語研究室的台灣地名資料庫,19 縣市共 1000 個地名,
+      每個地名一支影片 + 逐字素構詞分析(表達方式/造詞策略/運用手形/打法描述),
+      構詞分析全文存於 <code>recordings/placenames.json</code>。
+      地名只補缺詞,<b>絕不覆蓋</b>已存在的自然手語詞條;
+      同地名的多種打法(基隆1/基隆2)收斂成一個詞條,變體仍全數記錄於 manifest。
+      站上頁尾為「版權所有 All Rights Reserved」、無開放宣告,
+      <b>已取得張榮興台灣手語研究室使用同意</b>(使用者 2026-08-17 確認)。
+      <b>同意的是使用,不是公開</b>——訓練資料一律不對外公開,
+      影片與萃取結果不散布、不入版控,引用須註明出處。`,
+  },
+  {
     kind: "manual", dot: "var(--manual)",
     name: "手動標註 / 其他影片",
     url: "",
@@ -171,8 +220,9 @@ const SOURCES = [
 ];
 
 function renderCards() {
-  const counts = { natural: 0, signed: 0, manual: 0 };
-  for (const k in LEX) counts[kindOf(LEX[k])]++;
+  const counts = { natural: 0, signed: 0, dict: 0, new: 0, place: 0, manual: 0 };
+  // 別名鍵指向同一段錄影，算進來會讓每個來源的詞數灌水
+  for (const k in LEX) if (!LEX[k].alias_of) counts[kindOf(LEX[k])]++;
   const box = document.getElementById("src-cards");
   box.innerHTML = "";
   for (const s of SOURCES) {
@@ -218,6 +268,36 @@ function traceWord(word) {
         <span class="k">影片</span> <a href="${x.origin || "#"}" target="_blank" rel="noopener">${x.origin || "?"}</a><br>
         <span class="k">授權</span> ${x.license || "?"}<br>
         <span class="k">體系</span> 文法手語(system 欄位標記)<br>
+        <span class="k">抓取</span> ${x.fetched_at || "?"}`;
+    } else if (src.startsWith("twtsl:")) {
+      // 這個來源沒有 external_manifest 記錄，能顯示的就是詞條自己帶的東西：
+      // 動作描述在 text，出處靠 id 回推辭典頁
+      const id = src.slice(6);
+      originHTML = `
+        <span class="k">辭典編號</span> ${id}<br>
+        <span class="k">動作描述</span> ${e.text || "?"}<br>
+        <span class="k">辭典頁</span> <a href="https://twtsl.ccu.edu.tw/?id=${encodeURIComponent(id)}" target="_blank" rel="noopener">twtsl.ccu.edu.tw/?id=${id}</a><br>
+        <span class="k">授權</span> 可訓練可散布,須註明出處(蔡素娟等 2026,中正大學手語語言學台灣研究中心)`;
+    } else if (src.startsWith("tasli:")) {
+      const x = EXT[src] || {};
+      const clips = Object.entries(x.videos || {})
+        .map(([k, v]) => `${k}:<a href="https://www.youtube.com/watch?v=${v}" target="_blank" rel="noopener">${v}</a>`)
+        .join("、");
+      originHTML = `
+        <span class="k">詞條</span> ${x.word || "?"}<br>
+        <span class="k">影片</span> ${clips || "?"}<br>
+        <span class="k">詞頁</span> <a href="${x.page || "#"}" target="_blank" rel="noopener">${x.page || "?"}</a><br>
+        <span class="k">授權</span> ${x.license || "?"}<br>
+        <span class="k">抓取</span> ${x.fetched_at || "?"}`;
+    } else if (src.startsWith("placename:")) {
+      const x = EXT[src] || {};
+      const morph = (x.morphemes || [])
+        .map(m => `${m["字素"]}(${m["造詞策略"] || m["表達方式"] || "?"})`).join("、");
+      originHTML = `
+        <span class="k">縣市</span> ${x.county || e.county || "?"}<br>
+        <span class="k">構詞</span> ${morph || "?"}<br>
+        <span class="k">影片</span> <a href="${x.origin || "#"}" target="_blank" rel="noopener">${x.origin || "?"}</a><br>
+        <span class="k">授權</span> ${x.license || "?"}<br>
         <span class="k">抓取</span> ${x.fetched_at || "?"}`;
     } else {
       originHTML = `<span class="k">來源</span> 檢視器手動標註(本地素材)`;
