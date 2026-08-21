@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="手譯橋 SignBridge：即時手語翻譯系統。將手語影像轉換為文字，也能把口語句子轉成台灣手語語序並播放動畫。">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#E9EAE4">
 <title>手譯橋 SignBridge — 手語翻譯系統</title>
 <meta name="google-site-verification" content="8p95iFz6pA8p0foqyns39ckik2k76oWNKrs9THkAl70" />
 <link rel="canonical" href="https://tku-tsl-avatar-project.pages.dev/">
@@ -24,8 +24,8 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@400;500;700&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Archivo:wght@400;500;600&family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=20260822-cipher">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -48,16 +48,8 @@
 <!-- ======== NAV ======== -->
 <header class="nav">
   <a class="brand" href="#home" aria-label="手譯橋 SignBridge 首頁">
-    <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-      <circle cx="13" cy="16" r="6.5" stroke="#23211E" stroke-width="2.2"/>
-      <g stroke="#23211E" stroke-width="2.2" stroke-linecap="round">
-        <path d="M8.5,11 L6.5,5.5"/>
-        <path d="M12,9.6 L11.4,3.6"/>
-        <path d="M15.5,9.8 L17,4"/>
-        <path d="M18.5,12.4 L22,8.4"/>
-      </g>
-    </svg>
-    <span class="zh">手譯橋</span><span>SIGNBRIDGE</span>
+    <span class="wordmark" aria-hidden="true">sīgn·brĭdge</span>
+    <span class="zh">手譯橋</span>
   </a>
   <nav class="links" id="primaryNav" aria-label="主選單">
     <a href="#home" aria-current="page">首頁</a>
@@ -77,60 +69,68 @@
 <!-- ======== HOME / HERO ======== -->
 <section class="page-section hero" id="home" aria-label="首頁">
 
-  <!-- ======== REVEAL LAYER : colorful image shown under cursor ======== -->
-  <div class="reveal" id="reveal" aria-hidden="true">
-    <img class="stage" src="彩色圖_aligned.webp"
-         width="1535" height="1024" fetchpriority="high" decoding="async"
-         alt="">
-  </div>
+  <!-- ======== TYPOGRAPHIC COMPOSITION（cipher.tv 式對稱堆疊） ======== -->
+  <div class="hero-frame">
 
-  <!-- ======== SPARK HINTS : 吸引滑鼠移過去的對話框（星光背光） ======== -->
-  <div class="sparkles" aria-hidden="true">
-    <span class="spark-bubble" style="left:60%;top:42%"><img src="對話框_1.webp" alt="" width="381" height="163" decoding="async"></span>
-    <span class="spark-bubble" style="left:70%;top:32%"><img src="對話框_2.webp" alt="" width="388" height="165" decoding="async"></span>
-    <span class="spark-bubble" style="left:64%;top:62%"><img src="對話框_3.webp" alt="" width="380" height="155" decoding="async"></span>
-    <span class="spark-bubble" style="left:75%;top:70%"><img src="對話框_4.webp" alt="" width="373" height="147" decoding="async"></span>
-    <span class="spark-bubble" style="left:80%;top:48%"><img src="對話框_5.webp" alt="" width="453" height="136" decoding="async"></span>
-  </div>
-
-  <!-- ======== COPY ======== -->
-  <div class="copy">
-    <p class="eyebrow">REAL-TIME SIGN LANGUAGE AI</p>
-    <h1>看見雙手，<br><span class="accent">正在說的話</span>。</h1>
-    <p class="sub">手譯橋將手語即時轉換為文字，也把文字化為手語動畫。聽人與聾人之間的每一段對話，都能被完整理解、完整看見。</p>
-    <div class="ctas">
-      <a class="btn-primary" href="#recognition">手語 → 文字 <span class="arr">→</span></a>
-      <a class="btn-ghost" href="#generation"><span class="play"><svg width="9" height="10" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><polygon points="0,0 10,6 0,12"/></svg></span> 文字 → 手語</a>
+    <!-- ======== REVEAL LENS：游標掃過露出彩色底圖 ======== -->
+    <div class="reveal" id="reveal" aria-hidden="true">
+      <img class="stage" src="彩色圖_aligned.webp"
+           width="1535" height="1024" fetchpriority="high" decoding="async"
+           alt="">
     </div>
-  </div>
 
-  <!-- ======== HINT ======== -->
-  <div class="hint">
-    <span class="hint-ring" aria-hidden="true"></span>
-    <span class="mouse-text">移動游標 —— 看見手語被翻譯的瞬間</span>
-    <span class="touch-text">用手指拖曳畫面 —— 看見手語被翻譯的瞬間</span>
+    <h1 class="visually-hidden">手譯橋 SignBridge — 即時手語翻譯系統：手語轉文字、文字轉手語動畫</h1>
+
+    <p class="hero-tag" aria-hidden="true">( REAL-TIME SIGN LANGUAGE AI )</p>
+
+    <div class="type-stack stack-open" aria-hidden="true">
+      <span>SEEING SIGNS SPEAK</span>
+      <span>SILENT SENTENCES SEEN</span>
+      <span>SPOKEN SENTENCES SIGNED</span>
+      <span>SIGN AND SOUND SHARING SPACE</span>
+    </div>
+
+    <div class="brand-column" aria-hidden="true">
+      <span>手譯橋</span>
+      <span>手譯橋</span>
+      <span>手譯橋</span>
+      <span>手譯橋</span>
+      <span>手譯橋</span>
+      <span>手譯橋</span>
+      <span>手譯橋</span>
+    </div>
+
+    <div class="type-stack stack-close" aria-hidden="true">
+      <span>看見雙手，正在說的話</span>
+      <span>手語轉為文字，</span>
+      <span>文字化為手語動畫。</span>
+      <span class="stack-sub">聽人與聾人之間的每一段對話，都能被完整理解、完整看見</span>
+    </div>
+
+    <div class="ctas">
+      <a href="#recognition"><strong>手語 → 文字</strong><small>SIGN TO TEXT</small></a>
+      <a href="#generation"><strong>文字 → 手語</strong><small>TEXT TO SIGN</small></a>
+    </div>
+
+    <span class="mark mark-a" aria-hidden="true">S</span>
+    <span class="mark mark-b" aria-hidden="true">S</span>
   </div>
 
 </section>
 
-<!-- ======== RECOGNITION ======== -->
-<section class="page-section app-page" id="recognition" hidden aria-labelledby="rec-title">
-  <div class="page-title">
+<!-- ======== RECOGNITION（0813 排版：大舞台＋下方控制台） ======== -->
+<section class="page-section app-page generation-page recognition-page" id="recognition" hidden aria-labelledby="rec-title">
+  <div class="page-title visually-hidden">
     <span class="page-num" aria-hidden="true">2</span>
     <p class="eyebrow">SIGN TO TEXT</p>
     <h2 id="rec-title">辨識手語語序，<span class="accent">轉換台灣口語</span></h2>
   </div>
 
-  <div class="workspace-grid">
-    <article class="panel">
-      <h3 class="panel-title">輸入來源</h3>
+  <article class="capture-panel">
+    <h3 class="visually-hidden">手語影像輸入</h3>
 
-      <div class="mode-switch" role="group" aria-label="輸入模式">
-        <button type="button" class="chip-btn is-active" id="videoModeButton" data-mode="upload" aria-pressed="true">上傳影片</button>
-        <button type="button" class="chip-btn" id="cameraModeButton" data-mode="camera" aria-pressed="false">即時攝影機</button>
-      </div>
-
-      <div class="preview-box" id="previewBox">
+    <div class="capture-wrap" aria-label="手語影像預覽區">
+      <div class="capture-stage" id="previewBox">
         <video id="previewVideo" hidden playsinline controls></video>
         <canvas id="landmarkCanvas" class="landmark-canvas" hidden aria-hidden="true"></canvas>
         <span class="hands-badge" id="handsBadge" hidden role="status" aria-live="polite"></span>
@@ -143,146 +143,173 @@
           <span class="empty-sub">或將手語影片拖曳到這裡</span>
         </button>
       </div>
-      <input id="videoUpload" type="file" accept="video/*" hidden />
 
-      <div class="action-row">
+      <div class="capture-toolbar">
+        <div class="mode-switch" role="group" aria-label="輸入模式">
+          <button type="button" class="chip-btn source-btn is-active" id="videoModeButton" data-mode="upload" aria-pressed="true">上傳影片</button>
+          <button type="button" class="chip-btn source-btn" id="cameraModeButton" data-mode="camera" aria-pressed="false">即時攝影機</button>
+        </div>
+        <span class="status-dot stage-status" id="recognitionStatus" data-state="idle">等待輸入</span>
+      </div>
+    </div>
+  </article>
+  <input id="videoUpload" type="file" accept="video/*" hidden />
+
+  <article class="generation-console recognition-console" aria-labelledby="recognition-console-title">
+    <h3 class="visually-hidden" id="recognition-console-title">手語轉換口語</h3>
+
+    <div class="generation-input-row">
+      <div class="generation-section-label">
+        <span class="generation-section-title">輸入來源</span>
+        <span class="generation-field-label">手語影片或攝影機</span>
+      </div>
+
+      <p class="console-note" id="cameraMessage" role="status" aria-live="polite">
+        系統先顯示手語語序，再整理成口語。
+      </p>
+
+      <div class="action-row generation-actions">
         <button type="button" class="btn-primary" id="startRecognition">開始辨識</button>
         <button type="button" class="btn-ghost" id="resetRecognition">重置</button>
       </div>
+    </div>
 
-      <p class="status-note" id="cameraMessage" role="status" aria-live="polite">
-        系統先顯示手語語序，再整理成口語。
-      </p>
-    </article>
-
-    <article class="panel">
-      <div class="panel-head">
-        <h3 class="panel-title">辨識結果</h3>
-        <span class="status-dot" id="recognitionStatus" data-state="idle">等待輸入</span>
+    <div class="generation-output-row">
+      <div class="generation-section-label">
+        <span class="generation-section-title">辨識結果</span>
+        <span class="generation-field-label">台灣手語語序</span>
       </div>
 
-      <div class="steps-list" aria-label="辨識流程">
-        <div class="step-item" id="recognitionStep1">
-          <span class="step-dot" aria-hidden="true">1</span>
-          <strong>影像分析</strong>
+      <div class="recognition-result">
+        <div class="steps-list" aria-label="辨識流程">
+          <div class="step-item" id="recognitionStep1">
+            <span class="step-dot" aria-hidden="true">1</span>
+            <strong>影像分析</strong>
+          </div>
+          <div class="step-item" id="recognitionStep2">
+            <span class="step-dot" aria-hidden="true">2</span>
+            <strong>手語語序辨識</strong>
+          </div>
+          <div class="step-item" id="recognitionStep3">
+            <span class="step-dot" aria-hidden="true">3</span>
+            <strong>口語轉換</strong>
+          </div>
         </div>
-        <div class="step-item" id="recognitionStep2">
-          <span class="step-dot" aria-hidden="true">2</span>
-          <strong>手語語序辨識</strong>
-        </div>
-        <div class="step-item" id="recognitionStep3">
-          <span class="step-dot" aria-hidden="true">3</span>
-          <strong>口語轉換</strong>
-        </div>
-      </div>
-
-      <div class="result-block">
-        <span class="result-tag">手語語序</span>
         <div class="token-row" id="recognitionTokens" aria-live="polite"></div>
       </div>
+    </div>
 
-      <div class="result-block">
-        <span class="result-tag">台灣口語</span>
-        <p id="spokenResult" class="spoken-text">尚未辨識</p>
+    <div class="generation-output-row">
+      <div class="generation-section-label">
+        <span class="generation-field-label">台灣口語</span>
       </div>
-    </article>
-  </div>
+      <p id="spokenResult" class="spoken-text">尚未辨識</p>
+    </div>
+  </article>
 </section>
 
-<!-- ======== GENERATION ======== -->
-<section class="page-section app-page" id="generation" hidden aria-labelledby="gen-title">
-  <div class="page-title">
+<!-- ======== GENERATION（0813 排版：虛擬人大舞台＋下方控制台） ======== -->
+<section class="page-section app-page generation-page" id="generation" hidden aria-labelledby="gen-title">
+  <div class="page-title visually-hidden">
     <span class="page-num" aria-hidden="true">3</span>
     <p class="eyebrow">TEXT TO SIGN</p>
     <h2 id="gen-title">輸入口語，<span class="accent">轉換手語語序</span>並播放</h2>
   </div>
 
-  <div class="workspace-grid">
-    <article class="panel">
-      <h3 class="panel-title">輸入句子</h3>
+  <article class="avatar-panel">
+    <h3 class="visually-hidden">虛擬人播放</h3>
 
-      <div class="field-row">
-        <label for="textInput">台灣口語句子</label>
-        <textarea id="textInput" rows="3" placeholder="例如：我要喝水">我要喝水</textarea>
+    <div class="avatar-wrap" aria-label="虛擬人播放區">
+      <div class="avatar-stage" id="avatarStage">
+        <canvas id="signAvatarStage" class="signavatar-stage" aria-label="SignAvatar 3D 虛擬人"></canvas>
+        <div class="avatar-loading" id="avatarLoading" role="status" aria-live="polite" hidden>載入虛擬人…</div>
+        <!-- 3D 虛擬人已接入：火柴人佔位隱藏（genPlayer 仍以它追蹤播放狀態） -->
+        <div class="avatar-figure" id="avatarFigure" hidden aria-hidden="true">
+          <div class="avatar-head">
+            <div class="avatar-hair"></div>
+            <div class="avatar-eye avatar-eye-l"></div>
+            <div class="avatar-eye avatar-eye-r"></div>
+            <div class="avatar-smile"></div>
+          </div>
+          <div class="avatar-body"></div>
+          <div class="avatar-arm avatar-arm-l"></div>
+          <div class="avatar-arm avatar-arm-r"></div>
+        </div>
       </div>
+      <div class="player-toolbar">
+        <div class="playback-controls" aria-label="播放控制">
+          <button type="button" class="player-btn player-btn-primary" id="startPlayback">
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><polygon points="0,0 10,6 0,12"/></svg>
+            <span>整句播放</span>
+          </button>
+          <button type="button" class="player-btn" id="pausePlayback" disabled>
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="3" height="12" rx="1"/><rect x="7" y="0" width="3" height="12" rx="1"/></svg>
+            <span>暫停</span>
+          </button>
+        </div>
+        <div class="speed-row" role="group" aria-label="播放速率">
+          <span class="speed-label">播放速率</span>
+          <button type="button" class="speed-btn" data-rate="0.25" aria-pressed="false">0.25×</button>
+          <button type="button" class="speed-btn" data-rate="0.5" aria-pressed="false">0.5×</button>
+          <button type="button" class="speed-btn" data-rate="0.75" aria-pressed="false">0.75×</button>
+          <button type="button" class="speed-btn is-active" data-rate="1" aria-pressed="true">1×</button>
+          <button type="button" class="speed-btn" data-rate="1.5" aria-pressed="false">1.5×</button>
+        </div>
+      </div>
+      <div class="meta-row visually-hidden">
+        <div class="meta-item">
+          <span class="result-tag">播放狀態</span>
+          <strong id="avatarStatus">尚未播放</strong>
+        </div>
+        <div class="meta-divider" aria-hidden="true"></div>
+        <div class="meta-item">
+          <span class="result-tag">目前詞卡</span>
+          <strong id="activeToken">--</strong>
+        </div>
+      </div>
+    </div>
+  </article>
 
+  <article class="generation-console" aria-labelledby="generation-console-title">
+    <h3 class="visually-hidden" id="generation-console-title">口語轉換手語</h3>
+
+    <div class="generation-input-row">
+      <div class="generation-section-label">
+        <span class="generation-section-title">輸入句子</span>
+        <label class="generation-field-label" for="textInput">台灣口語句子</label>
+      </div>
+      <textarea id="textInput" rows="1" placeholder="請輸入中文句子…" aria-describedby="generationStatus"></textarea>
+
+      <div class="action-row generation-actions">
+        <button type="button" class="btn-primary" id="generateSign">轉成手語</button>
+        <button type="button" class="btn-ghost" id="clearText">清除</button>
+      </div>
+    </div>
+
+    <div class="generation-output-row">
+      <div class="generation-section-label">
+        <span class="generation-section-title">轉換結果</span>
+        <span class="generation-field-label">台灣手語語序</span>
+      </div>
+      <div class="token-row token-row-interactive" id="generationTokens" aria-label="手語詞卡；點擊任一詞卡可單獨播放該動作"></div>
+    </div>
+
+    <div hidden aria-hidden="true">
       <div class="field-row">
         <span class="field-label">常用句子</span>
         <div class="chips-row" id="quickPhrases" aria-label="常用句子快捷"></div>
       </div>
-
-      <div class="action-row">
-        <button type="button" class="btn-primary" id="generateSign">轉成手語</button>
-        <button type="button" class="btn-ghost" id="clearText">清除</button>
-      </div>
-
-      <p class="status-note" id="generationStatus" role="status" aria-live="polite">
-        輸入口語後，系統先轉換手語語序。
-      </p>
-    </article>
-
-    <article class="panel">
-      <h3 class="panel-title">轉換結果</h3>
-
       <div class="result-block">
         <span class="result-tag">原始句子</span>
-        <p id="originalSentence" class="spoken-text">我要喝水</p>
+        <p id="originalSentence" class="spoken-text"></p>
       </div>
+    </div>
 
-      <div class="result-block">
-        <span class="result-tag">台灣手語語序</span>
-        <div class="token-row token-row-interactive" id="generationTokens" aria-label="手語詞卡；點擊任一詞卡可單獨播放該動作"></div>
-        <p class="token-hint">點擊任一詞卡，可直接播放該詞動作</p>
-      </div>
-
-      <div class="avatar-wrap" aria-label="虛擬人播放區">
-        <div class="avatar-stage">
-          <div class="avatar-figure" id="avatarFigure">
-            <div class="avatar-head">
-              <div class="avatar-hair" aria-hidden="true"></div>
-              <div class="avatar-eye avatar-eye-l" aria-hidden="true"></div>
-              <div class="avatar-eye avatar-eye-r" aria-hidden="true"></div>
-              <div class="avatar-smile" aria-hidden="true"></div>
-            </div>
-            <div class="avatar-body" aria-hidden="true"></div>
-            <div class="avatar-arm avatar-arm-l" aria-hidden="true"></div>
-            <div class="avatar-arm avatar-arm-r" aria-hidden="true"></div>
-          </div>
-        </div>
-        <div class="player-toolbar">
-          <div class="playback-controls" aria-label="播放控制">
-            <button type="button" class="player-btn player-btn-primary" id="startPlayback">
-              <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><polygon points="0,0 10,6 0,12"/></svg>
-              <span>開始播放</span>
-            </button>
-            <button type="button" class="player-btn" id="pausePlayback" disabled>
-              <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><rect x="0" y="0" width="3" height="12" rx="1"/><rect x="7" y="0" width="3" height="12" rx="1"/></svg>
-              <span>暫停</span>
-            </button>
-          </div>
-          <div class="speed-row" role="group" aria-label="播放速率">
-            <span class="speed-label">播放速率</span>
-            <button type="button" class="speed-btn" data-rate="0.25" aria-pressed="false">0.25×</button>
-            <button type="button" class="speed-btn" data-rate="0.5" aria-pressed="false">0.5×</button>
-            <button type="button" class="speed-btn" data-rate="0.75" aria-pressed="false">0.75×</button>
-            <button type="button" class="speed-btn is-active" data-rate="1" aria-pressed="true">1×</button>
-            <button type="button" class="speed-btn" data-rate="1.5" aria-pressed="false">1.5×</button>
-          </div>
-        </div>
-        <div class="meta-row">
-          <div class="meta-item">
-            <span class="result-tag">播放狀態</span>
-            <strong id="avatarStatus">尚未播放</strong>
-          </div>
-          <div class="meta-divider" aria-hidden="true"></div>
-          <div class="meta-item">
-            <span class="result-tag">目前詞卡</span>
-            <strong id="activeToken">--</strong>
-          </div>
-        </div>
-      </div>
-    </article>
-  </div>
+    <p class="status-note visually-hidden" id="generationStatus" role="status" aria-live="polite">
+      輸入口語後，系統先轉換手語語序。
+    </p>
+    <p class="token-hint visually-hidden">點擊任一詞卡，可直接播放該詞動作</p>
+  </article>
 </section>
 
 </main>
@@ -302,7 +329,18 @@
   </dl>
 </dialog>
 
-<script src="script.js"></script>
-<script type="module" src="recognition.js"></script>
+<script src="signavatar-config.js?v=20260822-cipher"></script>
+<script src="script.js?v=20260822-cipher"></script>
+<script type="module" src="recognition.js?v=20260822-cipher"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js"
+  }
+}
+</script>
+<script type="module" src="avatar3d.js?v=20260822-cipher"></script>
+<script src="composer.js?v=20260822-cipher"></script>
+<script type="module" src="signavatar-bridge.js?v=20260822-cipher"></script>
 </body>
 </html>

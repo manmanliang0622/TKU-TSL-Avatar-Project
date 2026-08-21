@@ -4,9 +4,11 @@
 
 // ── Hero Reveal Lens ──
 (function () {
-  const hero   = document.getElementById('home');
+  // 透鏡以 .hero-frame 為座標基準
+  const homeSection = document.getElementById('home');
+  const hero   = document.querySelector('#home .hero-frame');
   const reveal = document.getElementById('reveal');
-  if (!hero || !reveal) return;
+  if (!homeSection || !hero || !reveal) return;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let x = 0, y = 0, tx = 0, ty = 0;
@@ -80,10 +82,10 @@
   // 只在首頁可見且分頁在前景時跑動畫迴圈
   function startLoop() { if (rafId === null) rafId = requestAnimationFrame(frame); }
   function stopLoop()  { if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; } }
-  function syncLoop()  { (document.hidden || hero.hidden) ? stopLoop() : startLoop(); }
+  function syncLoop()  { (document.hidden || homeSection.hidden) ? stopLoop() : startLoop(); }
 
   document.addEventListener('visibilitychange', syncLoop);
-  window.addEventListener('pagechange', () => { syncLoop(); if (!hero.hidden) updateRect(); });
+  window.addEventListener('pagechange', () => { syncLoop(); if (!homeSection.hidden) updateRect(); });
   startLoop();
 })();
 
@@ -156,7 +158,8 @@ const recognitionSteps = [
 
 let recognitionTimer = null;
 let currentStream    = null;
-let currentGeneratedTokens = generationSamples["我要喝水"];
+// 0813 排版：輸入框空白起始，不預載示範句
+let currentGeneratedTokens = [];
 let uploadedVideoUrl = null;
 
 // ── Page Navigation ──
@@ -393,9 +396,12 @@ function createAvatarPlayer(figure, tokensEl, { onState, onToken } = {}) {
 function syncPlaybackControls(state, detail = {}) {
   const hasTokens = currentGeneratedTokens.length > 0;
   const playing = state === "playing";
-  startPlaybackButton.disabled = !hasTokens || playing;
+  // 只看有沒有句子可以打：原本播放中就鎖住，點完詞卡的頭 850ms 內
+  // 「整句播放」是死的——那正是使用者最想按它的時候。
+  startPlaybackButton.disabled = !hasTokens;
   pausePlaybackButton.disabled = !playing;
-  startPlaybackButton.querySelector("span").textContent = state === "paused" ? "繼續播放" : "開始播放";
+  // 「整句播放」而不是「開始播放」：詞卡可單獨試播，這顆鈕永遠是回到整句
+  startPlaybackButton.querySelector("span").textContent = state === "paused" ? "繼續播放" : "整句播放";
 
   if (state === "playing") avatarStatus.textContent = "播放中";
   else if (state === "paused") avatarStatus.textContent = "已暫停";
@@ -460,7 +466,15 @@ function resetRecognitionSteps() {
   recognitionSteps.forEach(s => s.classList.remove("is-active", "is-complete"));
 }
 
+// 攝影機模式的畫面差異：自拍要鏡像（CSS 同時翻轉 video 與骨架 canvas），
+// 即時串流沒有時間軸可拖，原生播放列只會擋住畫面。
+function setCameraView(on) {
+  previewBox.classList.toggle("is-camera", on);
+  previewVideo.controls = !on;
+}
+
 function stopCameraStream() {
+  setCameraView(false);
   if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
 }
 
@@ -487,6 +501,7 @@ async function openCameraPreview() {
     previewVideo.srcObject = currentStream;
     previewVideo.play();
     showPreview(true);
+    setCameraView(true);
     cameraMessage.textContent = "攝影機已開啟，請讓雙手完整出現在畫面中。";
     setPressed(videoModeButton, false);
     setPressed(cameraModeButton, true);
@@ -557,10 +572,10 @@ function convertToSignOrder(sentence) {
 }
 
 // ── 語言模型 API（Gemma 4 QLoRA，中文 → TSL Gloss）──
-// 預設連本機 8018；模型跑在學校 VM，需先開 SSH 通道：
-//   ssh -p 2288 -N -L 8018:localhost:8018 b310ai@<VM 位址>
-// 未連線時自動退回內建對照表，前端仍可展示。
-const GLOSS_API = (localStorage.getItem("glossApi") || "http://127.0.0.1:8018").replace(/\/$/, "");
+// 預設同源：學校主機 bundle_server 直接提供 /translate；
+// 本機開發伺服器（8742）以代理轉發到 SSH 通道（127.0.0.1:8018 → 學校 8084）。
+// 連不上時自動退回內建對照表，前端仍可展示。可用 localStorage.glossApi 覆寫。
+const GLOSS_API = (localStorage.getItem("glossApi") || location.origin).replace(/\/$/, "");
 let glossApiOnline = null;   // null=未測、true/false=已測
 
 async function translateViaModel(sentence, timeoutMs = 60000) {
@@ -583,6 +598,27 @@ async function translateViaModel(sentence, timeoutMs = 60000) {
   }
 }
 
+// Composer 走同源 /translate（回傳含 sign_ids 的完整結果，3D 虛擬人靠它取動作片段）
+async function translateToSignOrder(sentence) {
+  if (window.Composer?.translate) {
+    try {
+      const result = await Composer.translate(sentence);
+      if (Array.isArray(result.glosses) && result.glosses.length) {
+        return { tokens: result.glosses, source: "gemma", seconds: result.seconds, translation: result };
+      }
+    } catch (ex) {
+      console.warn("Composer translate failed; trying direct API.", ex);
+    }
+  }
+  try {
+    const r = await translateViaModel(sentence);
+    return { tokens: r.tokens, source: "gemma", seconds: r.seconds, translation: null };
+  } catch (err) {
+    glossApiOnline = false;
+    return { tokens: convertToSignOrder(sentence), source: "fallback", error: err, translation: null };
+  }
+}
+
 async function updateGeneration() {
   const sentence = textInput.value.trim();
   if (!sentence) {
@@ -591,27 +627,30 @@ async function updateGeneration() {
     currentGeneratedTokens = [];
     renderGenerationTokens([]);
     genPlayer.load([]);
+    window.dispatchEvent(new CustomEvent("signavatar:generation-cleared"));
     return;
   }
 
+  genPlayer.stop();
+  currentGeneratedTokens = [];
+  renderGenerationTokens([]);
+  genPlayer.load([]);
   originalSentence.textContent = sentence;
   generationStatus.textContent = "語言模型翻譯中…";
+  window.dispatchEvent(new CustomEvent("signavatar:generation-started", {
+    detail: { sentence },
+  }));
 
-  let tokens, note;
-  try {
-    const r = await translateViaModel(sentence);
-    tokens = r.tokens;
-    note = `語言模型（Gemma 4 微調）翻譯完成，耗時 ${r.seconds}s。`;
-  } catch (err) {
-    glossApiOnline = false;
-    tokens = convertToSignOrder(sentence);
-    note = `未連上語言模型（${err.message}），改用內建對照表。`;
-  }
-
-  currentGeneratedTokens = tokens;
+  const translated = await translateToSignOrder(sentence);
+  currentGeneratedTokens = translated.tokens;
   renderGenerationTokens(currentGeneratedTokens);
   genPlayer.load(currentGeneratedTokens);
-  generationStatus.textContent = `${note}`;
+  generationStatus.textContent = translated.source === "gemma"
+    ? `語言模型（Gemma 4 微調）翻譯完成${translated.seconds ? `，耗時 ${translated.seconds}s` : ""}，正在接上虛擬人播放。`
+    : `未連上語言模型（${translated.error?.message || "離線"}），改用內建對照表。`;
+  window.dispatchEvent(new CustomEvent("signavatar:generation-updated", {
+    detail: { sentence, tokens: currentGeneratedTokens, translation: translated.translation },
+  }));
   playAvatarSequence();
 }
 
@@ -703,6 +742,7 @@ document.querySelector("#clearText").addEventListener("click", () => {
   renderGenerationTokens([]);
   genPlayer.load([]);
   generationStatus.textContent = "內容已清除，請重新輸入一句口語。";
+  window.dispatchEvent(new CustomEvent("signavatar:generation-cleared"));
 });
 
 // Enter 直接轉換（Shift+Enter 換行）
