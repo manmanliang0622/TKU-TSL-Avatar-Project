@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignAvatar — 資料來源</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🤟</text></svg>">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #12151a;
+    --line: #232830;
+    --ink: #e8e4d9;
+    --ink-dim: #6f7783;
+    --natural: #4fd8e8;
+    --signed: #ffb454;
+    --manual: #6f7783;
+    --place: #9d8cff;
+    --dict: #5ecf9a;
+    --new: #f0836a;
+    --surname: #d9a441;
+    --mono: "Berkeley Mono", "JetBrains Mono", "IBM Plex Mono", "SF Mono",
+            ui-monospace, Menlo, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--mono); }
+
+  header {
+    display: flex; align-items: center; gap: 0.9rem;
+    padding: 0.7rem 1.1rem; border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; background: var(--bg); z-index: 5;
+  }
+  header a.back { color: var(--ink-dim); text-decoration: none; }
+  header a.back:hover { color: var(--ink); }
+  header .brand { font-weight: 700; letter-spacing: 0.14em; }
+  header .brand em { color: var(--signed); font-style: normal; }
+  header .sep { color: var(--ink-dim); }
+  header .title { letter-spacing: 0.3em; font-size: 0.8rem; color: var(--ink-dim); }
+  header .spacer { flex: 1; }
+  header a.nav {
+    color: var(--ink-dim); text-decoration: none; font-size: 0.75rem;
+    border: 1px solid var(--line); border-radius: 4px; padding: 0.3rem 0.7rem;
+    margin-left: 0.4rem;
+  }
+  header a.nav:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 1.6rem 1.2rem 4rem; }
+  h2 { font-size: 0.85rem; letter-spacing: 0.25em; color: var(--ink-dim);
+       margin: 2.2rem 0 0.8rem; font-weight: 400; }
+  h2:first-child { margin-top: 0; }
+
+  .src-card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 1rem 1.1rem; margin-bottom: 0.9rem; line-height: 1.8; font-size: 0.85rem;
+  }
+  .src-card h3 { font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;
+                 flex-wrap: wrap; }
+  .src-card .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .src-card .count { color: var(--ink-dim); font-weight: 400; font-size: 0.78rem; }
+  .src-card .lic {
+    display: inline-block; font-size: 0.68rem; border-radius: 3px;
+    padding: 0.1rem 0.5rem; letter-spacing: 0.08em; margin-left: auto;
+  }
+  .lic.ok { background: rgba(79, 216, 232, 0.12); color: var(--natural); }
+  .lic.warn { background: rgba(255, 180, 84, 0.12); color: var(--signed); }
+  .src-card .meta { color: var(--ink-dim); font-size: 0.75rem; }
+  .src-card a { color: var(--natural); text-decoration: none; }
+  .src-card blockquote {
+    border-left: 2px solid var(--line); padding-left: 0.8rem; margin: 0.4rem 0;
+    color: var(--ink-dim); font-size: 0.75rem;
+  }
+
+  input[type="search"] {
+    width: 100%; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; color: var(--ink); font-family: var(--mono);
+    font-size: 0.9rem; padding: 0.55rem 0.8rem; outline: none; margin-bottom: 0.8rem;
+  }
+  input[type="search"]:focus { border-color: var(--ink-dim); }
+
+  .trace {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 0.7rem 0.9rem; margin-bottom: 0.5rem; font-size: 0.82rem; line-height: 1.9;
+  }
+  .trace b { font-size: 0.95rem; }
+  .trace .k { color: var(--ink-dim); }
+  .trace a { color: var(--natural); text-decoration: none; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink-dim); font-weight: 400; letter-spacing: 0.1em; position: sticky; }
+  td .ok { color: var(--natural); }
+  .table-wrap { overflow-x: auto; max-height: 420px; overflow-y: auto;
+                border: 1px solid var(--line); border-radius: 6px; }
+  #unit-note { color: var(--ink-dim); font-size: 0.72rem; margin-top: 0.4rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="./" title="回首頁">◂</a>
+  <span class="brand"><em>Sign</em>Avatar</span>
+  <span class="sep">▸</span>
+  <span class="title">資料來源 PROVENANCE</span>
+  <span class="spacer"></span>
+  <a class="nav" href="corpus.html">詞庫總覽</a>
+  <a class="nav" href="generate.html">手語生成</a>
+</header>
+
+<main>
+  <h2>來源總覽(數字即時統計自詞庫)</h2>
+  <div id="src-cards"></div>
+
+  <h2>查詢單一詞彙的出處</h2>
+  <input type="search" id="trace-q" placeholder="輸入詞彙,例:朋友、謝謝…">
+  <div id="trace-out"></div>
+
+  <h2>語料單元記錄(moc_manifest.json)</h2>
+  <input type="search" id="unit-q" placeholder="搜尋主題/單元…">
+  <div class="table-wrap"><table id="unit-table">
+    <thead><tr><th>單元</th><th>主題</th><th>演繹者</th><th>句數</th><th>影片已萃取</th><th>抓取時間</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <div id="unit-note"></div>
+</main>
+
+<script>
+"use strict";
+
+let LEX = {}, MOC = {}, EXT = {};
+
+async function fetchJSON(url, fallback) {
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    return res.ok ? await res.json() : fallback;
+  } catch { return fallback; }
+}
+
+function kindOf(entry) {
+  const src = String((entry && entry.source) || "");
+  if (src.startsWith("moc:")) return "natural";
+  if (src.startsWith("moe:")) return "signed";
+  if (src.startsWith("placename:")) return "place";
+  if (src.startsWith("twtsl:")) return "dict";
+  if (src.startsWith("tasli:")) return "new";
+  if (src.startsWith("familyname:")) return "surname";
+  return "manual";
+}
+
+const SOURCES = [
+  {
+    kind: "natural", dot: "var(--natural)",
+    name: "文化部臺灣手語語料庫(自然手語)",
+    url: "https://tslcorpus.moc.gov.tw/",
+    lic: { cls: "ok", text: "非商業研究明文允許" },
+    body: `聾人演繹影片 + 逐詞毫秒時間戳,經 MediaPipe 萃取切成詞級動作。
+      著作權聲明:「僅提供使用者進行研究、學術、教育等非商業性質用途……應註明出處」。
+      <blockquote>引用:張榮興(主編)(2025)。《臺灣手語語料庫》。臺北:中華民國文化部。</blockquote>
+      平行例句(中文↔gloss)亦全數來自本語料庫。逐單元記錄見下方表格。`,
+  },
+  {
+    kind: "signed", dot: "var(--signed)",
+    name: "教育部常用手語辭典(文法手語)",
+    url: "https://special.moe.gov.tw/signlanguage",
+    lic: { cls: "warn", text: "政府開放宣告(資料)/影片YouTube標準授權" },
+    body: `單詞教學影片(YouTube),用於補自然手語詞庫的缺詞。
+      <b>注意:此辭典偏「文法手語」(按中文語序的人工手語)</b>,
+      所有來自此處的詞條都標 <code>system: 文法手語</code>,絕不覆蓋自然手語詞條。
+      詞條資料依「政府網站資料開放宣告」使用並註明出處。`,
+  },
+  {
+    kind: "dict", dot: "var(--dict)",
+    name: "中正大學台灣手語線上辭典(第五版)",
+    url: "https://twtsl.ccu.edu.tw/",
+    lic: { cls: "ok", text: "可訓練可散布;須註明出處" },
+    body: `蔡素娟、戴浩一團隊編纂,約 3,500 詞條的單詞辭典,
+      每個詞條一支影片 + 動作描述 + 同義索引名。詞庫鍵同時收辭典正式名與
+      同義索引名(如「伴」與「陪伴」共用同一支影片),所以詞條數多於影片數。
+      影片檔名為 <code>&lt;id:04d&gt;_&lt;詞&gt;.mp4</code>,詞條標
+      <code>source: twtsl:&lt;id&gt;</code>。
+      <blockquote>引用:蔡素娟等(2026)。中正大學手語語言學台灣研究中心。</blockquote>
+      <b>本來源無逐筆 manifest</b>——出處可由 <code>twtsl:&lt;id&gt;</code>
+      直接回推辭典頁,動作描述存在詞條的 <code>text</code> 欄位。`,
+  },
+  {
+    kind: "new", dot: "var(--new)",
+    name: "臺灣手語新詞數位學習網(新詞)",
+    url: "https://newtsl.taslifamily.org/",
+    lic: { cls: "ok", text: "已取得同意;資料不公開" },
+    body: `社團法人臺灣手語翻譯協會蒐集的「新詞」——時事、品牌、科技、醫療這類
+      辭典來不及收的詞(ChatGPT、台積電、小紅書、載具、AED)。每詞一支詞彙影片
+      + 一支例句影片(掛 YouTube),詞條只收詞彙那支,例句的 id 留在 manifest。
+      <b>括號別名各自成鍵</b>:<code>優步（Uber）</code> 產生「優步」與「Uber」
+      兩個詞條,指向同一支影片。只補缺詞,絕不覆蓋既有詞條。
+      這批的用途是<b>擴充虛擬人講得出的實用詞彙</b>,不是補訓練資料的缺口
+      (實測 518 詞裡只有 1 個命中當時的缺詞清單)。
+      訓練資料一律不對外公開,影片不散布、不入版控,引用須註明出處。`,
+  },
+  {
+    kind: "place", dot: "var(--place)",
+    name: "台灣手語地名網(地名)",
+    url: "https://jung-hsingchang.tw/name/placenames_database.php",
+    lic: { cls: "ok", text: "已取得同意;資料不公開" },
+    body: `張榮興台灣手語研究室的台灣地名資料庫,19 縣市共 1000 個地名,
+      每個地名一支影片 + 逐字素構詞分析(表達方式/造詞策略/運用手形/打法描述),
+      構詞分析全文存於 <code>recordings/placenames.json</code>。
+      地名只補缺詞,<b>絕不覆蓋</b>已存在的自然手語詞條;
+      同地名的多種打法(基隆1/基隆2)收斂成一個詞條,變體仍全數記錄於 manifest。
+      站上頁尾為「版權所有 All Rights Reserved」、無開放宣告,
+      <b>已取得張榮興台灣手語研究室使用同意</b>(使用者 2026-08-17 確認)。
+      <b>同意的是使用,不是公開</b>——訓練資料一律不對外公開,
+      影片與萃取結果不散布、不入版控,引用須註明出處。`,
+  },
+  {
+    kind: "surname", dot: "var(--surname)",
+    name: "台灣手語姓氏網(姓氏)",
+    url: "https://jung-hsingchang.tw/name/familynames_database.php",
+    lic: { cls: "ok", text: "已取得同意;資料不公開" },
+    body: `張榮興台灣手語研究室的另一個資料庫,335 個姓氏,每個一支影片 +
+      逐字素構詞分析。台灣手語的姓氏多半<b>取字形</b>(刁 = 呈現「刁」之字形),
+      跟同字的一般詞是<b>不同手勢</b>——所以一姓收兩個鍵:
+      <code>林(姓)</code>(沿用詞庫既有寫法)與裸字 <code>林</code>;
+      裸字已被一般詞占用的(山、水、方、王…共 92 個)保留既有詞條,
+      姓氏打法只走 <code>X(姓)</code>。授權同地名網。`,
+  },
+  {
+    kind: "manual", dot: "var(--manual)",
+    name: "手動標註 / 其他影片",
+    url: "",
+    lic: { cls: "warn", text: "各自記錄於 external_manifest" },
+    body: `在檢視器中手動標註的片段(如財神到 MV,僅本地測試用),
+      以及 <code>signavatar yt</code> 收入的影片(如師大「線上手語教室」CC-BY 課程,
+      署名:國立臺灣師範大學特殊教育中心)。`,
+  },
+];
+
+function renderCards() {
+  const counts = { natural: 0, signed: 0, dict: 0, new: 0, place: 0, surname: 0, manual: 0 };
+  // 別名鍵指向同一段錄影，算進來會讓每個來源的詞數灌水
+  for (const k in LEX) if (!LEX[k].alias_of) counts[kindOf(LEX[k])]++;
+  const box = document.getElementById("src-cards");
+  box.innerHTML = "";
+  for (const s of SOURCES) {
+    const card = document.createElement("div");
+    card.className = "src-card";
+    card.innerHTML = `
+      <h3><span class="dot" style="background:${s.dot}"></span>${s.name}
+        <span class="count">${counts[s.kind].toLocaleString()} 詞</span>
+        <span class="lic ${s.lic.cls}">${s.lic.text}</span></h3>
+      ${s.url ? `<div class="meta"><a href="${s.url}" target="_blank" rel="noopener">${s.url}</a></div>` : ""}
+      <div>${s.body}</div>`;
+    box.appendChild(card);
+  }
+}
+
+function traceWord(word) {
+  const out = document.getElementById("trace-out");
+  out.innerHTML = "";
+  const q = word.trim();
+  if (!q) return;
+  const hits = Object.keys(LEX).filter(w => w.includes(q)).slice(0, 8);
+  if (!hits.length) {
+    out.innerHTML = `<div class="trace">詞庫沒有「${q}」</div>`;
+    return;
+  }
+  for (const w of hits) {
+    const e = LEX[w];
+    const src = String(e.source || "手動標註");
+    let originHTML = "";
+    if (src.startsWith("moc:")) {
+      const uuid = src.slice(4);
+      const m = MOC[uuid] || {};
+      originHTML = `
+        <span class="k">語料單元</span> ${uuid}(${m.theme || "?"}/${m.name || "?"})<br>
+        <span class="k">演繹者</span> ${(m.attr || []).join("、") || "?"}<br>
+        <span class="k">影片</span> <a href="https://tslcorpus.moc.gov.tw${m.film_url || ""}" target="_blank" rel="noopener">tslcorpus.moc.gov.tw${m.film_url || ""}</a><br>
+        <span class="k">授權</span> 非商業研究(須註明出處:張榮興主編 2025《臺灣手語語料庫》文化部)<br>
+        <span class="k">抓取</span> ${m.fetched_at || "?"}`;
+    } else if (src.startsWith("moe:")) {
+      const x = EXT[src] || {};
+      originHTML = `
+        <span class="k">辭典分類</span> ${x.category || "?"}<br>
+        <span class="k">影片</span> <a href="${x.origin || "#"}" target="_blank" rel="noopener">${x.origin || "?"}</a><br>
+        <span class="k">授權</span> ${x.license || "?"}<br>
+        <span class="k">體系</span> 文法手語(system 欄位標記)<br>
+        <span class="k">抓取</span> ${x.fetched_at || "?"}`;
+    } else if (src.startsWith("twtsl:")) {
+      // 這個來源沒有 external_manifest 記錄，能顯示的就是詞條自己帶的東西：
+      // 動作描述在 text，出處靠 id 回推辭典頁
+      const id = src.slice(6);
+      originHTML = `
+        <span class="k">辭典編號</span> ${id}<br>
+        <span class="k">動作描述</span> ${e.text || "?"}<br>
+        <span class="k">辭典頁</span> <a href="https://twtsl.ccu.edu.tw/?id=${encodeURIComponent(id)}" target="_blank" rel="noopener">twtsl.ccu.edu.tw/?id=${id}</a><br>
+        <span class="k">授權</span> 可訓練可散布,須註明出處(蔡素娟等 2026,中正大學手語語言學台灣研究中心)`;
+    } else if (src.startsWith("tasli:")) {
+      const x = EXT[src] || {};
+      const clips = Object.entries(x.videos || {})
+        .map(([k, v]) => `${k}:<a href="https://www.youtube.com/watch?v=${v}" target="_blank" rel="noopener">${v}</a>`)
+        .join("、");
+      originHTML = `
+        <span class="k">詞條</span> ${x.word || "?"}<br>
+        <span class="k">影片</span> ${clips || "?"}<br>
+        <span class="k">詞頁</span> <a href="${x.page || "#"}" target="_blank" rel="noopener">${x.page || "?"}</a><br>
+        <span class="k">授權</span> ${x.license || "?"}<br>
+        <span class="k">抓取</span> ${x.fetched_at || "?"}`;
+    } else if (src.startsWith("familyname:")) {
+      const x = EXT[src] || {};
+      const m = (x.morphemes || [])[0] || {};
+      originHTML = `
+        <span class="k">姓</span> ${x.word || "?"}（${x.stroke || "?"} 畫）<br>
+        <span class="k">造詞</span> ${m["表達方式"] || "?"}／${m["造詞策略"] || "?"}<br>
+        <span class="k">打法</span> ${m["打法描述"] || "?"}<br>
+        <span class="k">影片</span> <a href="${x.origin || "#"}" target="_blank" rel="noopener">${x.origin || "?"}</a><br>
+        <span class="k">授權</span> ${x.license || "?"}`;
+    } else if (src.startsWith("placename:")) {
+      const x = EXT[src] || {};
+      const morph = (x.morphemes || [])
+        .map(m => `${m["字素"]}(${m["造詞策略"] || m["表達方式"] || "?"})`).join("、");
+      originHTML = `
+        <span class="k">縣市</span> ${x.county || e.county || "?"}<br>
+        <span class="k">構詞</span> ${morph || "?"}<br>
+        <span class="k">影片</span> <a href="${x.origin || "#"}" target="_blank" rel="noopener">${x.origin || "?"}</a><br>
+        <span class="k">授權</span> ${x.license || "?"}<br>
+        <span class="k">抓取</span> ${x.fetched_at || "?"}`;
+    } else {
+      originHTML = `<span class="k">來源</span> 檢視器手動標註(本地素材)`;
+    }
+    const div = document.createElement("div");
+    div.className = "trace";
+    div.innerHTML = `<b>${w}</b> <span class="k">→ ${e.recording} @ ${e.start}–${e.end}s</span><br>${originHTML}
+      <br><a href="generate.html?text=${encodeURIComponent(w)}">▶ 播放這個詞</a>`;
+    out.appendChild(div);
+  }
+}
+
+function renderUnits(query) {
+  const tbody = document.querySelector("#unit-table tbody");
+  tbody.innerHTML = "";
+  const q = (query || "").trim();
+  const entries = Object.entries(MOC)
+    .sort((a, b) => a[0].localeCompare(b[0]));
+  let shown = 0, extracted = 0;
+  for (const [uuid, m] of entries) {
+    if (m.video_extracted) extracted++;
+    const hay = `${uuid} ${m.theme || ""} ${m.name || ""}`;
+    if (q && !hay.includes(q)) continue;
+    if (shown >= 500) break;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${uuid}</td><td>${m.theme || ""} ${m.name || ""}</td>
+      <td>${(m.attr || []).join(" ")}</td><td>${m.sentences ?? ""}</td>
+      <td>${m.video_extracted ? '<span class="ok">✓</span>' : "—"}</td>
+      <td>${(m.fetched_at || "").slice(0, 16)}</td>`;
+    tbody.appendChild(tr);
+    shown++;
+  }
+  document.getElementById("unit-note").textContent =
+    `${entries.length} 個單元已記錄,${extracted} 個影片已萃取(顯示 ${shown} 筆)`;
+}
+
+async function boot() {
+  [LEX, MOC, EXT] = await Promise.all([
+    fetchJSON("lexicon", {}),
+    fetchJSON("recordings/moc_manifest.json", {}),
+    fetchJSON("recordings/external_manifest.json", {}),
+  ]);
+  renderCards();
+  renderUnits("");
+}
+
+document.getElementById("trace-q").addEventListener("input", e => traceWord(e.target.value));
+document.getElementById("unit-q").addEventListener("input", e => renderUnits(e.target.value));
+boot();
+</script>
+</body>
+</html>

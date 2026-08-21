@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignAvatar — Motion Viewer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🤟</text></svg>">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #12151a;
+    --line: #232830;
+    --ink: #e8e4d9;
+    --ink-dim: #6f7783;
+    --left: #4fd8e8;   /* signer's left hand */
+    --right: #ffb454;  /* signer's right hand */
+    --mono: "Berkeley Mono", "JetBrains Mono", "IBM Plex Mono", "SF Mono",
+            ui-monospace, Menlo, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── header ─────────────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 1.2rem;
+    padding: 0.7rem 1.1rem;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  header .brand { font-size: 0.85rem; letter-spacing: 0.18em; }
+  #back-link {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 1rem;
+    padding: 0 0.3rem;
+  }
+  #back-link:hover { color: var(--right); }
+  header .brand b { color: var(--right); font-weight: 700; }
+  header .label {
+    font-size: 0.72rem;
+    color: var(--bg);
+    background: var(--ink);
+    padding: 0.1rem 0.55rem;
+    border-radius: 2px;
+    max-width: 40ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  header .meta { font-size: 0.7rem; color: var(--ink-dim); letter-spacing: 0.06em; }
+  header .spacer { flex: 1; }
+  header button {
+    font: inherit;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 0.25rem 0.8rem;
+    cursor: pointer;
+  }
+  header button:hover { border-color: var(--ink-dim); }
+  header button:disabled { opacity: 0.4; cursor: default; }
+  header select {
+    font: inherit;
+    font-size: 0.7rem;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 0.22rem 0.4rem;
+  }
+  #export-btn.recording { color: #ff6b6b; border-color: #ff6b6b; }
+  #job-status { font-size: 0.7rem; color: var(--right); letter-spacing: 0.08em; }
+  #job-status.error { color: #ff6b6b; }
+
+  /* ── expression readout ─────────────────────────────── */
+  #expr {
+    position: absolute;
+    top: 5.2rem;
+    right: 1.1rem;
+    font-size: 0.62rem;
+    text-align: right;
+    pointer-events: none;
+    color: var(--ink-dim);
+  }
+  #expr .row { display: flex; justify-content: flex-end; align-items: center; gap: 0.45rem; height: 1.05rem; }
+  #expr .bar { width: 72px; height: 3px; background: var(--line); border-radius: 1px; overflow: hidden; }
+  #expr .bar i { display: block; height: 100%; background: var(--right); }
+
+  /* ── stage ──────────────────────────────────────────── */
+  #stage-wrap { position: relative; flex: 1; min-height: 0; }
+  #stage { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+  #stage.dragging { cursor: grabbing; }
+  #stage3d { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: min(38vh, 38vw);
+    color: rgba(232, 228, 217, 0.028);
+    pointer-events: none;
+    font-weight: 700;
+  }
+  #stage-wrap::after {  /* vignette */
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 42%,
+                transparent 55%, rgba(0, 0, 0, 0.5) 100%);
+  }
+  #hud {
+    position: absolute;
+    top: 0.7rem;
+    left: 1.1rem;
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+    line-height: 1.7;
+    pointer-events: none;
+    white-space: pre;
+  }
+  #legend {
+    position: absolute;
+    top: 0.7rem;
+    right: 1.1rem;
+    font-size: 0.68rem;
+    text-align: right;
+    line-height: 1.7;
+    pointer-events: none;
+  }
+  #legend .l { color: var(--left); }
+  #legend .r { color: var(--right); }
+
+  /* ── source-video comparison card ───────────────────── */
+  #video-card {
+    position: absolute;
+    left: 1.1rem;
+    bottom: 1.1rem;
+    width: 300px;
+    background: #000;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
+  }
+  #video-card.large { width: min(560px, 44vw); }
+  #video-card video {
+    display: block;
+    width: 100%;
+    pointer-events: none;
+  }
+  #video-card video.mirrored { transform: scaleX(-1); }
+  #video-card .bar {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    border-top: 1px solid var(--line);
+  }
+  #video-card .bar .title { color: var(--ink); }
+  #video-card .bar label { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; }
+  #video-card .bar input { accent-color: var(--right); }
+  #video-card .bar button {
+    font: inherit;
+    color: var(--ink-dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: auto;
+    padding: 0 0.2rem;
+  }
+  #video-card .bar button:hover { color: var(--ink); }
+
+  /* ── sign composer panel ────────────────────────────── */
+  #compose-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    background: rgba(18, 21, 26, 0.96);
+    border-left: 1px solid var(--line);
+    transform: translateX(100%);
+    transition: transform 0.18s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 0.9rem;
+    font-size: 0.7rem;
+    overflow-y: auto;
+    z-index: 5;
+  }
+  #compose-panel.open { transform: translateX(0); }
+  #compose-panel h3 {
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--ink-dim);
+    font-weight: 400;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.35rem;
+  }
+  #compose-panel .close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+    cursor: pointer;
+    color: var(--ink-dim);
+    background: none;
+    border: none;
+    font: inherit;
+  }
+  #compose-panel input[type="text"], #compose-panel textarea {
+    width: 100%;
+    font: inherit;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 0.4rem 0.5rem;
+    resize: vertical;
+  }
+  #compose-panel button.action {
+    font: inherit;
+    letter-spacing: 0.1em;
+    color: var(--bg);
+    background: var(--right);
+    border: none;
+    border-radius: 2px;
+    padding: 0.35rem 0.9rem;
+    cursor: pointer;
+  }
+  #compose-panel button.mini {
+    font: inherit;
+    font-size: 0.66rem;
+    color: var(--ink);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 0.2rem 0.55rem;
+    cursor: pointer;
+  }
+  #compose-panel .row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  #compose-msg { color: var(--ink-dim); min-height: 1em; }
+  #compose-msg.err { color: #ff6b6b; }
+  #lexicon-list { display: flex; flex-direction: column; gap: 0.25rem; }
+  #lexicon-list .sign {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.28rem 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  #lexicon-list .sign:hover { border-color: var(--ink-dim); }
+  #lexicon-list .sign b { font-weight: 700; color: var(--ink); }
+  #lexicon-list .sign .meta { color: var(--ink-dim); font-size: 0.62rem; margin-left: auto; }
+  #lexicon-list .sign .del { color: var(--ink-dim); cursor: pointer; padding: 0 0.2rem; }
+  #lexicon-list .sign .del:hover { color: #ff6b6b; }
+  #mark-info { color: var(--ink-dim); }
+  #mark-info b { color: var(--right); }
+
+  #drop-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    color: var(--ink-dim);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+  }
+  #drop-hint .big { font-size: 2.2rem; color: var(--ink); letter-spacing: 0.3em; }
+  body.dragover #stage-wrap { outline: 2px dashed var(--right); outline-offset: -12px; }
+  .hidden { display: none !important; }
+
+  /* ── transport ──────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+    padding: 0.6rem 1.1rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  #timeline {
+    width: 100%;
+    height: 30px;
+    display: block;
+    cursor: ew-resize;
+  }
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.72rem;
+  }
+  #play {
+    font: inherit;
+    width: 5.4ch;
+    padding: 0.3rem 0;
+    color: var(--bg);
+    background: var(--ink);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    letter-spacing: 0.15em;
+    text-align: center;
+  }
+  #play.playing { background: var(--right); }
+  #clock { color: var(--ink); min-width: 21ch; }
+  #clock .dim { color: var(--ink-dim); }
+  .speed { display: flex; gap: 0.15rem; }
+  .speed button {
+    font: inherit;
+    font-size: 0.68rem;
+    color: var(--ink-dim);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    padding: 0.18rem 0.45rem;
+    cursor: pointer;
+  }
+  .speed button.on { color: var(--ink); border-color: var(--line); background: var(--bg); }
+  label.toggle { display: flex; align-items: center; gap: 0.4rem; color: var(--ink-dim); cursor: pointer; }
+  label.toggle input { accent-color: var(--right); }
+  .keys { margin-left: auto; color: var(--ink-dim); font-size: 0.64rem; letter-spacing: 0.08em; }
+</style>
+</head>
+<body>
+<header>
+  <a href="./" id="back-link" title="回影片庫">◂</a>
+  <span class="brand"><b>Sign</b>Avatar ▸ MOTION VIEWER</span>
+  <span class="label hidden" id="rec-label"></span>
+  <span class="meta" id="rec-meta"></span>
+  <span class="spacer"></span>
+  <span id="job-status" class="hidden"></span>
+  <select id="model-select" class="hidden" title="切換虛擬人"></select>
+  <button id="compose-btn">手語合成</button>
+  <button id="export-btn" title="錄製目前畫面為影片">⏺ EXPORT</button>
+  <button id="upload-btn">UPLOAD VIDEO</button>
+  <button id="open-btn">LOAD JSON</button>
+  <input type="file" id="file-input" accept=".json" class="hidden">
+  <input type="file" id="video-input" accept="video/*" class="hidden">
+</header>
+
+<div id="stage-wrap">
+  <div id="watermark">手語</div>
+  <canvas id="stage3d" class="hidden"></canvas>
+  <canvas id="stage"></canvas>
+  <div id="hud"></div>
+  <div id="legend" class="hidden">
+    <div class="l">● LEFT</div>
+    <div class="r">● RIGHT</div>
+    <div style="color:#8a93a0">● POSE</div>
+  </div>
+  <div id="expr" class="hidden"></div>
+  <div id="video-card" class="hidden">
+    <video id="source-video" muted playsinline preload="auto"></video>
+    <div class="bar">
+      <span class="title">SOURCE</span>
+      <label><input type="checkbox" id="video-mirror"> MIRROR</label>
+      <button id="video-size" title="縮放">⤢</button>
+      <button id="video-close" title="關閉">✕</button>
+    </div>
+  </div>
+  <div id="drop-hint">
+    <div class="big">手 語</div>
+    <div>DROP A RECORDING .JSON — OR PRESS「LOAD JSON」</div>
+    <div>拖放影片檔 = 上傳辨識 · 拖放 .json = 載入 · 拖放 .vrm = 換人物</div>
+  </div>
+
+  <aside id="compose-panel">
+    <button class="close" id="compose-close">✕</button>
+    <div>
+      <h3>輸入文字 → 手語</h3>
+      <div style="height:0.5rem"></div>
+      <textarea id="compose-text" rows="2" placeholder="輸入句子,詞彙庫比對後合成(例:財神到)"></textarea>
+      <div style="height:0.5rem"></div>
+      <div class="row">
+        <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer">
+          <input type="checkbox" id="compose-natural" checked>
+          自然手語語序(AI 翻譯)
+        </label>
+      </div>
+      <div style="height:0.4rem"></div>
+      <div class="row">
+        <button class="action" id="compose-go">合成播放</button>
+        <span id="compose-msg"></span>
+      </div>
+    </div>
+    <div>
+      <h3>詞彙庫 LEXICON</h3>
+      <div style="height:0.5rem"></div>
+      <div id="lexicon-list"><span style="color:var(--ink-dim)">（空,先在下方標註）</span></div>
+    </div>
+    <div>
+      <h3>標註新詞 ANNOTATE</h3>
+      <div style="height:0.5rem"></div>
+      <div class="row">
+        <button class="mini" id="mark-in">⇤ 設起點</button>
+        <button class="mini" id="mark-out">設終點 ⇥</button>
+        <span id="mark-info">in <b id="mark-in-v">–</b> · out <b id="mark-out-v">–</b></span>
+      </div>
+      <div style="height:0.5rem"></div>
+      <div class="row">
+        <input type="text" id="mark-name" placeholder="詞彙名稱(例:財神)" style="flex:1">
+        <button class="mini" id="mark-save">儲存</button>
+      </div>
+      <div style="height:0.4rem"></div>
+      <div style="color:var(--ink-dim)">播放到手勢起點按「設起點」、終點按「設終點」,命名後儲存。點詞彙可單獨播放。</div>
+    </div>
+  </aside>
+</div>
+
+<footer>
+  <canvas id="timeline"></canvas>
+  <div class="controls">
+    <button id="play">PLAY</button>
+    <span id="clock"></span>
+    <span class="speed" id="speed"></span>
+    <label class="toggle"><input type="checkbox" id="trails" checked> TRAILS</label>
+    <label class="toggle" id="pose-toggle-wrap"><input type="checkbox" id="pose" checked> POSE</label>
+    <label class="toggle"><input type="checkbox" id="avatar"> AVATAR</label>
+    <span class="keys">SPACE 播放 · ←→ 逐格 · 拖曳旋轉 · 滾輪縮放</span>
+  </div>
+</footer>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+<script type="module" src="avatar3d.js?v=20260818-compound1"></script>
+<script src="composer.js?v=20260818-compound1"></script>
+<script>
+"use strict";
+
+/* ── constants shared with blender/playback.py ─────────── */
+const VIEW_WIDTH_M = 0.8;
+const BASE_HEIGHT_M = 1.2;
+const CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [5,9],[9,10],[10,11],[11,12],
+  [9,13],[13,14],[14,15],[15,16],
+  [13,17],[17,18],[18,19],[19,20],
+  [0,17],
+];
+const HAND_COLOR = { Left: "#4fd8e8", Right: "#ffb454" };
+const POSE_COLOR = "#8a93a0";
+const POSE_MIN_VISIBILITY = 0.5;
+const POSE_CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,7],[0,4],[4,5],[5,6],[6,8],[9,10],
+  [11,12],[11,13],[13,15],[12,14],[14,16],
+  [11,23],[12,24],[23,24],
+  [23,25],[25,27],[24,26],[26,28],
+];
+const TRAIL_SECONDS = 1.1;
+const SPEEDS = [0.25, 0.5, 1, 2];
+
+/* MediaPipe (x right, y down, z NEGATIVE toward camera) → z-up scene space
+ * with +y toward the (default) viewer camera */
+function mpToScene(p) { return [p[0], -p[2], -p[1]]; }
+
+/* ── state ──────────────────────────────────────────────── */
+let rec = null;          // parsed recording JSON
+let rawFrames = [];      // rec.frames as stored — the 3D avatar retargets from these
+let samples = [];        // [{t, hands: {Left: [[x,y,z]×21]|null, Right: ...}}]
+let duration = 0;
+let playhead = 0;
+let playing = false;
+let speed = 1;
+let camera = { yaw: 0, pitch: 0.16, dist: 1.7, target: [0, 0, BASE_HEIGHT_M] };
+let gridZ = 0;  // reference grid height; snapped under the hands on load
+let avatarMode = false;
+
+const stage = document.getElementById("stage");
+const ctx = stage.getContext("2d");
+const timeline = document.getElementById("timeline");
+const tctx = timeline.getContext("2d");
+
+/* ── data loading ───────────────────────────────────────── */
+let annotatable = false;  // marking segments only makes sense on the server's own recording
+
+function loadRecording(data, sourceName) {
+  if (![1, 2].includes(data.version))
+    throw new Error(`unsupported schema version ${data.version}`);
+  annotatable = sourceName === "recording.json";
+  rec = data;
+  rawFrames = rec.frames;
+  const aspect = rec.source_width ? rec.source_height / rec.source_width : 1.0;
+
+  // image-plane coords → scene space, same mapping as the hand anchors
+  const imageToScene = p => [
+    (p[0] - 0.5) * VIEW_WIDTH_M,
+    0.0,
+    (0.5 - p[1]) * VIEW_WIDTH_M * aspect + BASE_HEIGHT_M,
+  ];
+
+  samples = rec.frames.map(f => {
+    const hands = { Left: null, Right: null };
+    for (const h of f.hands) {
+      const anchor = imageToScene(h.landmarks[0]);
+      hands[h.handedness] = h.world_landmarks.map(p => {
+        const s = mpToScene(p);
+        return [anchor[0] + s[0], anchor[1] + s[1], anchor[2] + s[2]];
+      });
+    }
+    // pose is drawn on the anchor plane (flat reference layer behind the hands)
+    const pose = f.pose
+      ? {
+          pts: f.pose.landmarks.map(imageToScene),
+          vis: f.pose.visibility,
+          // out-of-frame estimates (hips/legs when framed chest-up) aren't drawable
+          ok: f.pose.landmarks.map((p, k) =>
+            f.pose.visibility[k] >= POSE_MIN_VISIBILITY &&
+            p[0] >= -0.08 && p[0] <= 1.08 && p[1] >= -0.08 && p[1] <= 1.08),
+        }
+      : null;
+    return { t: f.timestamp, hands, pose, face: f.face ? f.face.blendshapes : null };
+  });
+  baseCache = null;  // timeline strip belongs to the previous recording
+  document.getElementById("pose-toggle-wrap").classList.toggle(
+    "hidden", !samples.some(s => s.pose));
+  duration = samples.length ? samples[samples.length - 1].t : 0;
+  playhead = 0;
+
+  fitCamera();
+  document.getElementById("drop-hint").classList.add("hidden");
+  document.getElementById("legend").classList.remove("hidden");
+  const labelEl = document.getElementById("rec-label");
+  labelEl.textContent = rec.label || sourceName || "(unlabeled)";
+  labelEl.classList.remove("hidden");
+  document.getElementById("rec-meta").textContent =
+    `${rec.frames.length}f · ${duration.toFixed(2)}s · ${rec.fps.toFixed(1)}fps · ${rec.source_width}×${rec.source_height}`;
+  drawTimeline();
+  setPlaying(true);
+}
+
+function fitCamera() {
+  let lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
+  for (const s of samples)
+    for (const side of ["Left", "Right"]) {
+      const pts = s.hands[side];
+      if (!pts) continue;
+      for (const p of pts)
+        for (let i = 0; i < 3; i++) {
+          lo[i] = Math.min(lo[i], p[i]);
+          hi[i] = Math.max(hi[i], p[i]);
+        }
+    }
+  if (!isFinite(lo[0])) return;
+  camera.target = [(lo[0]+hi[0])/2, (lo[1]+hi[1])/2, (lo[2]+hi[2])/2];
+  const extent = Math.max(hi[0]-lo[0], hi[1]-lo[1], hi[2]-lo[2], 0.3);
+  camera.dist = extent * 2.4;
+  gridZ = lo[2] - 0.06;  // keep the reference grid just under the hands
+}
+
+/* ?rec= / ?video= select a library item; without params the server default */
+const urlParams = new URLSearchParams(location.search);
+let currentRecName = urlParams.get("rec");  // used by annotation
+
+async function tryFetchDefault() {
+  const recUrl = currentRecName
+    ? `recordings/${encodeURIComponent(currentRecName)}`
+    : "recording.json";
+  try {
+    setJobStatus("LOADING RECORDING…");
+    const res = await fetch(recUrl, { cache: "no-store" });
+    if (res.ok) loadRecording(await res.json(), "recording.json");
+  } catch { /* file:// or 404 → wait for drag-drop */ }
+  setJobStatus("");
+  const videoUrl = urlParams.get("video") || (currentRecName ? null : "video");
+  if (!videoUrl) return;
+  try {
+    const res = await fetch(videoUrl, { cache: "no-store" });
+    if (res.ok) loadVideo(URL.createObjectURL(await res.blob()));
+  } catch { /* none configured */ }
+}
+
+/* ── video upload → server-side extraction ──────────────── */
+const jobStatus = document.getElementById("job-status");
+const uploadBtn = document.getElementById("upload-btn");
+
+function setJobStatus(text, isError) {
+  jobStatus.textContent = text;
+  jobStatus.classList.toggle("hidden", !text);
+  jobStatus.classList.toggle("error", !!isError);
+}
+
+async function uploadVideo(file) {
+  uploadBtn.disabled = true;
+  setJobStatus(`UPLOADING ${file.name}…`);
+  try {
+    const res = await fetch("upload", {
+      method: "POST",
+      // header values must be ISO-8859-1 → percent-encode (server unquotes)
+      headers: { "X-Filename": encodeURIComponent(file.name) },
+      body: file,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      setJobStatus(`ERROR: ${err.error || res.status}`, true);
+      uploadBtn.disabled = false;
+      return;
+    }
+    pollExtract();
+  } catch (ex) {
+    setJobStatus(`ERROR: ${ex.message}`, true);
+    uploadBtn.disabled = false;
+  }
+}
+
+async function pollExtract() {
+  let s;
+  try {
+    s = await (await fetch("extract/status", { cache: "no-store" })).json();
+  } catch {
+    setTimeout(pollExtract, 1000);
+    return;
+  }
+  if (s.state === "running") {
+    setJobStatus(`EXTRACTING ${s.done}${s.total ? "/" + s.total : ""} FRAMES…`);
+    setTimeout(pollExtract, 500);
+  } else if (s.state === "done") {
+    setJobStatus("");
+    uploadBtn.disabled = false;
+    const recName = s.name.replace(/\.[^.]+$/, ".json");
+    location.href =
+      `viewer.html?rec=${encodeURIComponent(recName)}` +
+      `&video=${encodeURIComponent("videos/" + s.name)}`;
+  } else if (s.state === "error") {
+    setJobStatus(`ERROR: ${s.error}`, true);
+    uploadBtn.disabled = false;
+  }
+}
+
+let avatarInitStarted = false;
+document.getElementById("avatar").onchange = e => {
+  avatarMode = e.target.checked;
+  const canvas3d = document.getElementById("stage3d");
+  canvas3d.classList.toggle("hidden", !avatarMode);
+  if (avatarMode && window.Avatar3D && !window.Avatar3D.ready && !avatarInitStarted) {
+    avatarInitStarted = true;
+    setJobStatus("LOADING AVATAR…");
+    window.Avatar3D.init(canvas3d)
+      .then(() => setJobStatus(""))
+      .catch(ex => setJobStatus(`AVATAR ERROR: ${ex.message || ex}`, true));
+  }
+};
+
+/* ── avatar model switching ─────────────────────────────── */
+const modelSelect = document.getElementById("model-select");
+async function loadModelList() {
+  try {
+    const res = await fetch("models.json", { cache: "no-store" });
+    if (!res.ok) return;
+    const { models } = await res.json();
+    if (!models.length) return;
+    modelSelect.innerHTML = models
+      .map(m => `<option value="models/${m}">${m.replace(/\.vrm$/, "")}</option>`)
+      .join("");
+    modelSelect.classList.remove("hidden");
+  } catch { /* server without models route */ }
+}
+async function switchModel(url, label) {
+  if (!window.Avatar3D || !avatarInitStarted) {
+    document.getElementById("avatar").checked = true;
+    document.getElementById("avatar").dispatchEvent(new Event("change"));
+  }
+  setJobStatus(`LOADING ${label}…`);
+  try {
+    await window.Avatar3D.loadModel(url);
+    setJobStatus("");
+  } catch (ex) {
+    setJobStatus(`MODEL ERROR: ${ex.message || ex}`, true);
+  }
+}
+modelSelect.onchange = e =>
+  switchModel(e.target.value, e.target.selectedOptions[0].textContent);
+
+/* ── export: record the visible stage to a .webm ────────── */
+const exportBtn = document.getElementById("export-btn");
+let recorder = null;
+exportBtn.onclick = () => {
+  if (recorder) { recorder.stop(); return; }
+  const canvas = avatarMode ? document.getElementById("stage3d") : stage;
+  const stream = canvas.captureStream(30);
+  const chunks = [];
+  recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9" });
+  recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+  recorder.onstop = () => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(chunks, { type: "video/webm" }));
+    a.download = `${(rec && rec.label) || "signavatar"}.webm`;
+    a.click();
+    recorder = null;
+    exportBtn.classList.remove("recording");
+    exportBtn.textContent = "⏺ EXPORT";
+  };
+  recorder.start();
+  exportBtn.classList.add("recording");
+  exportBtn.textContent = "■ STOP";
+  window.viewer.seek(0);
+  window.viewer.play(true);
+};
+
+uploadBtn.onclick = () => document.getElementById("video-input").click();
+document.getElementById("video-input").onchange = e => {
+  const f = e.target.files[0];
+  if (f) uploadVideo(f);
+  e.target.value = "";
+};
+
+/* ── source-video comparison ────────────────────────────── */
+const videoEl = document.getElementById("source-video");
+const videoCard = document.getElementById("video-card");
+
+function loadVideo(url) {
+  videoEl.src = url;
+  videoCard.classList.remove("hidden");
+}
+document.getElementById("video-mirror").onchange = e =>
+  videoEl.classList.toggle("mirrored", e.target.checked);
+document.getElementById("video-size").onclick = () =>
+  videoCard.classList.toggle("large");
+document.getElementById("video-close").onclick = () => {
+  videoEl.pause();
+  videoEl.removeAttribute("src");
+  videoCard.classList.add("hidden");
+};
+
+function syncVideo() {
+  if (videoCard.classList.contains("hidden") || !videoEl.src || videoEl.readyState < 2)
+    return;
+  videoEl.playbackRate = speed;
+  if (playing && videoEl.paused) videoEl.play().catch(() => {});
+  if (!playing && !videoEl.paused) videoEl.pause();
+  // the skeleton clock is the master; nudge the video when it drifts
+  const drift = Math.abs(videoEl.currentTime - playhead);
+  if (drift > (playing ? 0.12 : 0.02)) videoEl.currentTime = playhead;
+}
+
+document.getElementById("open-btn").onclick = () =>
+  document.getElementById("file-input").click();
+document.getElementById("file-input").onchange = async e => {
+  const f = e.target.files[0];
+  if (f) loadRecording(JSON.parse(await f.text()), f.name);
+};
+window.addEventListener("dragover", e => {
+  e.preventDefault();
+  document.body.classList.add("dragover");
+});
+window.addEventListener("dragleave", () => document.body.classList.remove("dragover"));
+window.addEventListener("drop", async e => {
+  e.preventDefault();
+  document.body.classList.remove("dragover");
+  for (const f of e.dataTransfer.files) {
+    if (f.name.endsWith(".vrm")) switchModel(URL.createObjectURL(f), f.name);
+    else if (f.type.startsWith("video/")) uploadVideo(f);  // upload + extract on the server
+    else loadRecording(JSON.parse(await f.text()), f.name);
+  }
+});
+
+/* ── playback clock ─────────────────────────────────────── */
+function setPlaying(on) {
+  playing = on && duration > 0;
+  const btn = document.getElementById("play");
+  btn.textContent = playing ? "❚❚" : "PLAY";
+  btn.classList.toggle("playing", playing);
+}
+document.getElementById("play").onclick = () => setPlaying(!playing);
+
+const speedBox = document.getElementById("speed");
+for (const s of SPEEDS) {
+  const b = document.createElement("button");
+  b.textContent = s + "×";
+  b.classList.toggle("on", s === speed);
+  b.onclick = () => {
+    speed = s;
+    for (const c of speedBox.children) c.classList.toggle("on", c === b);
+  };
+  speedBox.appendChild(b);
+}
+
+function frameIndexAt(t) {  // last frame with timestamp <= t
+  let lo = 0, hi = samples.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (samples[mid].t <= t) lo = mid; else hi = mid - 1;
+  }
+  return lo;
+}
+
+window.addEventListener("keydown", e => {
+  if (!samples.length) return;
+  if (e.code === "Space") { e.preventDefault(); setPlaying(!playing); }
+  if (e.code === "ArrowRight" || e.code === "ArrowLeft") {
+    e.preventDefault();
+    setPlaying(false);
+    const i = frameIndexAt(playhead) + (e.code === "ArrowRight" ? 1 : -1);
+    playhead = samples[Math.max(0, Math.min(samples.length - 1, i))].t;
+  }
+});
+
+/* ── camera orbit ───────────────────────────────────────── */
+let drag = null;
+stage.addEventListener("mousedown", e => {
+  drag = { x: e.clientX, y: e.clientY };
+  stage.classList.add("dragging");
+});
+window.addEventListener("mousemove", e => {
+  if (!drag) return;
+  camera.yaw += (e.clientX - drag.x) * 0.008;
+  camera.pitch = Math.max(-1.4, Math.min(1.4, camera.pitch + (e.clientY - drag.y) * 0.008));
+  drag = { x: e.clientX, y: e.clientY };
+});
+window.addEventListener("mouseup", () => {
+  drag = null;
+  stage.classList.remove("dragging");
+});
+stage.addEventListener("wheel", e => {
+  e.preventDefault();
+  camera.dist = Math.max(0.4, Math.min(8, camera.dist * (1 + e.deltaY * 0.001)));
+}, { passive: false });
+
+/* ── projection ─────────────────────────────────────────── */
+function makeProjector(w, h) {
+  const { yaw, pitch, dist, target } = camera;
+  const eye = [
+    target[0] + dist * Math.cos(pitch) * Math.sin(yaw),
+    target[1] + dist * Math.cos(pitch) * Math.cos(yaw),
+    target[2] + dist * Math.sin(pitch),
+  ];
+  const sub = (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+  const norm = v => {
+    const l = Math.hypot(...v) || 1;
+    return [v[0]/l, v[1]/l, v[2]/l];
+  };
+  const cross = (a, b) => [
+    a[1]*b[2] - a[2]*b[1],
+    a[2]*b[0] - a[0]*b[2],
+    a[0]*b[1] - a[1]*b[0],
+  ];
+  const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+  const fwd = norm(sub(target, eye));
+  const right = norm(cross(fwd, [0, 0, 1]));
+  const up = cross(right, fwd);
+  const f = 1.15 * h;
+  return p => {
+    const d = sub(p, eye);
+    const z = dot(d, fwd);
+    if (z < 0.05) return null;
+    return { x: w/2 + f * dot(d, right) / z, y: h/2 - f * dot(d, up) / z, z };
+  };
+}
+
+/* ── render loop ────────────────────────────────────────── */
+let lastTick = performance.now();
+
+function render(now) {
+  requestAnimationFrame(render);
+  const dt = (now - lastTick) / 1000;
+  lastTick = now;
+
+  const dpr = window.devicePixelRatio || 1;
+  const w = stage.clientWidth, h = stage.clientHeight;
+  if (stage.width !== w * dpr || stage.height !== h * dpr) {
+    stage.width = w * dpr;
+    stage.height = h * dpr;
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  if (!samples.length) return;
+
+  if (playing) {
+    playhead += dt * speed;
+    if (playhead > duration) {
+      playhead = 0;  // loop
+      if (recorder) recorder.stop();  // export captures exactly one pass
+    }
+  }
+
+  const i = frameIndexAt(playhead);
+  const cur = samples[i];
+  const nxt = samples[i + 1];
+  const mix = nxt ? (playhead - cur.t) / (nxt.t - cur.t || 1) : 0;
+
+  if (avatarMode && window.Avatar3D && window.Avatar3D.ready) {
+    // 3D rigged avatar takes over the stage; 2D canvas stays as event layer
+    window.Avatar3D.resize(w * dpr, h * dpr);
+    window.Avatar3D.setCamera(camera);
+    window.Avatar3D.update(rawFrames[i], dt);
+    window.Avatar3D.render();
+  } else {
+    const proj = makeProjector(w, h);
+    drawGrid(proj);
+
+    if (document.getElementById("trails").checked) drawTrails(proj, i);
+
+    if (document.getElementById("pose").checked && cur.pose) {
+      let pose = cur.pose;
+      if (nxt && nxt.pose)
+        pose = {
+          vis: cur.pose.vis,
+          ok: cur.pose.ok,
+          pts: cur.pose.pts.map((p, k) => [
+            p[0] + (nxt.pose.pts[k][0] - p[0]) * mix,
+            p[1] + (nxt.pose.pts[k][1] - p[1]) * mix,
+            p[2] + (nxt.pose.pts[k][2] - p[2]) * mix,
+          ]),
+        };
+      drawPose(proj, pose);
+    }
+
+    for (const side of ["Left", "Right"]) {
+      let pts = cur.hands[side];
+      if (!pts) continue;
+      if (nxt && nxt.hands[side])
+        pts = pts.map((p, k) => [
+          p[0] + (nxt.hands[side][k][0] - p[0]) * mix,
+          p[1] + (nxt.hands[side][k][1] - p[1]) * mix,
+          p[2] + (nxt.hands[side][k][2] - p[2]) * mix,
+        ]);
+      drawHand(proj, pts, HAND_COLOR[side]);
+    }
+  }
+
+  document.getElementById("hud").textContent =
+    `t ${playhead.toFixed(2).padStart(6)}s\nf ${String(i + 1).padStart(4)}/${samples.length}`;
+  document.getElementById("clock").innerHTML =
+    `${playhead.toFixed(2)}<span class="dim"> / ${duration.toFixed(2)}s · frame </span>${i + 1}<span class="dim">/${samples.length}</span>`;
+  updateExpression(i, cur.face);
+  syncVideo();
+  drawTimelineCursor();
+}
+
+function drawGrid(proj) {
+  ctx.lineWidth = 1;
+  const N = 6, STEP = 0.15;
+  for (let a = -N; a <= N; a++) {
+    const [tx, ty] = camera.target;
+    for (const [p1, p2] of [
+      [[tx + a*STEP, ty - N*STEP, gridZ], [tx + a*STEP, ty + N*STEP, gridZ]],
+      [[tx - N*STEP, ty + a*STEP, gridZ], [tx + N*STEP, ty + a*STEP, gridZ]],
+    ]) {
+      const s1 = proj(p1), s2 = proj(p2);
+      if (!s1 || !s2) continue;
+      ctx.strokeStyle = a === 0 ? "rgba(110,120,131,0.28)" : "rgba(110,120,131,0.12)";
+      ctx.beginPath();
+      ctx.moveTo(s1.x, s1.y);
+      ctx.lineTo(s2.x, s2.y);
+      ctx.stroke();
+    }
+  }
+}
+
+/* ── expression readout: strongest active blendshapes ───── */
+let lastExprFrame = -1;
+function updateExpression(frameIdx, blendshapes) {
+  if (frameIdx === lastExprFrame) return;
+  lastExprFrame = frameIdx;
+  const box = document.getElementById("expr");
+  if (!blendshapes) { box.classList.add("hidden"); return; }
+  const rows = Object.entries(blendshapes)
+    .filter(([name, v]) => name !== "_neutral" && v >= 0.15)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+  box.classList.toggle("hidden", rows.length === 0);
+  box.innerHTML = rows.map(([name, v]) =>
+    `<div class="row"><span>${name}</span>` +
+    `<span class="bar"><i style="width:${Math.round(v * 100)}%"></i></span></div>`
+  ).join("");
+}
+
+function drawPose(proj, pose) {
+  const scr = pose.pts.map(proj);
+  ctx.strokeStyle = POSE_COLOR;
+  ctx.lineCap = "round";
+  ctx.lineWidth = 1.2;
+  for (const [a, b] of POSE_CONNECTIONS) {
+    if (!pose.ok[a] || !pose.ok[b]) continue;
+    const p = scr[a], q = scr[b];
+    if (!p || !q) continue;
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(q.x, q.y);
+    ctx.stroke();
+  }
+  ctx.fillStyle = POSE_COLOR;
+  scr.forEach((p, k) => {
+    if (!p || !pose.ok[k]) return;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawHand(proj, pts, color) {
+  const scr = pts.map(proj);
+  ctx.strokeStyle = color;
+  ctx.lineCap = "round";
+  for (const [a, b] of CONNECTIONS) {
+    const p = scr[a], q = scr[b];
+    if (!p || !q) continue;
+    const depth = Math.min(1, camera.dist / ((p.z + q.z) / 2));
+    ctx.globalAlpha = 0.35 + 0.65 * Math.min(1, depth);
+    ctx.lineWidth = 1.4 * depth + 0.6;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(q.x, q.y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = color;
+  scr.forEach((p, k) => {
+    if (!p) return;
+    const r = (k === 0 ? 3.2 : [4, 8, 12, 16, 20].includes(k) ? 2.6 : 1.7)
+              * Math.min(1.4, camera.dist / p.z);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawTrails(proj, curIdx) {
+  const t0 = playhead - TRAIL_SECONDS;
+  ctx.lineCap = "round";
+  for (const side of ["Left", "Right"]) {
+    ctx.strokeStyle = HAND_COLOR[side];
+    let prev = null;
+    for (let k = curIdx; k >= 0 && samples[k].t >= t0; k--) {
+      const pts = samples[k].hands[side];
+      if (!pts) { prev = null; continue; }
+      const s = proj(pts[0]);
+      if (!s) { prev = null; continue; }
+      if (prev) {
+        ctx.globalAlpha = 0.5 * (1 - (playhead - samples[k].t) / TRAIL_SECONDS);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(prev.x, prev.y);
+        ctx.lineTo(s.x, s.y);
+        ctx.stroke();
+      }
+      prev = s;
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ── timeline: hand-presence strip, doubles as scrubber ─── */
+function drawTimeline() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = timeline.clientWidth, h = timeline.clientHeight;
+  timeline.width = w * dpr;
+  timeline.height = h * dpr;
+  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  tctx.clearRect(0, 0, w, h);
+  if (!samples.length) return;
+  const rowH = (h - 8) / 2;
+  samples.forEach((s, k) => {
+    const x = (s.t / (duration || 1)) * w;
+    if (s.hands.Left) {
+      tctx.fillStyle = HAND_COLOR.Left;
+      tctx.fillRect(x, 2, Math.max(1, w / samples.length), rowH);
+    }
+    if (s.hands.Right) {
+      tctx.fillStyle = HAND_COLOR.Right;
+      tctx.fillRect(x, 6 + rowH, Math.max(1, w / samples.length), rowH);
+    }
+  });
+}
+
+const cursor = document.createElement("canvas");  // overlay drawn each frame
+function drawTimelineCursor() {
+  // redraw base strip only when size changes; cursor is cheap: draw on top
+  drawTimelineBaseCached();
+  const w = timeline.clientWidth, h = timeline.clientHeight;
+  const x = (playhead / (duration || 1)) * w;
+  tctx.strokeStyle = "#e8e4d9";
+  tctx.lineWidth = 1.5;
+  tctx.beginPath();
+  tctx.moveTo(x, 0);
+  tctx.lineTo(x, h);
+  tctx.stroke();
+}
+
+let baseCache = null;
+function drawTimelineBaseCached() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = timeline.clientWidth, h = timeline.clientHeight;
+  if (!baseCache || baseCache.width !== w * dpr || baseCache.height !== h * dpr) {
+    drawTimeline();
+    baseCache = document.createElement("canvas");
+    baseCache.width = w * dpr;
+    baseCache.height = h * dpr;
+    baseCache.getContext("2d").drawImage(timeline, 0, 0);
+  } else {
+    tctx.setTransform(1, 0, 0, 1, 0, 0);
+    tctx.clearRect(0, 0, timeline.width, timeline.height);
+    tctx.drawImage(baseCache, 0, 0);
+    tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+}
+
+function seekFromEvent(e) {
+  const r = timeline.getBoundingClientRect();
+  playhead = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration;
+}
+let scrubbing = false;
+timeline.addEventListener("mousedown", e => {
+  scrubbing = true;
+  setPlaying(false);
+  seekFromEvent(e);
+});
+window.addEventListener("mousemove", e => { if (scrubbing) seekFromEvent(e); });
+window.addEventListener("mouseup", () => { scrubbing = false; });
+window.addEventListener("resize", () => { baseCache = null; });
+
+/* ── sign composer: text → stitched sign playback ─────────
+   core lives in composer.js (window.Composer); this side is UI glue */
+let LEXICON = {};
+
+const composePanel = document.getElementById("compose-panel");
+document.getElementById("compose-btn").onclick = () => composePanel.classList.toggle("open");
+document.getElementById("compose-close").onclick = () => composePanel.classList.remove("open");
+
+async function loadLexicon() {
+  try {
+    LEXICON = await Composer.loadLexicon();
+  } catch { /* server without lexicon route */ }
+  renderLexicon();
+}
+
+function renderLexicon() {
+  const box = document.getElementById("lexicon-list");
+  const names = Object.keys(LEXICON);
+  if (!names.length) {
+    box.innerHTML = `<span style="color:var(--ink-dim)">（空,先在下方標註）</span>`;
+    return;
+  }
+  box.innerHTML = "";
+  for (const name of names.sort()) {
+    const e = LEXICON[name];
+    const row = document.createElement("div");
+    row.className = "sign";
+    row.innerHTML = `<b>${name}</b><span class="meta">${(e.end - e.start).toFixed(1)}s</span><span class="del" title="刪除">✕</span>`;
+    row.onclick = () => composeAndPlay([name]);
+    row.querySelector(".del").onclick = async ev => {
+      ev.stopPropagation();
+      await fetch("lexicon", { method: "POST", body: JSON.stringify({ name, delete: true }) });
+      delete LEXICON[name];
+      renderLexicon();
+    };
+    box.appendChild(row);
+  }
+}
+
+const tokenize = text => Composer.tokenize(text, LEXICON);
+
+async function composeAndPlay(tokens, tags = null) {
+  const msg = document.getElementById("compose-msg");
+  const composed = await Composer.build(tokens, LEXICON, tags);
+  if (!composed) {
+    msg.textContent = "沒有可播放的片段";
+    msg.classList.add("err");
+    return;
+  }
+  document.getElementById("video-close").click();  // source video no longer matches
+  loadRecording(composed, "composed");
+}
+
+const translateText = text => Composer.translate(text);
+
+document.getElementById("compose-go").onclick = async () => {
+  const msg = document.getElementById("compose-msg");
+  msg.classList.remove("err");
+  const text = document.getElementById("compose-text").value;
+  if (!text.trim()) {
+    msg.textContent = "請輸入文字";
+    msg.classList.add("err");
+    return;
+  }
+  await loadLexicon();  // fresh每次:CLI 可能剛加了新詞
+  try {
+    if (document.getElementById("compose-natural").checked) {
+      msg.textContent = "翻譯中…";
+      const t = await translateText(text);
+      if (!t.glosses.length) {
+        msg.textContent = "詞彙庫沒有對應手語" +
+          (t.unknown.length ? `(${[...new Set(t.unknown)].join("、")})` : "");
+        msg.classList.add("err");
+        return;
+      }
+      const tagInfo = [
+        t.question === "wh" ? "wh疑問" : t.question === "yesno" ? "疑問" : "",
+        t.negation ? "否定" : "",
+      ].filter(Boolean).join("·");
+      msg.textContent = `TSL:${t.glosses.join(" ")}(${t.source}${tagInfo ? "·" + tagInfo : ""})` +
+        (t.unknown.length ? ` 略過:${[...new Set(t.unknown)].join("、")}` : "");
+      await composeAndPlay(t.glosses, { question: t.question, negation: t.negation });
+    } else {
+      const { tokens, unknown } = tokenize(text);
+      if (!tokens.length) {
+        msg.textContent = unknown.length ? `詞彙庫沒有:${[...new Set(unknown)].join("、")}` : "請輸入文字";
+        msg.classList.add("err");
+        return;
+      }
+      msg.textContent = `合成:${tokens.join(" + ")}` +
+        (unknown.length ? `(略過:${[...new Set(unknown)].join("、")})` : "");
+      await composeAndPlay(tokens);
+    }
+  } catch (ex) {
+    msg.textContent = `錯誤:${ex.message}`;
+    msg.classList.add("err");
+  }
+};
+
+/* ── annotation: mark in/out on the current recording ───── */
+let markIn = null, markOut = null;
+document.getElementById("mark-in").onclick = () => {
+  markIn = playhead;
+  document.getElementById("mark-in-v").textContent = markIn.toFixed(2);
+};
+document.getElementById("mark-out").onclick = () => {
+  markOut = playhead;
+  document.getElementById("mark-out-v").textContent = markOut.toFixed(2);
+};
+document.getElementById("mark-save").onclick = async () => {
+  const msg = document.getElementById("compose-msg");
+  msg.classList.remove("err");
+  const name = document.getElementById("mark-name").value.trim();
+  if (!annotatable) {
+    msg.textContent = "合成結果不能標註 — 請先重新整理回到原始錄製";
+    msg.classList.add("err");
+    return;
+  }
+  if (!name || markIn === null || markOut === null || markOut <= markIn) {
+    msg.textContent = "需要名稱 + 有效的起點/終點";
+    msg.classList.add("err");
+    return;
+  }
+  const recName =
+    currentRecName || (await (await fetch("status", { cache: "no-store" })).json()).recording;
+  const res = await fetch("lexicon", {
+    method: "POST",
+    body: JSON.stringify({ name, recording: recName, start: markIn, end: markOut }),
+  });
+  if (res.ok) {
+    LEXICON[name] = { recording: recName, start: markIn, end: markOut };
+    renderLexicon();
+    msg.textContent = `已儲存「${name}」`;
+    document.getElementById("mark-name").value = "";
+  } else {
+    msg.textContent = `儲存失敗:${(await res.json()).error || res.status}`;
+    msg.classList.add("err");
+  }
+};
+
+/* ── boot ───────────────────────────────────────────────── */
+window.composer = {  // console / automation hooks for text→sign
+  translate: translateText,
+  play: composeAndPlay,
+};
+window.viewer = {  // console / automation hooks
+  seek(t) { playhead = Math.max(0, Math.min(duration, t)); },
+  play(on) { setPlaying(on); },
+  orbit(yaw, pitch) { camera.yaw = yaw; camera.pitch = pitch; },
+  get state() {
+    return { playhead, playing, speed, frames: samples.length, duration,
+             frame: samples.length ? frameIndexAt(playhead) + 1 : 0 };
+  },
+};
+tryFetchDefault();
+loadModelList();
+loadLexicon();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

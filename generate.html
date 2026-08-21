@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SignAvatar — 手語生成</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>🤟</text></svg>">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #12151a;
+    --line: #232830;
+    --ink: #e8e4d9;
+    --ink-dim: #6f7783;
+    --left: #4fd8e8;
+    --right: #ffb454;
+    --mono: "Berkeley Mono", "JetBrains Mono", "IBM Plex Mono", "SF Mono",
+            ui-monospace, Menlo, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.7rem 1.1rem;
+    border-bottom: 1px solid var(--line);
+    z-index: 3;
+    background: var(--bg);
+  }
+  header a.back { color: var(--ink-dim); text-decoration: none; font-size: 1rem; }
+  header a.back:hover { color: var(--ink); }
+  header .brand { font-weight: 700; letter-spacing: 0.14em; }
+  header .brand em { color: var(--right); font-style: normal; }
+  header .sep { color: var(--ink-dim); }
+  header .title { letter-spacing: 0.3em; font-size: 0.8rem; color: var(--ink-dim); }
+  header .spacer { flex: 1; }
+  select#model {
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  #stage-wrap { position: relative; flex: 1; min-height: 0; }
+  canvas#stage { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+  canvas#stage:active { cursor: grabbing; }
+  #watermark {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: min(45vh, 45vw);
+    color: rgba(232, 228, 217, 0.025);
+    pointer-events: none; font-weight: 700;
+  }
+  #stage-hint {
+    position: absolute; top: 0.8rem; left: 1.1rem;
+    color: var(--ink-dim); font-size: 0.68rem; letter-spacing: 0.08em;
+  }
+  #loading {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-dim); letter-spacing: 0.3em; font-size: 0.8rem;
+  }
+
+  /* ── bottom generation bar ─────────────────────────── */
+  #bar {
+    z-index: 3;
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+    padding: 0.9rem 1.1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  #input-row { display: flex; gap: 0.6rem; }
+  #text {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 1rem;
+    padding: 0.65rem 0.8rem;
+    outline: none;
+  }
+  #text:focus { border-color: var(--ink-dim); }
+  button {
+    background: var(--right);
+    border: none;
+    border-radius: 6px;
+    color: #1a1205;
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0 1.3rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:disabled { opacity: 0.45; cursor: wait; }
+  button.ghost {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    font-weight: 400;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.72rem;
+  }
+  button.ghost:hover:enabled { color: var(--ink); border-color: var(--ink-dim); }
+
+  #result-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-height: 1.7rem; }
+  #result-row .lbl { color: var(--ink-dim); font-size: 0.72rem; letter-spacing: 0.15em; }
+  .gloss {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.85rem;
+  }
+  .gloss.active { border-color: var(--right); color: var(--right); }
+  .tag {
+    font-size: 0.68rem;
+    border-radius: 3px;
+    padding: 0.15rem 0.45rem;
+    letter-spacing: 0.1em;
+  }
+  .tag.q { background: rgba(79, 216, 232, 0.14); color: var(--left); }
+  .tag.n { background: rgba(255, 107, 107, 0.14); color: #ff6b6b; }
+  .tag.src { background: rgba(232, 228, 217, 0.08); color: var(--ink-dim); }
+  #msg { color: var(--ink-dim); font-size: 0.78rem; }
+  #msg.err { color: #ff6b6b; }
+
+  #examples { display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
+  #examples .lbl { color: var(--ink-dim); font-size: 0.68rem; letter-spacing: 0.15em; }
+  #examples button.ex {
+    background: transparent;
+    border: 1px dashed var(--line);
+    color: var(--ink-dim);
+    font-weight: 400;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+  }
+  #examples button.ex:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+  #controls { display: flex; align-items: center; gap: 0.5rem; }
+  #speed { display: flex; gap: 0.25rem; }
+  #speed button { font-size: 0.68rem; }
+  #speed button.on { color: var(--right); border-color: var(--right); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="./" title="回首頁">◂</a>
+  <span class="brand"><em>Sign</em>Avatar</span>
+  <span class="sep">▸</span>
+  <span class="title">手語生成 TEXT&nbsp;→&nbsp;SIGN</span>
+  <span class="spacer"></span>
+  <a href="corpus.html" style="color:var(--ink-dim);text-decoration:none;font-size:0.72rem;border:1px solid var(--line);border-radius:4px;padding:0.3rem 0.7rem;margin-right:0.6rem">詞庫總覽</a>
+  <select id="model" title="切換虛擬人"></select>
+</header>
+
+<div id="stage-wrap">
+  <div id="watermark">手語</div>
+  <canvas id="stage"></canvas>
+  <div id="stage-hint">拖曳旋轉 · 滾輪縮放</div>
+  <div id="loading">載入虛擬人…</div>
+</div>
+
+<div id="bar">
+  <div id="input-row">
+    <input id="text" placeholder="輸入中文句子,翻成臺灣手語(例:我朋友半年前突然車禍)" autocomplete="off">
+    <button id="go">生成手語</button>
+  </div>
+  <div id="result-row">
+    <span class="lbl">TSL</span>
+    <span id="glosses"><span style="color:var(--ink-dim);font-size:0.78rem">—</span></span>
+    <span id="msg"></span>
+    <span style="flex:1"></span>
+    <span id="controls">
+      <button class="ghost" id="replay" disabled>⟳ 重播</button>
+      <span id="speed">
+        <button class="ghost" data-s="0.5">0.5×</button>
+        <button class="ghost on" data-s="1">1×</button>
+        <button class="ghost" data-s="0.25">0.25×</button>
+      </span>
+    </span>
+  </div>
+  <div id="examples">
+    <span class="lbl">試試</span>
+    <button class="ex">我朋友半年前突然車禍</button>
+    <button class="ex">我聽不到</button>
+    <button class="ex">你的聽力檢查了嗎</button>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+<script type="module" src="avatar3d.js?v=20260818-compound1"></script>
+<script src="signavatar-config.js"></script>
+<script src="composer.js?v=20260818-compound1"></script>
+<script>
+"use strict";
+
+/* ── state ──────────────────────────────────────────── */
+let LEXICON = {};
+let composed = null;      // current composed recording
+let playhead = 0;
+let playing = false;
+let speed = 1;
+let tokenSpans = [];      // [{name, start, end}] for gloss highlighting
+const camera = { yaw: 0, pitch: 0.06, dist: 1.4 };
+
+const stage = document.getElementById("stage");
+const msg = document.getElementById("msg");
+
+/* ── avatar boot ────────────────────────────────────── */
+function fitStage() {
+  const wrap = document.getElementById("stage-wrap");
+  window.Avatar3D && Avatar3D.resize(wrap.clientWidth, wrap.clientHeight);
+}
+window.addEventListener("resize", fitStage);
+
+async function boot() {
+  // avatar3d.js is a module: wait until it lands on window
+  while (!window.Avatar3D) await new Promise(r => setTimeout(r, 40));
+  await Avatar3D.init(stage);
+  fitStage();
+  Avatar3D.setCamera(camera);
+  document.getElementById("loading").style.display = "none";
+  try { LEXICON = await Composer.loadLexicon(); } catch { /* offline */ }
+  loadModels();
+  const preset = new URLSearchParams(location.search).get("text");
+  if (preset) {
+    document.getElementById("text").value = preset;
+    generate();
+  }
+}
+
+async function loadModels() {
+  try {
+    const res = await fetch("models.json", { cache: "no-store" });
+    const { models } = await res.json();
+    const sel = document.getElementById("model");
+    sel.innerHTML = models.map(m => `<option>${m}</option>`).join("");
+    sel.onchange = async () => {
+      document.getElementById("loading").style.display = "flex";
+      await Avatar3D.loadModel(`models/${sel.value}`);
+      document.getElementById("loading").style.display = "none";
+    };
+  } catch { /* no models route */ }
+}
+
+/* ── playback loop ──────────────────────────────────── */
+function frameAt(t) {
+  const frames = composed.frames;
+  let lo = 0, hi = frames.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (frames[mid].timestamp <= t) lo = mid; else hi = mid - 1;
+  }
+  return frames[lo];
+}
+
+let lastTick = null;
+function tick(now) {
+  requestAnimationFrame(tick);
+  const dt = lastTick ? (now - lastTick) / 1000 : 0.016;
+  lastTick = now;
+  if (composed) {
+    if (playing) {
+      playhead += dt * speed;
+      const dur = composed.frames[composed.frames.length - 1].timestamp;
+      if (playhead >= dur) { playhead = dur; playing = false; }
+      highlightGloss();
+    }
+    Avatar3D.update(frameAt(playhead), dt);
+  }
+  Avatar3D.setCamera(camera);
+  Avatar3D.render();
+}
+
+function highlightGloss() {
+  for (const el of document.querySelectorAll(".gloss")) {
+    const span = tokenSpans.find(s => s.name === el.dataset.name);
+    el.classList.toggle("active", !!span && playhead >= span.start && playhead <= span.end);
+  }
+}
+
+/* ── orbit controls ─────────────────────────────────── */
+let dragging = false, lastX = 0, lastY = 0;
+stage.addEventListener("pointerdown", e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+window.addEventListener("pointerup", () => { dragging = false; });
+window.addEventListener("pointermove", e => {
+  if (!dragging) return;
+  camera.yaw -= (e.clientX - lastX) * 0.006;
+  camera.pitch = Math.max(-0.9, Math.min(0.9, camera.pitch + (e.clientY - lastY) * 0.004));
+  lastX = e.clientX; lastY = e.clientY;
+});
+stage.addEventListener("wheel", e => {
+  e.preventDefault();
+  camera.dist = Math.max(0.5, Math.min(3.5, camera.dist * (1 + e.deltaY * 0.001)));
+}, { passive: false });
+
+/* ── generation flow ────────────────────────────────── */
+function renderGlosses(t) {
+  const box = document.getElementById("glosses");
+  box.innerHTML = "";
+  for (const g of t.glosses) {
+    const el = document.createElement("span");
+    el.className = "gloss";
+    el.dataset.name = g;
+    el.textContent = g;
+    box.appendChild(el);
+  }
+  const addTag = (cls, text) => {
+    const el = document.createElement("span");
+    el.className = `tag ${cls}`;
+    el.textContent = text;
+    box.appendChild(el);
+  };
+  if (t.question === "yesno") addTag("q", "疑問·挑眉");
+  if (t.question === "wh") addTag("q", "wh疑問·皺眉");
+  if (t.negation) addTag("n", "否定·搖頭");
+  addTag("src", (t.source === "llm" || t.source === "gemma") ? "AI 翻譯" : "規則式");
+}
+
+/* map composed frames back to per-token time spans for highlighting */
+function computeSpans(tokens) {
+  tokenSpans = [];
+  let t = 0;
+  for (const name of tokens) {
+    const entry = LEXICON[name];
+    if (!entry) continue;
+    const segDur = entry.end - entry.start;
+    const start = t;
+    t += segDur + 1 / Composer.COMPOSE_FPS;
+    tokenSpans.push({ name, start, end: t });
+    t += 0.3;  // approximate transition gap; highlighting only, not playback-critical
+  }
+}
+
+async function generate() {
+  const text = document.getElementById("text").value.trim();
+  if (!text) return;
+  const go = document.getElementById("go");
+  go.disabled = true;
+  msg.classList.remove("err");
+  msg.textContent = "翻譯中…";
+  try {
+    LEXICON = await Composer.loadLexicon();  // fresh每次:CLI 可能剛加了新詞
+    const t = await Composer.translate(text);
+    if (!t.glosses.length) {
+      msg.textContent = "詞彙庫沒有對應手語" +
+        (t.unknown.length ? `(${[...new Set(t.unknown)].join("、")})` : "");
+      msg.classList.add("err");
+      return;
+    }
+    renderGlosses(t);
+    msg.textContent = t.unknown.length ? `略過:${[...new Set(t.unknown)].join("、")}` : "";
+    const built = await Composer.build(t.glosses, LEXICON, { question: t.question, negation: t.negation });
+    if (!built) {
+      msg.textContent = "詞庫裡找不到可播放的片段(重新整理再試?)";
+      msg.classList.add("err");
+      return;
+    }
+    composed = built;
+    computeSpans(t.glosses);
+    playhead = 0;
+    playing = true;
+    document.getElementById("replay").disabled = false;
+  } catch (ex) {
+    msg.textContent = `錯誤:${ex.message}`;
+    msg.classList.add("err");
+  } finally {
+    go.disabled = false;
+  }
+}
+
+document.getElementById("go").onclick = generate;
+document.getElementById("text").addEventListener("keydown", e => {
+  if (e.key === "Enter") generate();
+});
+document.getElementById("replay").onclick = () => { playhead = 0; playing = true; };
+for (const b of document.querySelectorAll("#speed button")) {
+  b.onclick = () => {
+    speed = parseFloat(b.dataset.s);
+    for (const x of document.querySelectorAll("#speed button")) x.classList.toggle("on", x === b);
+  };
+}
+for (const b of document.querySelectorAll("#examples .ex")) {
+  b.onclick = () => { document.getElementById("text").value = b.textContent; generate(); };
+}
+
+window.generatePage = {  // console / automation hooks
+  generate(text) { document.getElementById("text").value = text; return generate(); },
+  get state() { return { playhead, playing, frames: composed ? composed.frames.length : 0 }; },
+};
+
+boot();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

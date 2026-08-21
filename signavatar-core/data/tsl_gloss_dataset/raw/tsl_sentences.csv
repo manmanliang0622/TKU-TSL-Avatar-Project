@@ -1,0 +1,1001 @@
+id,source,zh_sentence,tsl_gloss,subject,object,time,topic,verb,verb_type,agreement,question_type,negation,nonmanual,notes
+TSL0001,manual,我昨天買了一台新電腦,昨天 電腦 我 買,我,電腦,昨天,電腦,買,plain,word_order,none,false,none,時間在前；主題優先
+TSL0002,manual,他明天要去台北,明天 台北 他 去,他,台北,明天,台北,去,spatial,spatial_direction,none,false,none,時間在前；地點作主題
+TSL0003,manual,紅色的花很漂亮,花 紅 漂亮,none,none,none,花,漂亮,plain,word_order,none,false,none,修飾語放名詞後
+TSL0004,manual,我不要去學校,學校 我 去 不要,我,學校,none,學校,去,spatial,word_order,none,true,head_shake,否定詞放動詞後
+TSL0005,manual,你去哪裡,你 去 哪裡,你,哪裡,none,none,去,spatial,spatial_direction,wh,false,wh_expression,疑問詞保留在句尾
+TSL0006,manual,老師他怕,老師 他 怕,他,老師,none,老師,怕,plain,eye_gaze,none,false,eye_gaze,普通動詞可用眼神呼應受語
+TSL0007,manual,我討厭蟑螂,蟑螂 我 討厭,我,蟑螂,none,蟑螂,討厭,plain,word_order,none,false,none,受語先作主題
+TSL0008,manual,妹妹今天看書,今天 書 妹妹 看,妹妹,書,今天,書,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0009,manual,爸爸昨天給我錢,昨天 爸爸 錢 給 我,爸爸,我,昨天,錢,給,agreement,directional_movement,none,false,none,給使用方向移動標示主受語
+TSL0010,manual,我問老師問題,老師 問題 我 問,我,老師,none,老師,問,agreement,directional_movement,none,false,eye_gaze,呼應動詞可配合方向與眼神
+TSL0011,manual,明天你要不要來,明天 你 來 要 不要,你,none,明天,none,來,spatial,word_order,yesno,true,brow_raise,是非問句加疑問表情
+TSL0012,manual,他不喜歡咖啡,咖啡 他 喜歡 不,他,咖啡,none,咖啡,喜歡,plain,word_order,none,true,head_shake,否定詞置於動詞後
+TSL0013,manual,今天下午我們開會,今天 下午 會議 我們 開,我們,會議,今天 下午,會議,開,plain,word_order,none,false,none,時間詞組置前
+TSL0014,manual,你媽媽在哪裡,你 媽媽 哪裡,你媽媽,哪裡,none,你 媽媽,在,unknown,word_order,wh,false,wh_expression,存在位置問句
+TSL0015,manual,小孩在公園玩,公園 小孩 玩,小孩,公園,none,公園,玩,spatial,spatial_location,none,false,none,地點先建立空間
+TSL0016,manual,我今天很累,今天 我 累,我,none,今天,none,累,plain,word_order,none,false,none,狀態句保留主語與形容詞
+TSL0017,manual,哥哥把書放在桌上,桌子 書 哥哥 放,哥哥,書,none,桌子,放,spatial,spatial_location,none,false,none,空間定位先建立桌子位置
+TSL0018,manual,昨天朋友打電話給我,昨天 朋友 電話 給 我,朋友,我,昨天,電話,給,agreement,directional_movement,none,false,none,方向動詞標示給的對象
+TSL0019,manual,你為什麼遲到,你 遲到 為什麼,你,none,none,none,遲到,plain,word_order,wh,false,wh_expression,疑問詞放句尾
+TSL0020,manual,我沒有看到他,他 我 看 沒有,我,他,none,他,看,plain,word_order,none,true,head_shake,受語先作主題；否定放後
+TSL0021,manual,我今天早上喝咖啡,今天 早上 咖啡 我 喝,我,咖啡,今天 早上,咖啡,喝,plain,word_order,none,false,none,時間詞組置前；受語作主題
+TSL0022,manual,他晚上回家,晚上 家 他 回,他,家,晚上,家,回,spatial,spatial_direction,none,false,none,時間在前；地點先建立
+TSL0023,manual,她明天參加考試,明天 考試 她 參加,她,考試,明天,考試,參加,plain,word_order,none,false,none,事件作主題
+TSL0024,manual,我喜歡這本書,書 這 我 喜歡,我,書 這,none,書 這,喜歡,plain,word_order,none,false,none,受語先作主題
+TSL0025,manual,你吃飯了嗎,你 飯 吃 完,你,飯,none,none,吃,plain,word_order,yesno,false,brow_raise,是非問句用眉毛上揚
+TSL0026,manual,他昨天沒有來,昨天 他 來 沒有,他,none,昨天,none,來,spatial,word_order,none,true,head_shake,否定放動詞後
+TSL0027,manual,我們星期六去看電影,星期六 電影 我們 看,我們,電影,星期六,電影,看,plain,word_order,none,false,none,時間在前；活動作主題
+TSL0028,manual,老師今天教數學,今天 數學 老師 教,老師,數學,今天,數學,教,agreement,directional_movement,none,false,none,教可用方向標示對象
+TSL0029,manual,學生問問題,問題 學生 問,學生,問題,none,問題,問,agreement,directional_movement,none,false,eye_gaze,問句內容作主題
+TSL0030,manual,媽媽給弟弟水,媽媽 水 給 弟弟,媽媽,弟弟,none,水,給,agreement,directional_movement,none,false,none,給用方向移動標示受者
+TSL0031,manual,弟弟把球放在箱子裡,箱子 球 弟弟 放,弟弟,球,none,箱子,放,spatial,spatial_location,none,false,none,先建立空間位置
+TSL0032,manual,今天雨很大,今天 雨 大,none,雨,今天,雨,大,plain,word_order,none,false,none,天氣主題句
+TSL0033,manual,明天會下雨嗎,明天 雨 下,none,雨,明天,雨,下,plain,word_order,yesno,false,brow_raise,是非問句
+TSL0034,manual,你要喝茶還是咖啡,茶 咖啡 你 要 哪一個,你,茶 咖啡,none,茶 咖啡,要,plain,word_order,wh,false,choice_question,選擇問句
+TSL0035,manual,我不會開車,我 開車 會 不,我,none,none,none,開車,plain,word_order,none,true,head_shake,能力否定
+TSL0036,manual,他會寫中文,中文 他 寫 會,他,中文,none,中文,寫,plain,word_order,none,false,none,受語作主題
+TSL0037,manual,我們昨天去醫院,昨天 醫院 我們 去,我們,醫院,昨天,醫院,去,spatial,spatial_direction,none,false,none,時間地點先行
+TSL0038,manual,醫生幫我檢查,醫生 檢查 幫 我,醫生,我,none,檢查,幫,agreement,directional_movement,none,false,none,幫可用方向標示受者
+TSL0039,manual,我今天頭痛,今天 我 頭 痛,我,none,今天,none,痛,plain,word_order,none,false,none,身體部位加狀態
+TSL0040,manual,你哪裡不舒服,你 身體 不舒服 哪裡,你,none,none,none,不舒服,plain,word_order,wh,false,wh_expression,疑問詞放句尾
+TSL0041,manual,爸爸正在煮飯,飯 爸爸 煮,爸爸,飯,none,飯,煮,plain,word_order,none,false,none,受語先行
+TSL0042,manual,姐姐昨天洗衣服,昨天 衣服 姐姐 洗,姐姐,衣服,昨天,衣服,洗,plain,word_order,none,false,none,時間在前
+TSL0043,manual,弟弟還沒有寫作業,作業 弟弟 寫 還沒,弟弟,作業,none,作業,寫,plain,word_order,none,true,head_shake,完成否定
+TSL0044,manual,你作業寫完了嗎,作業 你 寫 完,你,作業,none,作業,寫,plain,word_order,yesno,false,brow_raise,主題加是非問
+TSL0045,manual,我想買手機,手機 我 買 想,我,手機,none,手機,買,plain,word_order,none,false,none,願望語氣後置
+TSL0046,manual,手機太貴我不買,手機 貴 太 我 買 不,我,手機,none,手機,買,plain,word_order,none,true,head_shake,原因主題加否定
+TSL0047,manual,他早上坐公車上班,早上 公車 他 坐 上班,他,公車,早上,公車,坐,spatial,spatial_path,none,false,none,交通工具先標
+TSL0048,manual,我下午搭捷運去學校,下午 捷運 學校 我 搭 去,我,學校,下午,捷運,去,spatial,spatial_path,none,false,none,時間交通地點先行
+TSL0049,manual,你住在哪裡,你 住 哪裡,你,哪裡,none,none,住,spatial,spatial_location,wh,false,wh_expression,位置疑問
+TSL0050,manual,我家在台中,台中 我 家 在,我家,台中,none,台中,在,spatial,spatial_location,none,false,none,地點作主題
+TSL0051,manual,她把照片傳給我,照片 她 傳 給 我,她,我,none,照片,傳,agreement,directional_movement,none,false,none,傳給可用方向移動
+TSL0052,manual,我寄信給朋友,朋友 信 我 寄 給,我,朋友,none,朋友,寄,agreement,directional_movement,none,false,none,受者先建立
+TSL0053,manual,朋友昨天打電話給你,昨天 朋友 電話 給 你,朋友,你,昨天,電話,給,agreement,directional_movement,none,false,none,時間在前；方向給你
+TSL0054,manual,你有沒有收到訊息,訊息 你 收到 有 沒有,你,訊息,none,訊息,收到,plain,word_order,yesno,true,brow_raise,有沒有問句
+TSL0055,manual,我今天晚上要開會,今天 晚上 會議 我 開 要,我,會議,今天 晚上,會議,開,plain,word_order,none,false,none,時間詞組置前
+TSL0056,manual,會議幾點開始,會議 開始 幾點,none,會議,none,會議,開始,plain,word_order,wh,false,wh_expression,時間疑問詞句尾
+TSL0057,manual,老闆明天找我,明天 老闆 找 我,老闆,我,明天,none,找,agreement,directional_movement,none,false,eye_gaze,找用方向與眼神呼應
+TSL0058,manual,我今天不能加班,今天 我 加班 能 不,我,none,今天,none,加班,plain,word_order,none,true,head_shake,能力或許可否定
+TSL0059,manual,這件衣服很漂亮,衣服 這 漂亮,none,衣服 這,none,衣服 這,漂亮,plain,word_order,none,false,none,指示詞跟在名詞後
+TSL0060,manual,那雙鞋子太小,鞋子 那 小 太,none,鞋子 那,none,鞋子 那,小,plain,word_order,none,false,none,修飾與程度後置
+TSL0061,manual,我不要紅色我要黑色,紅 我 要 不 黑 我 要,我,紅 黑,none,紅,要,plain,word_order,none,true,head_shake,對比主題
+TSL0062,manual,你喜歡哪一個顏色,顏色 你 喜歡 哪一個,你,顏色,none,顏色,喜歡,plain,word_order,wh,false,wh_expression,疑問詞句尾
+TSL0063,manual,小明昨天送花給老師,昨天 老師 花 小明 送,小明,老師,昨天,老師,送,agreement,directional_movement,none,false,none,受者與物先建立
+TSL0064,manual,老師稱讚小明,小明 老師 稱讚,老師,小明,none,小明,稱讚,agreement,directional_movement,none,false,eye_gaze,受語作主題
+TSL0065,manual,我早上看到一隻狗,早上 狗 我 看見,我,狗,早上,狗,看見,plain,word_order,none,false,none,時間在前；受語主題
+TSL0066,manual,狗跑到公園,公園 狗 跑 去,狗,公園,none,公園,跑,spatial,spatial_path,none,false,none,路徑終點先建立
+TSL0067,manual,貓在椅子下面睡覺,椅子 下面 貓 睡覺,貓,椅子 下面,none,椅子 下面,睡覺,spatial,spatial_location,none,false,none,空間位置作主題
+TSL0068,manual,你昨天睡得好嗎,昨天 你 睡 好,你,none,昨天,none,睡,plain,word_order,yesno,false,brow_raise,是非問句
+TSL0069,manual,我今天睡不好,今天 我 睡 好 不,我,none,今天,none,睡,plain,word_order,none,true,head_shake,否定後置
+TSL0070,manual,他為什麼哭,他 哭 為什麼,他,none,none,none,哭,plain,word_order,wh,false,wh_expression,原因疑問詞放後
+TSL0071,manual,妹妹因為生氣所以哭,妹妹 生氣 所以 哭,妹妹,none,none,妹妹,哭,plain,word_order,none,false,facial_affect,原因先說明
+TSL0072,manual,我知道答案,答案 我 知道,我,答案,none,答案,知道,plain,word_order,none,false,none,受語先行
+TSL0073,manual,他不知道答案,答案 他 知道 不,他,答案,none,答案,知道,plain,word_order,none,true,head_shake,否定後置
+TSL0074,manual,你記得我的名字嗎,我 名字 你 記得,你,我 名字,none,我 名字,記得,plain,word_order,yesno,false,brow_raise,是非問句
+TSL0075,manual,我忘記他的名字,他 名字 我 忘記,我,他 名字,none,他 名字,忘記,plain,word_order,none,false,none,所有者名詞作主題
+TSL0076,manual,今天班上很多人請假,今天 班 人 多 請假,人,none,今天,班,請假,plain,word_order,none,false,none,場域先建立
+TSL0077,manual,誰今天沒有來,今天 來 沒有 誰,誰,none,今天,none,來,plain,word_order,wh,true,wh_expression,疑問詞與否定在後
+TSL0078,manual,我明天早上八點到公司,明天 早上 八點 公司 我 到,我,公司,明天 早上 八點,公司,到,spatial,spatial_direction,none,false,none,精確時間置前
+TSL0079,manual,公司離車站很近,車站 公司 近,公司,車站,none,車站,近,spatial,spatial_location,none,false,none,空間關係主題
+TSL0080,manual,這裡不能停車,這裡 停車 能 不,none,這裡,none,這裡,停車,spatial,spatial_location,none,true,head_shake,地點規則否定
+TSL0081,manual,請你幫我拍照,照片 請 你 幫 我 拍,你,我,none,照片,幫,agreement,directional_movement,none,false,polite_expression,請求句
+TSL0082,manual,我可以問你問題嗎,問題 我 問 你 可以,我,你,none,問題,問,agreement,directional_movement,yesno,false,brow_raise,許可是非問
+TSL0083,manual,你不要告訴他,你 告訴 他 不要,你,他,none,none,告訴,agreement,directional_movement,none,true,head_shake,禁止句
+TSL0084,manual,他告訴我一個秘密,秘密 他 告訴 我,他,我,none,秘密,告訴,agreement,directional_movement,none,false,none,告訴方向指向受者
+TSL0085,manual,我們一起去吃飯,飯 我們 一起 去 吃,我們,飯,none,飯,吃,spatial,word_order,none,false,none,活動主題
+TSL0086,manual,你們幾個人要來,你們 來 人 幾個,你們,none,none,none,來,plain,word_order,wh,false,wh_expression,數量疑問詞句尾
+TSL0087,manual,我只買兩個蘋果,蘋果 兩個 我 買 只,我,蘋果 兩個,none,蘋果,買,plain,word_order,none,false,none,數量跟名詞；限制語後置
+TSL0088,manual,蘋果一公斤多少錢,蘋果 一公斤 錢 多少,none,蘋果,none,蘋果,多少,unknown,word_order,wh,false,wh_expression,價格疑問
+TSL0089,manual,今天市場人很多,今天 市場 人 多,人,市場,今天,市場,多,plain,word_order,none,false,none,地點主題
+TSL0090,manual,我不喜歡人太多,人 多 太 我 喜歡 不,我,人 多 太,none,人,喜歡,plain,word_order,none,true,head_shake,主題加否定
+TSL0091,manual,他正在找鑰匙,鑰匙 他 找,他,鑰匙,none,鑰匙,找,plain,eye_gaze,none,false,eye_gaze,普通動詞搭配眼神
+TSL0092,manual,鑰匙放在哪裡,鑰匙 放 哪裡,none,鑰匙,none,鑰匙,放,spatial,spatial_location,wh,false,wh_expression,物品位置疑問
+TSL0093,manual,我把鑰匙放在桌上,桌子 鑰匙 我 放,我,鑰匙,none,桌子,放,spatial,spatial_location,none,false,none,先建立放置位置
+TSL0094,manual,你昨天有看到我的錢包嗎,昨天 我 錢包 你 看見 有,你,我 錢包,昨天,我 錢包,看見,plain,word_order,yesno,false,brow_raise,是非問句
+TSL0095,manual,我今天沒有帶錢包,今天 錢包 我 帶 沒有,我,錢包,今天,錢包,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0096,manual,雨停了我們就出門,雨 停 我們 出門,我們,none,none,雨,出門,spatial,word_order,none,false,none,條件先行
+TSL0097,manual,如果明天下雨我就不去,明天 雨 下 如果 我 去 不,我,none,明天,雨,去,spatial,word_order,none,true,head_shake,條件句加否定
+TSL0098,manual,他比我高,他 我 比 高,他,我,none,他,高,plain,word_order,none,false,none,比較句
+TSL0099,manual,我比他矮,我 他 比 矮,我,他,none,我,矮,plain,word_order,none,false,none,比較句
+TSL0100,manual,這個問題我不懂,問題 這 我 懂 不,我,問題 這,none,問題 這,懂,plain,word_order,none,true,head_shake,受語主題；否定後置
+TSL0101,synthetic_manual,我早上七點起床,早上 七點 我 起床,我,none,早上 七點,none,起床,plain,word_order,none,false,none,時間詞組置前
+TSL0102,synthetic_manual,他晚上十一點睡覺,晚上 十一點 他 睡覺,他,none,晚上 十一點,none,睡覺,plain,word_order,none,false,none,時間詞組置前
+TSL0103,synthetic_manual,我們今天一起吃早餐,今天 早餐 我們 一起 吃,我們,早餐,今天,早餐,吃,plain,word_order,none,false,none,活動作主題
+TSL0104,synthetic_manual,妹妹不吃青菜,青菜 妹妹 吃 不,妹妹,青菜,none,青菜,吃,plain,word_order,none,true,head_shake,否定放動詞後
+TSL0105,synthetic_manual,你昨天喝了很多水嗎,昨天 水 多 你 喝,你,水,昨天,水,喝,plain,word_order,yesno,false,brow_raise,時間在前；是非問
+TSL0106,synthetic_manual,我今天忘記帶雨傘,今天 雨傘 我 帶 忘記,我,雨傘,今天,雨傘,帶,plain,word_order,none,false,none,受語作主題
+TSL0107,synthetic_manual,外面現在很熱,現在 外面 熱,none,外面,現在,外面,熱,plain,word_order,none,false,none,時間地點先行
+TSL0108,synthetic_manual,教室裡面很安靜,教室 裡面 安靜,none,教室 裡面,none,教室,安靜,spatial,spatial_location,none,false,none,空間位置作主題
+TSL0109,synthetic_manual,學生們正在討論報告,報告 學生 討論,學生,報告,none,報告,討論,plain,word_order,none,false,none,受語先作主題
+TSL0110,synthetic_manual,老師昨天提醒我們考試,昨天 考試 老師 提醒 我們,老師,我們,昨天,考試,提醒,agreement,directional_movement,none,false,eye_gaze,提醒可用方向標示對象
+TSL0111,synthetic_manual,你明天幾點下課,明天 你 下課 幾點,你,none,明天,none,下課,plain,word_order,wh,false,wh_expression,時間疑問詞句尾
+TSL0112,synthetic_manual,我下午三點下班,下午 三點 我 下班,我,none,下午 三點,none,下班,plain,word_order,none,false,none,精確時間置前
+TSL0113,synthetic_manual,他今天沒有上班,今天 他 上班 沒有,他,none,今天,none,上班,plain,word_order,none,true,head_shake,否定後置
+TSL0114,synthetic_manual,公司今天開重要會議,今天 重要 會議 公司 開,公司,會議,今天,會議,開,plain,word_order,none,false,none,時間在前；事件主題
+TSL0115,synthetic_manual,我需要你的幫忙,你 幫忙 我 需要,我,你 幫忙,none,你,需要,plain,word_order,none,false,none,受語關係先建立
+TSL0116,synthetic_manual,你可以幫我搬桌子嗎,桌子 你 幫 我 搬 可以,你,我,none,桌子,幫,agreement,directional_movement,yesno,false,brow_raise,請求是非問
+TSL0117,synthetic_manual,桌子太重我搬不動,桌子 重 太 我 搬 能 不,我,桌子,none,桌子,搬,plain,word_order,none,true,head_shake,主題加能力否定
+TSL0118,synthetic_manual,哥哥把椅子搬到外面,外面 椅子 哥哥 搬 去,哥哥,椅子,none,外面,搬,spatial,spatial_path,none,false,none,終點位置先建立
+TSL0119,synthetic_manual,你今天有空嗎,今天 你 空 有,你,none,今天,none,有,plain,word_order,yesno,false,brow_raise,是非問句
+TSL0120,synthetic_manual,我今天沒有空,今天 我 空 沒有,我,none,今天,none,有,plain,word_order,none,true,head_shake,否定存在
+TSL0121,synthetic_manual,我們晚上去夜市,晚上 夜市 我們 去,我們,夜市,晚上,夜市,去,spatial,spatial_direction,none,false,none,時間地點先行
+TSL0122,synthetic_manual,夜市人很多很吵,夜市 人 多 吵,人,夜市,none,夜市,吵,plain,word_order,none,false,none,地點作主題
+TSL0123,synthetic_manual,我想吃臭豆腐,臭豆腐 我 吃 想,我,臭豆腐,none,臭豆腐,吃,plain,word_order,none,false,none,願望語氣後置
+TSL0124,synthetic_manual,他不敢吃辣,辣 他 吃 敢 不,他,辣,none,辣,吃,plain,word_order,none,true,head_shake,能力情態否定
+TSL0125,synthetic_manual,這家店很好吃,店 這 好吃,none,店 這,none,店 這,好吃,plain,word_order,none,false,none,指示詞跟名詞
+TSL0126,synthetic_manual,那家店不好吃,店 那 好吃 不,none,店 那,none,店 那,好吃,plain,word_order,none,true,head_shake,否定後置
+TSL0127,synthetic_manual,你要買幾杯飲料,飲料 你 買 幾杯,你,飲料,none,飲料,買,plain,word_order,wh,false,wh_expression,數量疑問句尾
+TSL0128,synthetic_manual,我要買兩杯奶茶,奶茶 兩杯 我 買 要,我,奶茶 兩杯,none,奶茶,買,plain,word_order,none,false,none,數量跟名詞
+TSL0129,synthetic_manual,奶茶少冰半糖,奶茶 冰 少 糖 半,none,奶茶,none,奶茶,none,unknown,word_order,none,false,none,飲料修飾資訊後置
+TSL0130,synthetic_manual,你今天晚上想看電影嗎,今天 晚上 電影 你 看 想,你,電影,今天 晚上,電影,看,plain,word_order,yesno,false,brow_raise,是非問句
+TSL0131,synthetic_manual,這部電影我看過,電影 這 我 看 過,我,電影 這,none,電影 這,看,plain,word_order,none,false,none,經驗標記後置
+TSL0132,synthetic_manual,我還沒有看過那部電影,電影 那 我 看 過 還沒,我,電影 那,none,電影 那,看,plain,word_order,none,true,head_shake,經驗否定
+TSL0133,synthetic_manual,電影什麼時候開始,電影 開始 什麼時候,none,電影,none,電影,開始,plain,word_order,wh,false,wh_expression,時間疑問詞句尾
+TSL0134,synthetic_manual,電影票太貴了,電影票 貴 太,none,電影票,none,電影票,貴,plain,word_order,none,false,none,程度副詞後置
+TSL0135,synthetic_manual,我昨天在圖書館讀書,昨天 圖書館 我 讀書,我,圖書館,昨天,圖書館,讀書,spatial,spatial_location,none,false,none,時間地點先行
+TSL0136,synthetic_manual,圖書館裡面不能講話,圖書館 裡面 講話 能 不,none,圖書館 裡面,none,圖書館,講話,spatial,spatial_location,none,true,head_shake,地點規則否定
+TSL0137,synthetic_manual,你借了哪一本書,書 你 借 哪一本,你,書,none,書,借,plain,word_order,wh,false,wh_expression,疑問詞句尾
+TSL0138,synthetic_manual,我借了三本書,書 三本 我 借,我,書 三本,none,書,借,plain,word_order,none,false,none,數量跟名詞
+TSL0139,synthetic_manual,書下星期要還,下星期 書 還 要,none,書,下星期,書,還,plain,word_order,none,false,none,時間在前
+TSL0140,synthetic_manual,我忘記還書,書 我 還 忘記,我,書,none,書,還,plain,word_order,none,false,none,受語作主題
+TSL0141,synthetic_manual,他今天穿藍色衣服,今天 衣服 藍 他 穿,他,衣服 藍,今天,衣服,穿,plain,word_order,none,false,none,修飾語放名詞後
+TSL0142,synthetic_manual,我明天要穿黑色外套,明天 外套 黑 我 穿 要,我,外套 黑,明天,外套,穿,plain,word_order,none,false,none,時間在前；顏色後置
+TSL0143,synthetic_manual,外套放在哪裡,外套 放 哪裡,none,外套,none,外套,放,spatial,spatial_location,wh,false,wh_expression,物品位置疑問
+TSL0144,synthetic_manual,外套在房間裡,房間 裡面 外套 在,外套,房間 裡面,none,房間,在,spatial,spatial_location,none,false,none,位置先建立
+TSL0145,synthetic_manual,你今天看起來很累,今天 你 看起來 累,你,none,今天,none,累,plain,word_order,none,false,facial_affect,狀態句
+TSL0146,synthetic_manual,我昨天工作太久所以很累,昨天 工作 久 太 所以 我 累,我,none,昨天,工作,累,plain,word_order,none,false,facial_affect,原因先行
+TSL0147,synthetic_manual,你要不要休息一下,你 休息 一下 要 不要,你,none,none,none,休息,plain,word_order,yesno,true,brow_raise,要不要問句
+TSL0148,synthetic_manual,我現在不想休息,現在 我 休息 想 不,我,none,現在,none,休息,plain,word_order,none,true,head_shake,意願否定
+TSL0149,synthetic_manual,明天早上請叫我起床,明天 早上 請 你 叫 我 起床,你,我,明天 早上,none,叫,agreement,directional_movement,none,false,polite_expression,請求句
+TSL0150,synthetic_manual,我怕明天遲到,明天 遲到 我 怕,我,遲到,明天,遲到,怕,plain,eye_gaze,none,false,facial_affect,普通動詞可用眼神
+TSL0151,synthetic_manual,他昨天遲到了半小時,昨天 半小時 他 遲到,他,none,昨天 半小時,none,遲到,plain,word_order,none,false,none,時間資訊置前
+TSL0152,synthetic_manual,老師問他為什麼遲到,他 遲到 為什麼 老師 問,老師,他,none,他 遲到,問,agreement,directional_movement,wh,false,wh_expression,問句內容作主題
+TSL0153,synthetic_manual,他說公車壞了,公車 壞 他 說,他,公車 壞,none,公車,說,agreement,directional_movement,none,false,none,內容先建立
+TSL0154,synthetic_manual,公車今天開得很慢,今天 公車 慢,none,公車,今天,公車,慢,plain,word_order,none,false,none,時間在前
+TSL0155,synthetic_manual,你平常怎麼去上班,平常 上班 你 去 怎麼,你,上班,平常,上班,去,spatial,spatial_path,wh,false,wh_expression,方式疑問詞句尾
+TSL0156,synthetic_manual,我平常騎機車上班,平常 機車 我 騎 上班,我,機車,平常,機車,騎,spatial,spatial_path,none,false,none,交通工具先行
+TSL0157,synthetic_manual,下雨天我不騎機車,下雨 天 機車 我 騎 不,我,機車,下雨 天,機車,騎,spatial,spatial_path,none,true,head_shake,條件時間先行
+TSL0158,synthetic_manual,下雨天我坐捷運,下雨 天 捷運 我 坐,我,捷運,下雨 天,捷運,坐,spatial,spatial_path,none,false,none,交通工具主題
+TSL0159,synthetic_manual,你手機號碼是多少,你 手機 號碼 多少,你,手機 號碼,none,你 手機,多少,unknown,word_order,wh,false,wh_expression,數字資訊疑問
+TSL0160,synthetic_manual,我可以留下電話給你,電話 我 留下 給 你 可以,我,你,none,電話,給,agreement,directional_movement,yesno,false,brow_raise,許可是非問
+TSL0161,synthetic_manual,他沒有回我的訊息,我 訊息 他 回 沒有,他,我 訊息,none,我 訊息,回,agreement,directional_movement,none,true,head_shake,否定後置
+TSL0162,synthetic_manual,我等他等了很久,他 我 等 久,我,他,none,他,等,plain,eye_gaze,none,false,eye_gaze,受語先建立
+TSL0163,synthetic_manual,你等誰,你 等 誰,你,誰,none,none,等,plain,eye_gaze,wh,false,wh_expression,疑問詞句尾
+TSL0164,synthetic_manual,我等朋友,朋友 我 等,我,朋友,none,朋友,等,plain,eye_gaze,none,false,eye_gaze,受語作主題
+TSL0165,synthetic_manual,朋友還沒有到,朋友 到 還沒,朋友,none,none,朋友,到,spatial,word_order,none,true,head_shake,完成否定
+TSL0166,synthetic_manual,我們先進去等,我們 進去 先 等,我們,none,none,none,進去,spatial,spatial_direction,none,false,none,順序副詞靠前或動作後
+TSL0167,synthetic_manual,外面風很大,外面 風 大,none,外面,none,外面,大,plain,word_order,none,false,none,地點主題
+TSL0168,synthetic_manual,窗戶可以關起來嗎,窗戶 關 可以,none,窗戶,none,窗戶,關,spatial,spatial_location,yesno,false,brow_raise,是非問句
+TSL0169,synthetic_manual,請你把門打開,門 請 你 打開,你,門,none,門,打開,spatial,spatial_location,none,false,polite_expression,請求句
+TSL0170,synthetic_manual,門不要關,門 關 不要,none,門,none,門,關,spatial,spatial_location,none,true,head_shake,禁止句
+TSL0171,synthetic_manual,我正在整理房間,房間 我 整理,我,房間,none,房間,整理,plain,word_order,none,false,none,受語作主題
+TSL0172,synthetic_manual,房間太亂我受不了,房間 亂 太 我 受不了,我,房間,none,房間,受不了,plain,word_order,none,false,facial_affect,主題加評價
+TSL0173,synthetic_manual,妹妹幫我掃地,妹妹 掃地 幫 我,妹妹,我,none,掃地,幫,agreement,directional_movement,none,false,none,幫用方向標示受者
+TSL0174,synthetic_manual,我謝謝妹妹,妹妹 我 謝謝,我,妹妹,none,妹妹,謝謝,agreement,directional_movement,none,false,facial_affect,受語先建立
+TSL0175,synthetic_manual,你今天心情好嗎,今天 你 心情 好,你,none,今天,none,好,plain,word_order,yesno,false,brow_raise,是非問句
+TSL0176,synthetic_manual,我今天心情不好,今天 我 心情 好 不,我,none,今天,none,好,plain,word_order,none,true,facial_affect,否定後置
+TSL0177,synthetic_manual,他為什麼生氣,他 生氣 為什麼,他,none,none,none,生氣,plain,word_order,wh,false,wh_expression,原因疑問句尾
+TSL0178,synthetic_manual,因為我忘記打電話給他,他 電話 我 打 忘記,我,他,none,他,打,agreement,directional_movement,none,false,none,受者先建立
+TSL0179,synthetic_manual,我等等打電話道歉,等一下 電話 我 打 道歉,我,電話,等一下,電話,道歉,agreement,directional_movement,none,false,facial_affect,時間在前
+TSL0180,synthetic_manual,你應該跟他說清楚,他 你 說 清楚 應該,你,他,none,他,說,agreement,directional_movement,none,false,none,情態詞後置
+TSL0181,synthetic_manual,這件事情很重要,事情 這 重要,none,事情 這,none,事情 這,重要,plain,word_order,none,false,none,指示主題
+TSL0182,synthetic_manual,你不要忘記這件事情,事情 這 你 忘記 不要,你,事情 這,none,事情 這,忘記,plain,word_order,none,true,head_shake,禁止句
+TSL0183,synthetic_manual,明天記得帶身分證,明天 身分證 你 帶 記得,你,身分證,明天,身分證,帶,plain,word_order,none,false,none,提醒句
+TSL0184,synthetic_manual,沒有身分證不能進去,身分證 沒有 進去 能 不,none,身分證,none,身分證,進去,spatial,word_order,none,true,head_shake,條件否定
+TSL0185,synthetic_manual,入口在哪裡,入口 在 哪裡,none,入口,none,入口,在,spatial,spatial_location,wh,false,wh_expression,位置疑問
+TSL0186,synthetic_manual,入口在右邊,右邊 入口 在,入口,右邊,none,右邊,在,spatial,spatial_location,none,false,none,空間位置先建立
+TSL0187,synthetic_manual,請往左邊走,左邊 請 你 走,你,左邊,none,左邊,走,spatial,spatial_direction,none,false,polite_expression,方向指令
+TSL0188,synthetic_manual,電梯壞了請走樓梯,電梯 壞 樓梯 請 走,你,樓梯,none,電梯,走,spatial,spatial_path,none,false,polite_expression,原因先行
+TSL0189,synthetic_manual,樓梯在前面,前面 樓梯 在,樓梯,前面,none,前面,在,spatial,spatial_location,none,false,none,空間位置句
+TSL0190,synthetic_manual,你不要跑太快,你 跑 快 太 不要,你,none,none,none,跑,spatial,word_order,none,true,head_shake,禁止句
+TSL0191,synthetic_manual,小孩在樓梯上跑很危險,樓梯 小孩 跑 危險,小孩,樓梯,none,樓梯,跑,spatial,spatial_location,none,false,facial_affect,地點先建立
+TSL0192,synthetic_manual,媽媽叫小孩慢慢走,小孩 慢慢 走 媽媽 叫,媽媽,小孩,none,小孩,叫,agreement,directional_movement,none,false,none,受者與動作內容先建立
+TSL0193,synthetic_manual,今天新聞說颱風要來,今天 颱風 來 要 新聞 說,新聞,颱風,今天,颱風,說,plain,word_order,none,false,none,時間與事件主題
+TSL0194,synthetic_manual,颱風明天會影響台灣,明天 台灣 颱風 影響 會,颱風,台灣,明天,台灣,影響,plain,word_order,none,false,none,時間地點先行
+TSL0195,synthetic_manual,大家要小心安全,大家 安全 小心 要,大家,安全,none,大家,小心,plain,word_order,none,false,none,提醒語氣後置
+TSL0196,synthetic_manual,外出不要忘記帶雨衣,外出 雨衣 帶 忘記 不要,你,雨衣,none,外出,帶,plain,word_order,none,true,head_shake,禁止忘記
+TSL0197,synthetic_manual,明天學校可能停課,明天 學校 停課 可能,學校,none,明天,學校,停課,plain,word_order,none,false,none,可能性標記後置
+TSL0198,synthetic_manual,停課消息在哪裡看,停課 消息 看 哪裡,你,停課 消息,none,停課 消息,看,plain,word_order,wh,false,wh_expression,資訊來源疑問
+TSL0199,synthetic_manual,我會上網查資料,資料 我 上網 查 會,我,資料,none,資料,查,plain,word_order,none,false,none,受語作主題
+TSL0200,synthetic_manual,查到消息我再告訴你,消息 查到 我 再 告訴 你,我,你,none,消息,告訴,agreement,directional_movement,none,false,none,告訴方向指向你
+TSL0201,synthetic_template,我今天買書,今天 書 我 買,我,書,今天,書,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0202,synthetic_template,我今天沒有買書,今天 書 我 買 沒有,我,書,今天,書,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0203,synthetic_template,我今天看書,今天 書 我 看,我,書,今天,書,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0204,synthetic_template,我今天沒有看書,今天 書 我 看 沒有,我,書,今天,書,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0205,synthetic_template,我今天喝書,今天 書 我 喝,我,書,今天,書,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0206,synthetic_template,我今天沒有喝書,今天 書 我 喝 沒有,我,書,今天,書,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0207,synthetic_template,我今天帶書,今天 書 我 帶,我,書,今天,書,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0208,synthetic_template,我今天沒有帶書,今天 書 我 帶 沒有,我,書,今天,書,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0209,synthetic_template,我今天寫書,今天 書 我 寫,我,書,今天,書,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0210,synthetic_template,我今天沒有寫書,今天 書 我 寫 沒有,我,書,今天,書,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0211,synthetic_template,我今天找書,今天 書 我 找,我,書,今天,書,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0212,synthetic_template,我今天沒有找書,今天 書 我 找 沒有,我,書,今天,書,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0213,synthetic_template,我今天喜歡書,今天 書 我 喜歡,我,書,今天,書,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0214,synthetic_template,我今天沒有喜歡書,今天 書 我 喜歡 沒有,我,書,今天,書,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0215,synthetic_template,我今天記得書,今天 書 我 記得,我,書,今天,書,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0216,synthetic_template,我今天沒有記得書,今天 書 我 記得 沒有,我,書,今天,書,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0217,synthetic_template,我今天忘記書,今天 書 我 忘記,我,書,今天,書,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0218,synthetic_template,我今天沒有忘記書,今天 書 我 忘記 沒有,我,書,今天,書,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0219,synthetic_template,我今天討厭書,今天 書 我 討厭,我,書,今天,書,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0220,synthetic_template,我今天沒有討厭書,今天 書 我 討厭 沒有,我,書,今天,書,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0221,synthetic_template,我今天買手機,今天 手機 我 買,我,手機,今天,手機,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0222,synthetic_template,我今天沒有買手機,今天 手機 我 買 沒有,我,手機,今天,手機,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0223,synthetic_template,我今天看手機,今天 手機 我 看,我,手機,今天,手機,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0224,synthetic_template,我今天沒有看手機,今天 手機 我 看 沒有,我,手機,今天,手機,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0225,synthetic_template,我今天喝手機,今天 手機 我 喝,我,手機,今天,手機,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0226,synthetic_template,我今天沒有喝手機,今天 手機 我 喝 沒有,我,手機,今天,手機,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0227,synthetic_template,我今天帶手機,今天 手機 我 帶,我,手機,今天,手機,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0228,synthetic_template,我今天沒有帶手機,今天 手機 我 帶 沒有,我,手機,今天,手機,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0229,synthetic_template,我今天寫手機,今天 手機 我 寫,我,手機,今天,手機,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0230,synthetic_template,我今天沒有寫手機,今天 手機 我 寫 沒有,我,手機,今天,手機,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0231,synthetic_template,我今天找手機,今天 手機 我 找,我,手機,今天,手機,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0232,synthetic_template,我今天沒有找手機,今天 手機 我 找 沒有,我,手機,今天,手機,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0233,synthetic_template,我今天喜歡手機,今天 手機 我 喜歡,我,手機,今天,手機,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0234,synthetic_template,我今天沒有喜歡手機,今天 手機 我 喜歡 沒有,我,手機,今天,手機,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0235,synthetic_template,我今天記得手機,今天 手機 我 記得,我,手機,今天,手機,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0236,synthetic_template,我今天沒有記得手機,今天 手機 我 記得 沒有,我,手機,今天,手機,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0237,synthetic_template,我今天忘記手機,今天 手機 我 忘記,我,手機,今天,手機,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0238,synthetic_template,我今天沒有忘記手機,今天 手機 我 忘記 沒有,我,手機,今天,手機,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0239,synthetic_template,我今天討厭手機,今天 手機 我 討厭,我,手機,今天,手機,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0240,synthetic_template,我今天沒有討厭手機,今天 手機 我 討厭 沒有,我,手機,今天,手機,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0241,synthetic_template,我今天買咖啡,今天 咖啡 我 買,我,咖啡,今天,咖啡,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0242,synthetic_template,我今天沒有買咖啡,今天 咖啡 我 買 沒有,我,咖啡,今天,咖啡,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0243,synthetic_template,我今天看咖啡,今天 咖啡 我 看,我,咖啡,今天,咖啡,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0244,synthetic_template,我今天沒有看咖啡,今天 咖啡 我 看 沒有,我,咖啡,今天,咖啡,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0245,synthetic_template,我今天喝咖啡,今天 咖啡 我 喝,我,咖啡,今天,咖啡,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0246,synthetic_template,我今天沒有喝咖啡,今天 咖啡 我 喝 沒有,我,咖啡,今天,咖啡,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0247,synthetic_template,我今天帶咖啡,今天 咖啡 我 帶,我,咖啡,今天,咖啡,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0248,synthetic_template,我今天沒有帶咖啡,今天 咖啡 我 帶 沒有,我,咖啡,今天,咖啡,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0249,synthetic_template,我今天寫咖啡,今天 咖啡 我 寫,我,咖啡,今天,咖啡,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0250,synthetic_template,我今天沒有寫咖啡,今天 咖啡 我 寫 沒有,我,咖啡,今天,咖啡,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0251,synthetic_template,我今天找咖啡,今天 咖啡 我 找,我,咖啡,今天,咖啡,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0252,synthetic_template,我今天沒有找咖啡,今天 咖啡 我 找 沒有,我,咖啡,今天,咖啡,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0253,synthetic_template,我今天喜歡咖啡,今天 咖啡 我 喜歡,我,咖啡,今天,咖啡,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0254,synthetic_template,我今天沒有喜歡咖啡,今天 咖啡 我 喜歡 沒有,我,咖啡,今天,咖啡,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0255,synthetic_template,我今天記得咖啡,今天 咖啡 我 記得,我,咖啡,今天,咖啡,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0256,synthetic_template,我今天沒有記得咖啡,今天 咖啡 我 記得 沒有,我,咖啡,今天,咖啡,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0257,synthetic_template,我今天忘記咖啡,今天 咖啡 我 忘記,我,咖啡,今天,咖啡,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0258,synthetic_template,我今天沒有忘記咖啡,今天 咖啡 我 忘記 沒有,我,咖啡,今天,咖啡,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0259,synthetic_template,我今天討厭咖啡,今天 咖啡 我 討厭,我,咖啡,今天,咖啡,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0260,synthetic_template,我今天沒有討厭咖啡,今天 咖啡 我 討厭 沒有,我,咖啡,今天,咖啡,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0261,synthetic_template,我今天買水,今天 水 我 買,我,水,今天,水,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0262,synthetic_template,我今天沒有買水,今天 水 我 買 沒有,我,水,今天,水,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0263,synthetic_template,我今天看水,今天 水 我 看,我,水,今天,水,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0264,synthetic_template,我今天沒有看水,今天 水 我 看 沒有,我,水,今天,水,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0265,synthetic_template,我今天喝水,今天 水 我 喝,我,水,今天,水,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0266,synthetic_template,我今天沒有喝水,今天 水 我 喝 沒有,我,水,今天,水,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0267,synthetic_template,我今天帶水,今天 水 我 帶,我,水,今天,水,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0268,synthetic_template,我今天沒有帶水,今天 水 我 帶 沒有,我,水,今天,水,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0269,synthetic_template,我今天寫水,今天 水 我 寫,我,水,今天,水,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0270,synthetic_template,我今天沒有寫水,今天 水 我 寫 沒有,我,水,今天,水,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0271,synthetic_template,我今天找水,今天 水 我 找,我,水,今天,水,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0272,synthetic_template,我今天沒有找水,今天 水 我 找 沒有,我,水,今天,水,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0273,synthetic_template,我今天喜歡水,今天 水 我 喜歡,我,水,今天,水,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0274,synthetic_template,我今天沒有喜歡水,今天 水 我 喜歡 沒有,我,水,今天,水,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0275,synthetic_template,我今天記得水,今天 水 我 記得,我,水,今天,水,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0276,synthetic_template,我今天沒有記得水,今天 水 我 記得 沒有,我,水,今天,水,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0277,synthetic_template,我今天忘記水,今天 水 我 忘記,我,水,今天,水,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0278,synthetic_template,我今天沒有忘記水,今天 水 我 忘記 沒有,我,水,今天,水,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0279,synthetic_template,我今天討厭水,今天 水 我 討厭,我,水,今天,水,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0280,synthetic_template,我今天沒有討厭水,今天 水 我 討厭 沒有,我,水,今天,水,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0281,synthetic_template,我今天買作業,今天 作業 我 買,我,作業,今天,作業,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0282,synthetic_template,我今天沒有買作業,今天 作業 我 買 沒有,我,作業,今天,作業,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0283,synthetic_template,我今天看作業,今天 作業 我 看,我,作業,今天,作業,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0284,synthetic_template,我今天沒有看作業,今天 作業 我 看 沒有,我,作業,今天,作業,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0285,synthetic_template,我今天喝作業,今天 作業 我 喝,我,作業,今天,作業,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0286,synthetic_template,我今天沒有喝作業,今天 作業 我 喝 沒有,我,作業,今天,作業,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0287,synthetic_template,我今天帶作業,今天 作業 我 帶,我,作業,今天,作業,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0288,synthetic_template,我今天沒有帶作業,今天 作業 我 帶 沒有,我,作業,今天,作業,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0289,synthetic_template,我今天寫作業,今天 作業 我 寫,我,作業,今天,作業,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0290,synthetic_template,我今天沒有寫作業,今天 作業 我 寫 沒有,我,作業,今天,作業,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0291,synthetic_template,我今天找作業,今天 作業 我 找,我,作業,今天,作業,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0292,synthetic_template,我今天沒有找作業,今天 作業 我 找 沒有,我,作業,今天,作業,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0293,synthetic_template,我今天喜歡作業,今天 作業 我 喜歡,我,作業,今天,作業,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0294,synthetic_template,我今天沒有喜歡作業,今天 作業 我 喜歡 沒有,我,作業,今天,作業,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0295,synthetic_template,我今天記得作業,今天 作業 我 記得,我,作業,今天,作業,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0296,synthetic_template,我今天沒有記得作業,今天 作業 我 記得 沒有,我,作業,今天,作業,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0297,synthetic_template,我今天忘記作業,今天 作業 我 忘記,我,作業,今天,作業,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0298,synthetic_template,我今天沒有忘記作業,今天 作業 我 忘記 沒有,我,作業,今天,作業,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0299,synthetic_template,我今天討厭作業,今天 作業 我 討厭,我,作業,今天,作業,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0300,synthetic_template,我今天沒有討厭作業,今天 作業 我 討厭 沒有,我,作業,今天,作業,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0301,synthetic_template,我今天買電影,今天 電影 我 買,我,電影,今天,電影,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0302,synthetic_template,我今天沒有買電影,今天 電影 我 買 沒有,我,電影,今天,電影,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0303,synthetic_template,我今天看電影,今天 電影 我 看,我,電影,今天,電影,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0304,synthetic_template,我今天沒有看電影,今天 電影 我 看 沒有,我,電影,今天,電影,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0305,synthetic_template,我今天喝電影,今天 電影 我 喝,我,電影,今天,電影,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0306,synthetic_template,我今天沒有喝電影,今天 電影 我 喝 沒有,我,電影,今天,電影,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0307,synthetic_template,我今天帶電影,今天 電影 我 帶,我,電影,今天,電影,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0308,synthetic_template,我今天沒有帶電影,今天 電影 我 帶 沒有,我,電影,今天,電影,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0309,synthetic_template,我今天寫電影,今天 電影 我 寫,我,電影,今天,電影,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0310,synthetic_template,我今天沒有寫電影,今天 電影 我 寫 沒有,我,電影,今天,電影,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0311,synthetic_template,我今天找電影,今天 電影 我 找,我,電影,今天,電影,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0312,synthetic_template,我今天沒有找電影,今天 電影 我 找 沒有,我,電影,今天,電影,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0313,synthetic_template,我今天喜歡電影,今天 電影 我 喜歡,我,電影,今天,電影,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0314,synthetic_template,我今天沒有喜歡電影,今天 電影 我 喜歡 沒有,我,電影,今天,電影,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0315,synthetic_template,我今天記得電影,今天 電影 我 記得,我,電影,今天,電影,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0316,synthetic_template,我今天沒有記得電影,今天 電影 我 記得 沒有,我,電影,今天,電影,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0317,synthetic_template,我今天忘記電影,今天 電影 我 忘記,我,電影,今天,電影,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0318,synthetic_template,我今天沒有忘記電影,今天 電影 我 忘記 沒有,我,電影,今天,電影,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0319,synthetic_template,我今天討厭電影,今天 電影 我 討厭,我,電影,今天,電影,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0320,synthetic_template,我今天沒有討厭電影,今天 電影 我 討厭 沒有,我,電影,今天,電影,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0321,synthetic_template,我今天買訊息,今天 訊息 我 買,我,訊息,今天,訊息,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0322,synthetic_template,我今天沒有買訊息,今天 訊息 我 買 沒有,我,訊息,今天,訊息,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0323,synthetic_template,我今天看訊息,今天 訊息 我 看,我,訊息,今天,訊息,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0324,synthetic_template,我今天沒有看訊息,今天 訊息 我 看 沒有,我,訊息,今天,訊息,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0325,synthetic_template,我今天喝訊息,今天 訊息 我 喝,我,訊息,今天,訊息,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0326,synthetic_template,我今天沒有喝訊息,今天 訊息 我 喝 沒有,我,訊息,今天,訊息,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0327,synthetic_template,我今天帶訊息,今天 訊息 我 帶,我,訊息,今天,訊息,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0328,synthetic_template,我今天沒有帶訊息,今天 訊息 我 帶 沒有,我,訊息,今天,訊息,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0329,synthetic_template,我今天寫訊息,今天 訊息 我 寫,我,訊息,今天,訊息,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0330,synthetic_template,我今天沒有寫訊息,今天 訊息 我 寫 沒有,我,訊息,今天,訊息,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0331,synthetic_template,我今天找訊息,今天 訊息 我 找,我,訊息,今天,訊息,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0332,synthetic_template,我今天沒有找訊息,今天 訊息 我 找 沒有,我,訊息,今天,訊息,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0333,synthetic_template,我今天喜歡訊息,今天 訊息 我 喜歡,我,訊息,今天,訊息,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0334,synthetic_template,我今天沒有喜歡訊息,今天 訊息 我 喜歡 沒有,我,訊息,今天,訊息,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0335,synthetic_template,我今天記得訊息,今天 訊息 我 記得,我,訊息,今天,訊息,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0336,synthetic_template,我今天沒有記得訊息,今天 訊息 我 記得 沒有,我,訊息,今天,訊息,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0337,synthetic_template,我今天忘記訊息,今天 訊息 我 忘記,我,訊息,今天,訊息,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0338,synthetic_template,我今天沒有忘記訊息,今天 訊息 我 忘記 沒有,我,訊息,今天,訊息,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0339,synthetic_template,我今天討厭訊息,今天 訊息 我 討厭,我,訊息,今天,訊息,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0340,synthetic_template,我今天沒有討厭訊息,今天 訊息 我 討厭 沒有,我,訊息,今天,訊息,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0341,synthetic_template,我今天買照片,今天 照片 我 買,我,照片,今天,照片,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0342,synthetic_template,我今天沒有買照片,今天 照片 我 買 沒有,我,照片,今天,照片,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0343,synthetic_template,我今天看照片,今天 照片 我 看,我,照片,今天,照片,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0344,synthetic_template,我今天沒有看照片,今天 照片 我 看 沒有,我,照片,今天,照片,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0345,synthetic_template,我今天喝照片,今天 照片 我 喝,我,照片,今天,照片,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0346,synthetic_template,我今天沒有喝照片,今天 照片 我 喝 沒有,我,照片,今天,照片,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0347,synthetic_template,我今天帶照片,今天 照片 我 帶,我,照片,今天,照片,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0348,synthetic_template,我今天沒有帶照片,今天 照片 我 帶 沒有,我,照片,今天,照片,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0349,synthetic_template,我今天寫照片,今天 照片 我 寫,我,照片,今天,照片,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0350,synthetic_template,我今天沒有寫照片,今天 照片 我 寫 沒有,我,照片,今天,照片,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0351,synthetic_template,我今天找照片,今天 照片 我 找,我,照片,今天,照片,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0352,synthetic_template,我今天沒有找照片,今天 照片 我 找 沒有,我,照片,今天,照片,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0353,synthetic_template,我今天喜歡照片,今天 照片 我 喜歡,我,照片,今天,照片,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0354,synthetic_template,我今天沒有喜歡照片,今天 照片 我 喜歡 沒有,我,照片,今天,照片,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0355,synthetic_template,我今天記得照片,今天 照片 我 記得,我,照片,今天,照片,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0356,synthetic_template,我今天沒有記得照片,今天 照片 我 記得 沒有,我,照片,今天,照片,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0357,synthetic_template,我今天忘記照片,今天 照片 我 忘記,我,照片,今天,照片,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0358,synthetic_template,我今天沒有忘記照片,今天 照片 我 忘記 沒有,我,照片,今天,照片,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0359,synthetic_template,我今天討厭照片,今天 照片 我 討厭,我,照片,今天,照片,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0360,synthetic_template,我今天沒有討厭照片,今天 照片 我 討厭 沒有,我,照片,今天,照片,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0361,synthetic_template,我今天買雨傘,今天 雨傘 我 買,我,雨傘,今天,雨傘,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0362,synthetic_template,我今天沒有買雨傘,今天 雨傘 我 買 沒有,我,雨傘,今天,雨傘,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0363,synthetic_template,我今天看雨傘,今天 雨傘 我 看,我,雨傘,今天,雨傘,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0364,synthetic_template,我今天沒有看雨傘,今天 雨傘 我 看 沒有,我,雨傘,今天,雨傘,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0365,synthetic_template,我今天喝雨傘,今天 雨傘 我 喝,我,雨傘,今天,雨傘,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0366,synthetic_template,我今天沒有喝雨傘,今天 雨傘 我 喝 沒有,我,雨傘,今天,雨傘,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0367,synthetic_template,我今天帶雨傘,今天 雨傘 我 帶,我,雨傘,今天,雨傘,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0368,synthetic_template,我今天沒有帶雨傘,今天 雨傘 我 帶 沒有,我,雨傘,今天,雨傘,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0369,synthetic_template,我今天寫雨傘,今天 雨傘 我 寫,我,雨傘,今天,雨傘,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0370,synthetic_template,我今天沒有寫雨傘,今天 雨傘 我 寫 沒有,我,雨傘,今天,雨傘,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0371,synthetic_template,我今天找雨傘,今天 雨傘 我 找,我,雨傘,今天,雨傘,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0372,synthetic_template,我今天沒有找雨傘,今天 雨傘 我 找 沒有,我,雨傘,今天,雨傘,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0373,synthetic_template,我今天喜歡雨傘,今天 雨傘 我 喜歡,我,雨傘,今天,雨傘,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0374,synthetic_template,我今天沒有喜歡雨傘,今天 雨傘 我 喜歡 沒有,我,雨傘,今天,雨傘,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0375,synthetic_template,我今天記得雨傘,今天 雨傘 我 記得,我,雨傘,今天,雨傘,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0376,synthetic_template,我今天沒有記得雨傘,今天 雨傘 我 記得 沒有,我,雨傘,今天,雨傘,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0377,synthetic_template,我今天忘記雨傘,今天 雨傘 我 忘記,我,雨傘,今天,雨傘,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0378,synthetic_template,我今天沒有忘記雨傘,今天 雨傘 我 忘記 沒有,我,雨傘,今天,雨傘,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0379,synthetic_template,我今天討厭雨傘,今天 雨傘 我 討厭,我,雨傘,今天,雨傘,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0380,synthetic_template,我今天沒有討厭雨傘,今天 雨傘 我 討厭 沒有,我,雨傘,今天,雨傘,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0381,synthetic_template,我今天買錢包,今天 錢包 我 買,我,錢包,今天,錢包,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0382,synthetic_template,我今天沒有買錢包,今天 錢包 我 買 沒有,我,錢包,今天,錢包,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0383,synthetic_template,我今天看錢包,今天 錢包 我 看,我,錢包,今天,錢包,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0384,synthetic_template,我今天沒有看錢包,今天 錢包 我 看 沒有,我,錢包,今天,錢包,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0385,synthetic_template,我今天喝錢包,今天 錢包 我 喝,我,錢包,今天,錢包,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0386,synthetic_template,我今天沒有喝錢包,今天 錢包 我 喝 沒有,我,錢包,今天,錢包,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0387,synthetic_template,我今天帶錢包,今天 錢包 我 帶,我,錢包,今天,錢包,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0388,synthetic_template,我今天寫錢包,今天 錢包 我 寫,我,錢包,今天,錢包,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0389,synthetic_template,我今天沒有寫錢包,今天 錢包 我 寫 沒有,我,錢包,今天,錢包,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0390,synthetic_template,我今天找錢包,今天 錢包 我 找,我,錢包,今天,錢包,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0391,synthetic_template,我今天沒有找錢包,今天 錢包 我 找 沒有,我,錢包,今天,錢包,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0392,synthetic_template,我今天喜歡錢包,今天 錢包 我 喜歡,我,錢包,今天,錢包,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0393,synthetic_template,我今天沒有喜歡錢包,今天 錢包 我 喜歡 沒有,我,錢包,今天,錢包,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0394,synthetic_template,我今天記得錢包,今天 錢包 我 記得,我,錢包,今天,錢包,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0395,synthetic_template,我今天沒有記得錢包,今天 錢包 我 記得 沒有,我,錢包,今天,錢包,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0396,synthetic_template,我今天忘記錢包,今天 錢包 我 忘記,我,錢包,今天,錢包,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0397,synthetic_template,我今天沒有忘記錢包,今天 錢包 我 忘記 沒有,我,錢包,今天,錢包,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0398,synthetic_template,我今天討厭錢包,今天 錢包 我 討厭,我,錢包,今天,錢包,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0399,synthetic_template,我今天沒有討厭錢包,今天 錢包 我 討厭 沒有,我,錢包,今天,錢包,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0400,synthetic_template,你今天買書,今天 書 你 買,你,書,今天,書,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0401,synthetic_template,你今天沒有買書,今天 書 你 買 沒有,你,書,今天,書,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0402,synthetic_template,你今天看書,今天 書 你 看,你,書,今天,書,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0403,synthetic_template,你今天沒有看書,今天 書 你 看 沒有,你,書,今天,書,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0404,synthetic_template,你今天喝書,今天 書 你 喝,你,書,今天,書,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0405,synthetic_template,你今天沒有喝書,今天 書 你 喝 沒有,你,書,今天,書,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0406,synthetic_template,你今天帶書,今天 書 你 帶,你,書,今天,書,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0407,synthetic_template,你今天沒有帶書,今天 書 你 帶 沒有,你,書,今天,書,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0408,synthetic_template,你今天寫書,今天 書 你 寫,你,書,今天,書,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0409,synthetic_template,你今天沒有寫書,今天 書 你 寫 沒有,你,書,今天,書,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0410,synthetic_template,你今天找書,今天 書 你 找,你,書,今天,書,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0411,synthetic_template,你今天沒有找書,今天 書 你 找 沒有,你,書,今天,書,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0412,synthetic_template,你今天喜歡書,今天 書 你 喜歡,你,書,今天,書,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0413,synthetic_template,你今天沒有喜歡書,今天 書 你 喜歡 沒有,你,書,今天,書,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0414,synthetic_template,你今天記得書,今天 書 你 記得,你,書,今天,書,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0415,synthetic_template,你今天沒有記得書,今天 書 你 記得 沒有,你,書,今天,書,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0416,synthetic_template,你今天忘記書,今天 書 你 忘記,你,書,今天,書,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0417,synthetic_template,你今天沒有忘記書,今天 書 你 忘記 沒有,你,書,今天,書,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0418,synthetic_template,你今天討厭書,今天 書 你 討厭,你,書,今天,書,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0419,synthetic_template,你今天沒有討厭書,今天 書 你 討厭 沒有,你,書,今天,書,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0420,synthetic_template,你今天買手機,今天 手機 你 買,你,手機,今天,手機,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0421,synthetic_template,你今天沒有買手機,今天 手機 你 買 沒有,你,手機,今天,手機,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0422,synthetic_template,你今天看手機,今天 手機 你 看,你,手機,今天,手機,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0423,synthetic_template,你今天沒有看手機,今天 手機 你 看 沒有,你,手機,今天,手機,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0424,synthetic_template,你今天喝手機,今天 手機 你 喝,你,手機,今天,手機,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0425,synthetic_template,你今天沒有喝手機,今天 手機 你 喝 沒有,你,手機,今天,手機,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0426,synthetic_template,你今天帶手機,今天 手機 你 帶,你,手機,今天,手機,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0427,synthetic_template,你今天沒有帶手機,今天 手機 你 帶 沒有,你,手機,今天,手機,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0428,synthetic_template,你今天寫手機,今天 手機 你 寫,你,手機,今天,手機,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0429,synthetic_template,你今天沒有寫手機,今天 手機 你 寫 沒有,你,手機,今天,手機,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0430,synthetic_template,你今天找手機,今天 手機 你 找,你,手機,今天,手機,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0431,synthetic_template,你今天沒有找手機,今天 手機 你 找 沒有,你,手機,今天,手機,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0432,synthetic_template,你今天喜歡手機,今天 手機 你 喜歡,你,手機,今天,手機,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0433,synthetic_template,你今天沒有喜歡手機,今天 手機 你 喜歡 沒有,你,手機,今天,手機,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0434,synthetic_template,你今天記得手機,今天 手機 你 記得,你,手機,今天,手機,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0435,synthetic_template,你今天沒有記得手機,今天 手機 你 記得 沒有,你,手機,今天,手機,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0436,synthetic_template,你今天忘記手機,今天 手機 你 忘記,你,手機,今天,手機,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0437,synthetic_template,你今天沒有忘記手機,今天 手機 你 忘記 沒有,你,手機,今天,手機,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0438,synthetic_template,你今天討厭手機,今天 手機 你 討厭,你,手機,今天,手機,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0439,synthetic_template,你今天沒有討厭手機,今天 手機 你 討厭 沒有,你,手機,今天,手機,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0440,synthetic_template,你今天買咖啡,今天 咖啡 你 買,你,咖啡,今天,咖啡,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0441,synthetic_template,你今天沒有買咖啡,今天 咖啡 你 買 沒有,你,咖啡,今天,咖啡,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0442,synthetic_template,你今天看咖啡,今天 咖啡 你 看,你,咖啡,今天,咖啡,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0443,synthetic_template,你今天沒有看咖啡,今天 咖啡 你 看 沒有,你,咖啡,今天,咖啡,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0444,synthetic_template,你今天喝咖啡,今天 咖啡 你 喝,你,咖啡,今天,咖啡,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0445,synthetic_template,你今天沒有喝咖啡,今天 咖啡 你 喝 沒有,你,咖啡,今天,咖啡,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0446,synthetic_template,你今天帶咖啡,今天 咖啡 你 帶,你,咖啡,今天,咖啡,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0447,synthetic_template,你今天沒有帶咖啡,今天 咖啡 你 帶 沒有,你,咖啡,今天,咖啡,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0448,synthetic_template,你今天寫咖啡,今天 咖啡 你 寫,你,咖啡,今天,咖啡,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0449,synthetic_template,你今天沒有寫咖啡,今天 咖啡 你 寫 沒有,你,咖啡,今天,咖啡,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0450,synthetic_template,你今天找咖啡,今天 咖啡 你 找,你,咖啡,今天,咖啡,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0451,synthetic_template,你今天沒有找咖啡,今天 咖啡 你 找 沒有,你,咖啡,今天,咖啡,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0452,synthetic_template,你今天喜歡咖啡,今天 咖啡 你 喜歡,你,咖啡,今天,咖啡,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0453,synthetic_template,你今天沒有喜歡咖啡,今天 咖啡 你 喜歡 沒有,你,咖啡,今天,咖啡,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0454,synthetic_template,你今天記得咖啡,今天 咖啡 你 記得,你,咖啡,今天,咖啡,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0455,synthetic_template,你今天沒有記得咖啡,今天 咖啡 你 記得 沒有,你,咖啡,今天,咖啡,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0456,synthetic_template,你今天忘記咖啡,今天 咖啡 你 忘記,你,咖啡,今天,咖啡,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0457,synthetic_template,你今天沒有忘記咖啡,今天 咖啡 你 忘記 沒有,你,咖啡,今天,咖啡,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0458,synthetic_template,你今天討厭咖啡,今天 咖啡 你 討厭,你,咖啡,今天,咖啡,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0459,synthetic_template,你今天沒有討厭咖啡,今天 咖啡 你 討厭 沒有,你,咖啡,今天,咖啡,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0460,synthetic_template,你今天買水,今天 水 你 買,你,水,今天,水,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0461,synthetic_template,你今天沒有買水,今天 水 你 買 沒有,你,水,今天,水,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0462,synthetic_template,你今天看水,今天 水 你 看,你,水,今天,水,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0463,synthetic_template,你今天沒有看水,今天 水 你 看 沒有,你,水,今天,水,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0464,synthetic_template,你今天喝水,今天 水 你 喝,你,水,今天,水,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0465,synthetic_template,你今天沒有喝水,今天 水 你 喝 沒有,你,水,今天,水,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0466,synthetic_template,你今天帶水,今天 水 你 帶,你,水,今天,水,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0467,synthetic_template,你今天沒有帶水,今天 水 你 帶 沒有,你,水,今天,水,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0468,synthetic_template,你今天寫水,今天 水 你 寫,你,水,今天,水,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0469,synthetic_template,你今天沒有寫水,今天 水 你 寫 沒有,你,水,今天,水,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0470,synthetic_template,你今天找水,今天 水 你 找,你,水,今天,水,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0471,synthetic_template,你今天沒有找水,今天 水 你 找 沒有,你,水,今天,水,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0472,synthetic_template,你今天喜歡水,今天 水 你 喜歡,你,水,今天,水,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0473,synthetic_template,你今天沒有喜歡水,今天 水 你 喜歡 沒有,你,水,今天,水,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0474,synthetic_template,你今天記得水,今天 水 你 記得,你,水,今天,水,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0475,synthetic_template,你今天沒有記得水,今天 水 你 記得 沒有,你,水,今天,水,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0476,synthetic_template,你今天忘記水,今天 水 你 忘記,你,水,今天,水,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0477,synthetic_template,你今天沒有忘記水,今天 水 你 忘記 沒有,你,水,今天,水,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0478,synthetic_template,你今天討厭水,今天 水 你 討厭,你,水,今天,水,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0479,synthetic_template,你今天沒有討厭水,今天 水 你 討厭 沒有,你,水,今天,水,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0480,synthetic_template,你今天買作業,今天 作業 你 買,你,作業,今天,作業,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0481,synthetic_template,你今天沒有買作業,今天 作業 你 買 沒有,你,作業,今天,作業,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0482,synthetic_template,你今天看作業,今天 作業 你 看,你,作業,今天,作業,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0483,synthetic_template,你今天沒有看作業,今天 作業 你 看 沒有,你,作業,今天,作業,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0484,synthetic_template,你今天喝作業,今天 作業 你 喝,你,作業,今天,作業,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0485,synthetic_template,你今天沒有喝作業,今天 作業 你 喝 沒有,你,作業,今天,作業,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0486,synthetic_template,你今天帶作業,今天 作業 你 帶,你,作業,今天,作業,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0487,synthetic_template,你今天沒有帶作業,今天 作業 你 帶 沒有,你,作業,今天,作業,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0488,synthetic_template,你今天寫作業,今天 作業 你 寫,你,作業,今天,作業,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0489,synthetic_template,你今天沒有寫作業,今天 作業 你 寫 沒有,你,作業,今天,作業,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0490,synthetic_template,你今天找作業,今天 作業 你 找,你,作業,今天,作業,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0491,synthetic_template,你今天沒有找作業,今天 作業 你 找 沒有,你,作業,今天,作業,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0492,synthetic_template,你今天喜歡作業,今天 作業 你 喜歡,你,作業,今天,作業,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0493,synthetic_template,你今天沒有喜歡作業,今天 作業 你 喜歡 沒有,你,作業,今天,作業,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0494,synthetic_template,你今天記得作業,今天 作業 你 記得,你,作業,今天,作業,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0495,synthetic_template,你今天沒有記得作業,今天 作業 你 記得 沒有,你,作業,今天,作業,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0496,synthetic_template,你今天忘記作業,今天 作業 你 忘記,你,作業,今天,作業,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0497,synthetic_template,你今天沒有忘記作業,今天 作業 你 忘記 沒有,你,作業,今天,作業,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0498,synthetic_template,你今天討厭作業,今天 作業 你 討厭,你,作業,今天,作業,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0499,synthetic_template,你今天沒有討厭作業,今天 作業 你 討厭 沒有,你,作業,今天,作業,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0500,synthetic_template,你今天買電影,今天 電影 你 買,你,電影,今天,電影,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0501,synthetic_template,你今天沒有買電影,今天 電影 你 買 沒有,你,電影,今天,電影,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0502,synthetic_template,你今天看電影,今天 電影 你 看,你,電影,今天,電影,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0503,synthetic_template,你今天沒有看電影,今天 電影 你 看 沒有,你,電影,今天,電影,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0504,synthetic_template,你今天喝電影,今天 電影 你 喝,你,電影,今天,電影,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0505,synthetic_template,你今天沒有喝電影,今天 電影 你 喝 沒有,你,電影,今天,電影,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0506,synthetic_template,你今天帶電影,今天 電影 你 帶,你,電影,今天,電影,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0507,synthetic_template,你今天沒有帶電影,今天 電影 你 帶 沒有,你,電影,今天,電影,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0508,synthetic_template,你今天寫電影,今天 電影 你 寫,你,電影,今天,電影,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0509,synthetic_template,你今天沒有寫電影,今天 電影 你 寫 沒有,你,電影,今天,電影,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0510,synthetic_template,你今天找電影,今天 電影 你 找,你,電影,今天,電影,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0511,synthetic_template,你今天沒有找電影,今天 電影 你 找 沒有,你,電影,今天,電影,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0512,synthetic_template,你今天喜歡電影,今天 電影 你 喜歡,你,電影,今天,電影,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0513,synthetic_template,你今天沒有喜歡電影,今天 電影 你 喜歡 沒有,你,電影,今天,電影,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0514,synthetic_template,你今天記得電影,今天 電影 你 記得,你,電影,今天,電影,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0515,synthetic_template,你今天沒有記得電影,今天 電影 你 記得 沒有,你,電影,今天,電影,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0516,synthetic_template,你今天忘記電影,今天 電影 你 忘記,你,電影,今天,電影,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0517,synthetic_template,你今天沒有忘記電影,今天 電影 你 忘記 沒有,你,電影,今天,電影,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0518,synthetic_template,你今天討厭電影,今天 電影 你 討厭,你,電影,今天,電影,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0519,synthetic_template,你今天沒有討厭電影,今天 電影 你 討厭 沒有,你,電影,今天,電影,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0520,synthetic_template,你今天買訊息,今天 訊息 你 買,你,訊息,今天,訊息,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0521,synthetic_template,你今天沒有買訊息,今天 訊息 你 買 沒有,你,訊息,今天,訊息,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0522,synthetic_template,你今天看訊息,今天 訊息 你 看,你,訊息,今天,訊息,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0523,synthetic_template,你今天沒有看訊息,今天 訊息 你 看 沒有,你,訊息,今天,訊息,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0524,synthetic_template,你今天喝訊息,今天 訊息 你 喝,你,訊息,今天,訊息,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0525,synthetic_template,你今天沒有喝訊息,今天 訊息 你 喝 沒有,你,訊息,今天,訊息,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0526,synthetic_template,你今天帶訊息,今天 訊息 你 帶,你,訊息,今天,訊息,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0527,synthetic_template,你今天沒有帶訊息,今天 訊息 你 帶 沒有,你,訊息,今天,訊息,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0528,synthetic_template,你今天寫訊息,今天 訊息 你 寫,你,訊息,今天,訊息,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0529,synthetic_template,你今天沒有寫訊息,今天 訊息 你 寫 沒有,你,訊息,今天,訊息,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0530,synthetic_template,你今天找訊息,今天 訊息 你 找,你,訊息,今天,訊息,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0531,synthetic_template,你今天沒有找訊息,今天 訊息 你 找 沒有,你,訊息,今天,訊息,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0532,synthetic_template,你今天喜歡訊息,今天 訊息 你 喜歡,你,訊息,今天,訊息,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0533,synthetic_template,你今天沒有喜歡訊息,今天 訊息 你 喜歡 沒有,你,訊息,今天,訊息,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0534,synthetic_template,你今天記得訊息,今天 訊息 你 記得,你,訊息,今天,訊息,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0535,synthetic_template,你今天沒有記得訊息,今天 訊息 你 記得 沒有,你,訊息,今天,訊息,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0536,synthetic_template,你今天忘記訊息,今天 訊息 你 忘記,你,訊息,今天,訊息,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0537,synthetic_template,你今天沒有忘記訊息,今天 訊息 你 忘記 沒有,你,訊息,今天,訊息,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0538,synthetic_template,你今天討厭訊息,今天 訊息 你 討厭,你,訊息,今天,訊息,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0539,synthetic_template,你今天沒有討厭訊息,今天 訊息 你 討厭 沒有,你,訊息,今天,訊息,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0540,synthetic_template,你今天買照片,今天 照片 你 買,你,照片,今天,照片,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0541,synthetic_template,你今天沒有買照片,今天 照片 你 買 沒有,你,照片,今天,照片,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0542,synthetic_template,你今天看照片,今天 照片 你 看,你,照片,今天,照片,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0543,synthetic_template,你今天沒有看照片,今天 照片 你 看 沒有,你,照片,今天,照片,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0544,synthetic_template,你今天喝照片,今天 照片 你 喝,你,照片,今天,照片,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0545,synthetic_template,你今天沒有喝照片,今天 照片 你 喝 沒有,你,照片,今天,照片,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0546,synthetic_template,你今天帶照片,今天 照片 你 帶,你,照片,今天,照片,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0547,synthetic_template,你今天沒有帶照片,今天 照片 你 帶 沒有,你,照片,今天,照片,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0548,synthetic_template,你今天寫照片,今天 照片 你 寫,你,照片,今天,照片,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0549,synthetic_template,你今天沒有寫照片,今天 照片 你 寫 沒有,你,照片,今天,照片,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0550,synthetic_template,你今天找照片,今天 照片 你 找,你,照片,今天,照片,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0551,synthetic_template,你今天沒有找照片,今天 照片 你 找 沒有,你,照片,今天,照片,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0552,synthetic_template,你今天喜歡照片,今天 照片 你 喜歡,你,照片,今天,照片,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0553,synthetic_template,你今天沒有喜歡照片,今天 照片 你 喜歡 沒有,你,照片,今天,照片,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0554,synthetic_template,你今天記得照片,今天 照片 你 記得,你,照片,今天,照片,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0555,synthetic_template,你今天沒有記得照片,今天 照片 你 記得 沒有,你,照片,今天,照片,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0556,synthetic_template,你今天忘記照片,今天 照片 你 忘記,你,照片,今天,照片,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0557,synthetic_template,你今天沒有忘記照片,今天 照片 你 忘記 沒有,你,照片,今天,照片,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0558,synthetic_template,你今天討厭照片,今天 照片 你 討厭,你,照片,今天,照片,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0559,synthetic_template,你今天沒有討厭照片,今天 照片 你 討厭 沒有,你,照片,今天,照片,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0560,synthetic_template,你今天買雨傘,今天 雨傘 你 買,你,雨傘,今天,雨傘,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0561,synthetic_template,你今天沒有買雨傘,今天 雨傘 你 買 沒有,你,雨傘,今天,雨傘,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0562,synthetic_template,你今天看雨傘,今天 雨傘 你 看,你,雨傘,今天,雨傘,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0563,synthetic_template,你今天沒有看雨傘,今天 雨傘 你 看 沒有,你,雨傘,今天,雨傘,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0564,synthetic_template,你今天喝雨傘,今天 雨傘 你 喝,你,雨傘,今天,雨傘,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0565,synthetic_template,你今天沒有喝雨傘,今天 雨傘 你 喝 沒有,你,雨傘,今天,雨傘,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0566,synthetic_template,你今天帶雨傘,今天 雨傘 你 帶,你,雨傘,今天,雨傘,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0567,synthetic_template,你今天沒有帶雨傘,今天 雨傘 你 帶 沒有,你,雨傘,今天,雨傘,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0568,synthetic_template,你今天寫雨傘,今天 雨傘 你 寫,你,雨傘,今天,雨傘,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0569,synthetic_template,你今天沒有寫雨傘,今天 雨傘 你 寫 沒有,你,雨傘,今天,雨傘,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0570,synthetic_template,你今天找雨傘,今天 雨傘 你 找,你,雨傘,今天,雨傘,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0571,synthetic_template,你今天沒有找雨傘,今天 雨傘 你 找 沒有,你,雨傘,今天,雨傘,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0572,synthetic_template,你今天喜歡雨傘,今天 雨傘 你 喜歡,你,雨傘,今天,雨傘,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0573,synthetic_template,你今天沒有喜歡雨傘,今天 雨傘 你 喜歡 沒有,你,雨傘,今天,雨傘,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0574,synthetic_template,你今天記得雨傘,今天 雨傘 你 記得,你,雨傘,今天,雨傘,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0575,synthetic_template,你今天沒有記得雨傘,今天 雨傘 你 記得 沒有,你,雨傘,今天,雨傘,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0576,synthetic_template,你今天忘記雨傘,今天 雨傘 你 忘記,你,雨傘,今天,雨傘,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0577,synthetic_template,你今天沒有忘記雨傘,今天 雨傘 你 忘記 沒有,你,雨傘,今天,雨傘,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0578,synthetic_template,你今天討厭雨傘,今天 雨傘 你 討厭,你,雨傘,今天,雨傘,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0579,synthetic_template,你今天沒有討厭雨傘,今天 雨傘 你 討厭 沒有,你,雨傘,今天,雨傘,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0580,synthetic_template,你今天買錢包,今天 錢包 你 買,你,錢包,今天,錢包,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0581,synthetic_template,你今天沒有買錢包,今天 錢包 你 買 沒有,你,錢包,今天,錢包,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0582,synthetic_template,你今天看錢包,今天 錢包 你 看,你,錢包,今天,錢包,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0583,synthetic_template,你今天沒有看錢包,今天 錢包 你 看 沒有,你,錢包,今天,錢包,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0584,synthetic_template,你今天喝錢包,今天 錢包 你 喝,你,錢包,今天,錢包,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0585,synthetic_template,你今天沒有喝錢包,今天 錢包 你 喝 沒有,你,錢包,今天,錢包,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0586,synthetic_template,你今天帶錢包,今天 錢包 你 帶,你,錢包,今天,錢包,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0587,synthetic_template,你今天沒有帶錢包,今天 錢包 你 帶 沒有,你,錢包,今天,錢包,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0588,synthetic_template,你今天寫錢包,今天 錢包 你 寫,你,錢包,今天,錢包,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0589,synthetic_template,你今天沒有寫錢包,今天 錢包 你 寫 沒有,你,錢包,今天,錢包,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0590,synthetic_template,你今天找錢包,今天 錢包 你 找,你,錢包,今天,錢包,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0591,synthetic_template,你今天沒有找錢包,今天 錢包 你 找 沒有,你,錢包,今天,錢包,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0592,synthetic_template,你今天喜歡錢包,今天 錢包 你 喜歡,你,錢包,今天,錢包,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0593,synthetic_template,你今天沒有喜歡錢包,今天 錢包 你 喜歡 沒有,你,錢包,今天,錢包,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0594,synthetic_template,你今天記得錢包,今天 錢包 你 記得,你,錢包,今天,錢包,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0595,synthetic_template,你今天沒有記得錢包,今天 錢包 你 記得 沒有,你,錢包,今天,錢包,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0596,synthetic_template,你今天忘記錢包,今天 錢包 你 忘記,你,錢包,今天,錢包,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0597,synthetic_template,你今天沒有忘記錢包,今天 錢包 你 忘記 沒有,你,錢包,今天,錢包,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0598,synthetic_template,你今天討厭錢包,今天 錢包 你 討厭,你,錢包,今天,錢包,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0599,synthetic_template,你今天沒有討厭錢包,今天 錢包 你 討厭 沒有,你,錢包,今天,錢包,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0600,synthetic_template,他今天買書,今天 書 他 買,他,書,今天,書,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0601,synthetic_template,他今天沒有買書,今天 書 他 買 沒有,他,書,今天,書,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0602,synthetic_template,他今天看書,今天 書 他 看,他,書,今天,書,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0603,synthetic_template,他今天沒有看書,今天 書 他 看 沒有,他,書,今天,書,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0604,synthetic_template,他今天喝書,今天 書 他 喝,他,書,今天,書,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0605,synthetic_template,他今天沒有喝書,今天 書 他 喝 沒有,他,書,今天,書,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0606,synthetic_template,他今天帶書,今天 書 他 帶,他,書,今天,書,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0607,synthetic_template,他今天沒有帶書,今天 書 他 帶 沒有,他,書,今天,書,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0608,synthetic_template,他今天寫書,今天 書 他 寫,他,書,今天,書,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0609,synthetic_template,他今天沒有寫書,今天 書 他 寫 沒有,他,書,今天,書,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0610,synthetic_template,他今天找書,今天 書 他 找,他,書,今天,書,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0611,synthetic_template,他今天沒有找書,今天 書 他 找 沒有,他,書,今天,書,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0612,synthetic_template,他今天喜歡書,今天 書 他 喜歡,他,書,今天,書,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0613,synthetic_template,他今天沒有喜歡書,今天 書 他 喜歡 沒有,他,書,今天,書,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0614,synthetic_template,他今天記得書,今天 書 他 記得,他,書,今天,書,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0615,synthetic_template,他今天沒有記得書,今天 書 他 記得 沒有,他,書,今天,書,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0616,synthetic_template,他今天忘記書,今天 書 他 忘記,他,書,今天,書,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0617,synthetic_template,他今天沒有忘記書,今天 書 他 忘記 沒有,他,書,今天,書,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0618,synthetic_template,他今天討厭書,今天 書 他 討厭,他,書,今天,書,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0619,synthetic_template,他今天沒有討厭書,今天 書 他 討厭 沒有,他,書,今天,書,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0620,synthetic_template,他今天買手機,今天 手機 他 買,他,手機,今天,手機,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0621,synthetic_template,他今天沒有買手機,今天 手機 他 買 沒有,他,手機,今天,手機,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0622,synthetic_template,他今天看手機,今天 手機 他 看,他,手機,今天,手機,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0623,synthetic_template,他今天沒有看手機,今天 手機 他 看 沒有,他,手機,今天,手機,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0624,synthetic_template,他今天喝手機,今天 手機 他 喝,他,手機,今天,手機,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0625,synthetic_template,他今天沒有喝手機,今天 手機 他 喝 沒有,他,手機,今天,手機,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0626,synthetic_template,他今天帶手機,今天 手機 他 帶,他,手機,今天,手機,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0627,synthetic_template,他今天沒有帶手機,今天 手機 他 帶 沒有,他,手機,今天,手機,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0628,synthetic_template,他今天寫手機,今天 手機 他 寫,他,手機,今天,手機,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0629,synthetic_template,他今天沒有寫手機,今天 手機 他 寫 沒有,他,手機,今天,手機,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0630,synthetic_template,他今天找手機,今天 手機 他 找,他,手機,今天,手機,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0631,synthetic_template,他今天沒有找手機,今天 手機 他 找 沒有,他,手機,今天,手機,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0632,synthetic_template,他今天喜歡手機,今天 手機 他 喜歡,他,手機,今天,手機,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0633,synthetic_template,他今天沒有喜歡手機,今天 手機 他 喜歡 沒有,他,手機,今天,手機,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0634,synthetic_template,他今天記得手機,今天 手機 他 記得,他,手機,今天,手機,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0635,synthetic_template,他今天沒有記得手機,今天 手機 他 記得 沒有,他,手機,今天,手機,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0636,synthetic_template,他今天忘記手機,今天 手機 他 忘記,他,手機,今天,手機,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0637,synthetic_template,他今天沒有忘記手機,今天 手機 他 忘記 沒有,他,手機,今天,手機,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0638,synthetic_template,他今天討厭手機,今天 手機 他 討厭,他,手機,今天,手機,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0639,synthetic_template,他今天沒有討厭手機,今天 手機 他 討厭 沒有,他,手機,今天,手機,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0640,synthetic_template,他今天買咖啡,今天 咖啡 他 買,他,咖啡,今天,咖啡,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0641,synthetic_template,他今天沒有買咖啡,今天 咖啡 他 買 沒有,他,咖啡,今天,咖啡,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0642,synthetic_template,他今天看咖啡,今天 咖啡 他 看,他,咖啡,今天,咖啡,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0643,synthetic_template,他今天沒有看咖啡,今天 咖啡 他 看 沒有,他,咖啡,今天,咖啡,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0644,synthetic_template,他今天喝咖啡,今天 咖啡 他 喝,他,咖啡,今天,咖啡,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0645,synthetic_template,他今天沒有喝咖啡,今天 咖啡 他 喝 沒有,他,咖啡,今天,咖啡,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0646,synthetic_template,他今天帶咖啡,今天 咖啡 他 帶,他,咖啡,今天,咖啡,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0647,synthetic_template,他今天沒有帶咖啡,今天 咖啡 他 帶 沒有,他,咖啡,今天,咖啡,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0648,synthetic_template,他今天寫咖啡,今天 咖啡 他 寫,他,咖啡,今天,咖啡,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0649,synthetic_template,他今天沒有寫咖啡,今天 咖啡 他 寫 沒有,他,咖啡,今天,咖啡,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0650,synthetic_template,他今天找咖啡,今天 咖啡 他 找,他,咖啡,今天,咖啡,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0651,synthetic_template,他今天沒有找咖啡,今天 咖啡 他 找 沒有,他,咖啡,今天,咖啡,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0652,synthetic_template,他今天喜歡咖啡,今天 咖啡 他 喜歡,他,咖啡,今天,咖啡,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0653,synthetic_template,他今天沒有喜歡咖啡,今天 咖啡 他 喜歡 沒有,他,咖啡,今天,咖啡,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0654,synthetic_template,他今天記得咖啡,今天 咖啡 他 記得,他,咖啡,今天,咖啡,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0655,synthetic_template,他今天沒有記得咖啡,今天 咖啡 他 記得 沒有,他,咖啡,今天,咖啡,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0656,synthetic_template,他今天忘記咖啡,今天 咖啡 他 忘記,他,咖啡,今天,咖啡,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0657,synthetic_template,他今天沒有忘記咖啡,今天 咖啡 他 忘記 沒有,他,咖啡,今天,咖啡,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0658,synthetic_template,他今天討厭咖啡,今天 咖啡 他 討厭,他,咖啡,今天,咖啡,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0659,synthetic_template,他今天沒有討厭咖啡,今天 咖啡 他 討厭 沒有,他,咖啡,今天,咖啡,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0660,synthetic_template,他今天買水,今天 水 他 買,他,水,今天,水,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0661,synthetic_template,他今天沒有買水,今天 水 他 買 沒有,他,水,今天,水,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0662,synthetic_template,他今天看水,今天 水 他 看,他,水,今天,水,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0663,synthetic_template,他今天沒有看水,今天 水 他 看 沒有,他,水,今天,水,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0664,synthetic_template,他今天喝水,今天 水 他 喝,他,水,今天,水,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0665,synthetic_template,他今天沒有喝水,今天 水 他 喝 沒有,他,水,今天,水,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0666,synthetic_template,他今天帶水,今天 水 他 帶,他,水,今天,水,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0667,synthetic_template,他今天沒有帶水,今天 水 他 帶 沒有,他,水,今天,水,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0668,synthetic_template,他今天寫水,今天 水 他 寫,他,水,今天,水,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0669,synthetic_template,他今天沒有寫水,今天 水 他 寫 沒有,他,水,今天,水,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0670,synthetic_template,他今天找水,今天 水 他 找,他,水,今天,水,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0671,synthetic_template,他今天沒有找水,今天 水 他 找 沒有,他,水,今天,水,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0672,synthetic_template,他今天喜歡水,今天 水 他 喜歡,他,水,今天,水,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0673,synthetic_template,他今天沒有喜歡水,今天 水 他 喜歡 沒有,他,水,今天,水,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0674,synthetic_template,他今天記得水,今天 水 他 記得,他,水,今天,水,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0675,synthetic_template,他今天沒有記得水,今天 水 他 記得 沒有,他,水,今天,水,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0676,synthetic_template,他今天忘記水,今天 水 他 忘記,他,水,今天,水,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0677,synthetic_template,他今天沒有忘記水,今天 水 他 忘記 沒有,他,水,今天,水,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0678,synthetic_template,他今天討厭水,今天 水 他 討厭,他,水,今天,水,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0679,synthetic_template,他今天沒有討厭水,今天 水 他 討厭 沒有,他,水,今天,水,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0680,synthetic_template,他今天買作業,今天 作業 他 買,他,作業,今天,作業,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0681,synthetic_template,他今天沒有買作業,今天 作業 他 買 沒有,他,作業,今天,作業,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0682,synthetic_template,他今天看作業,今天 作業 他 看,他,作業,今天,作業,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0683,synthetic_template,他今天沒有看作業,今天 作業 他 看 沒有,他,作業,今天,作業,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0684,synthetic_template,他今天喝作業,今天 作業 他 喝,他,作業,今天,作業,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0685,synthetic_template,他今天沒有喝作業,今天 作業 他 喝 沒有,他,作業,今天,作業,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0686,synthetic_template,他今天帶作業,今天 作業 他 帶,他,作業,今天,作業,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0687,synthetic_template,他今天沒有帶作業,今天 作業 他 帶 沒有,他,作業,今天,作業,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0688,synthetic_template,他今天寫作業,今天 作業 他 寫,他,作業,今天,作業,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0689,synthetic_template,他今天沒有寫作業,今天 作業 他 寫 沒有,他,作業,今天,作業,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0690,synthetic_template,他今天找作業,今天 作業 他 找,他,作業,今天,作業,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0691,synthetic_template,他今天沒有找作業,今天 作業 他 找 沒有,他,作業,今天,作業,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0692,synthetic_template,他今天喜歡作業,今天 作業 他 喜歡,他,作業,今天,作業,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0693,synthetic_template,他今天沒有喜歡作業,今天 作業 他 喜歡 沒有,他,作業,今天,作業,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0694,synthetic_template,他今天記得作業,今天 作業 他 記得,他,作業,今天,作業,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0695,synthetic_template,他今天沒有記得作業,今天 作業 他 記得 沒有,他,作業,今天,作業,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0696,synthetic_template,他今天忘記作業,今天 作業 他 忘記,他,作業,今天,作業,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0697,synthetic_template,他今天沒有忘記作業,今天 作業 他 忘記 沒有,他,作業,今天,作業,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0698,synthetic_template,他今天討厭作業,今天 作業 他 討厭,他,作業,今天,作業,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0699,synthetic_template,他今天沒有討厭作業,今天 作業 他 討厭 沒有,他,作業,今天,作業,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0700,synthetic_template,他今天買電影,今天 電影 他 買,他,電影,今天,電影,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0701,synthetic_template,他今天沒有買電影,今天 電影 他 買 沒有,他,電影,今天,電影,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0702,synthetic_template,他今天看電影,今天 電影 他 看,他,電影,今天,電影,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0703,synthetic_template,他今天沒有看電影,今天 電影 他 看 沒有,他,電影,今天,電影,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0704,synthetic_template,他今天喝電影,今天 電影 他 喝,他,電影,今天,電影,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0705,synthetic_template,他今天沒有喝電影,今天 電影 他 喝 沒有,他,電影,今天,電影,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0706,synthetic_template,他今天帶電影,今天 電影 他 帶,他,電影,今天,電影,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0707,synthetic_template,他今天沒有帶電影,今天 電影 他 帶 沒有,他,電影,今天,電影,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0708,synthetic_template,他今天寫電影,今天 電影 他 寫,他,電影,今天,電影,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0709,synthetic_template,他今天沒有寫電影,今天 電影 他 寫 沒有,他,電影,今天,電影,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0710,synthetic_template,他今天找電影,今天 電影 他 找,他,電影,今天,電影,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0711,synthetic_template,他今天沒有找電影,今天 電影 他 找 沒有,他,電影,今天,電影,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0712,synthetic_template,他今天喜歡電影,今天 電影 他 喜歡,他,電影,今天,電影,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0713,synthetic_template,他今天沒有喜歡電影,今天 電影 他 喜歡 沒有,他,電影,今天,電影,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0714,synthetic_template,他今天記得電影,今天 電影 他 記得,他,電影,今天,電影,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0715,synthetic_template,他今天沒有記得電影,今天 電影 他 記得 沒有,他,電影,今天,電影,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0716,synthetic_template,他今天忘記電影,今天 電影 他 忘記,他,電影,今天,電影,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0717,synthetic_template,他今天沒有忘記電影,今天 電影 他 忘記 沒有,他,電影,今天,電影,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0718,synthetic_template,他今天討厭電影,今天 電影 他 討厭,他,電影,今天,電影,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0719,synthetic_template,他今天沒有討厭電影,今天 電影 他 討厭 沒有,他,電影,今天,電影,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0720,synthetic_template,他今天買訊息,今天 訊息 他 買,他,訊息,今天,訊息,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0721,synthetic_template,他今天沒有買訊息,今天 訊息 他 買 沒有,他,訊息,今天,訊息,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0722,synthetic_template,他今天看訊息,今天 訊息 他 看,他,訊息,今天,訊息,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0723,synthetic_template,他今天沒有看訊息,今天 訊息 他 看 沒有,他,訊息,今天,訊息,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0724,synthetic_template,他今天喝訊息,今天 訊息 他 喝,他,訊息,今天,訊息,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0725,synthetic_template,他今天沒有喝訊息,今天 訊息 他 喝 沒有,他,訊息,今天,訊息,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0726,synthetic_template,他今天帶訊息,今天 訊息 他 帶,他,訊息,今天,訊息,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0727,synthetic_template,他今天沒有帶訊息,今天 訊息 他 帶 沒有,他,訊息,今天,訊息,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0728,synthetic_template,他今天寫訊息,今天 訊息 他 寫,他,訊息,今天,訊息,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0729,synthetic_template,他今天沒有寫訊息,今天 訊息 他 寫 沒有,他,訊息,今天,訊息,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0730,synthetic_template,他今天找訊息,今天 訊息 他 找,他,訊息,今天,訊息,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0731,synthetic_template,他今天沒有找訊息,今天 訊息 他 找 沒有,他,訊息,今天,訊息,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0732,synthetic_template,他今天喜歡訊息,今天 訊息 他 喜歡,他,訊息,今天,訊息,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0733,synthetic_template,他今天沒有喜歡訊息,今天 訊息 他 喜歡 沒有,他,訊息,今天,訊息,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0734,synthetic_template,他今天記得訊息,今天 訊息 他 記得,他,訊息,今天,訊息,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0735,synthetic_template,他今天沒有記得訊息,今天 訊息 他 記得 沒有,他,訊息,今天,訊息,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0736,synthetic_template,他今天忘記訊息,今天 訊息 他 忘記,他,訊息,今天,訊息,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0737,synthetic_template,他今天沒有忘記訊息,今天 訊息 他 忘記 沒有,他,訊息,今天,訊息,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0738,synthetic_template,他今天討厭訊息,今天 訊息 他 討厭,他,訊息,今天,訊息,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0739,synthetic_template,他今天沒有討厭訊息,今天 訊息 他 討厭 沒有,他,訊息,今天,訊息,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0740,synthetic_template,他今天買照片,今天 照片 他 買,他,照片,今天,照片,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0741,synthetic_template,他今天沒有買照片,今天 照片 他 買 沒有,他,照片,今天,照片,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0742,synthetic_template,他今天看照片,今天 照片 他 看,他,照片,今天,照片,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0743,synthetic_template,他今天沒有看照片,今天 照片 他 看 沒有,他,照片,今天,照片,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0744,synthetic_template,他今天喝照片,今天 照片 他 喝,他,照片,今天,照片,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0745,synthetic_template,他今天沒有喝照片,今天 照片 他 喝 沒有,他,照片,今天,照片,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0746,synthetic_template,他今天帶照片,今天 照片 他 帶,他,照片,今天,照片,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0747,synthetic_template,他今天沒有帶照片,今天 照片 他 帶 沒有,他,照片,今天,照片,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0748,synthetic_template,他今天寫照片,今天 照片 他 寫,他,照片,今天,照片,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0749,synthetic_template,他今天沒有寫照片,今天 照片 他 寫 沒有,他,照片,今天,照片,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0750,synthetic_template,他今天找照片,今天 照片 他 找,他,照片,今天,照片,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0751,synthetic_template,他今天沒有找照片,今天 照片 他 找 沒有,他,照片,今天,照片,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0752,synthetic_template,他今天喜歡照片,今天 照片 他 喜歡,他,照片,今天,照片,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0753,synthetic_template,他今天沒有喜歡照片,今天 照片 他 喜歡 沒有,他,照片,今天,照片,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0754,synthetic_template,他今天記得照片,今天 照片 他 記得,他,照片,今天,照片,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0755,synthetic_template,他今天沒有記得照片,今天 照片 他 記得 沒有,他,照片,今天,照片,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0756,synthetic_template,他今天忘記照片,今天 照片 他 忘記,他,照片,今天,照片,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0757,synthetic_template,他今天沒有忘記照片,今天 照片 他 忘記 沒有,他,照片,今天,照片,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0758,synthetic_template,他今天討厭照片,今天 照片 他 討厭,他,照片,今天,照片,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0759,synthetic_template,他今天沒有討厭照片,今天 照片 他 討厭 沒有,他,照片,今天,照片,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0760,synthetic_template,他今天買雨傘,今天 雨傘 他 買,他,雨傘,今天,雨傘,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0761,synthetic_template,他今天沒有買雨傘,今天 雨傘 他 買 沒有,他,雨傘,今天,雨傘,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0762,synthetic_template,他今天看雨傘,今天 雨傘 他 看,他,雨傘,今天,雨傘,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0763,synthetic_template,他今天沒有看雨傘,今天 雨傘 他 看 沒有,他,雨傘,今天,雨傘,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0764,synthetic_template,他今天喝雨傘,今天 雨傘 他 喝,他,雨傘,今天,雨傘,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0765,synthetic_template,他今天沒有喝雨傘,今天 雨傘 他 喝 沒有,他,雨傘,今天,雨傘,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0766,synthetic_template,他今天帶雨傘,今天 雨傘 他 帶,他,雨傘,今天,雨傘,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0767,synthetic_template,他今天沒有帶雨傘,今天 雨傘 他 帶 沒有,他,雨傘,今天,雨傘,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0768,synthetic_template,他今天寫雨傘,今天 雨傘 他 寫,他,雨傘,今天,雨傘,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0769,synthetic_template,他今天沒有寫雨傘,今天 雨傘 他 寫 沒有,他,雨傘,今天,雨傘,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0770,synthetic_template,他今天找雨傘,今天 雨傘 他 找,他,雨傘,今天,雨傘,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0771,synthetic_template,他今天沒有找雨傘,今天 雨傘 他 找 沒有,他,雨傘,今天,雨傘,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0772,synthetic_template,他今天喜歡雨傘,今天 雨傘 他 喜歡,他,雨傘,今天,雨傘,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0773,synthetic_template,他今天沒有喜歡雨傘,今天 雨傘 他 喜歡 沒有,他,雨傘,今天,雨傘,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0774,synthetic_template,他今天記得雨傘,今天 雨傘 他 記得,他,雨傘,今天,雨傘,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0775,synthetic_template,他今天沒有記得雨傘,今天 雨傘 他 記得 沒有,他,雨傘,今天,雨傘,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0776,synthetic_template,他今天忘記雨傘,今天 雨傘 他 忘記,他,雨傘,今天,雨傘,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0777,synthetic_template,他今天沒有忘記雨傘,今天 雨傘 他 忘記 沒有,他,雨傘,今天,雨傘,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0778,synthetic_template,他今天討厭雨傘,今天 雨傘 他 討厭,他,雨傘,今天,雨傘,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0779,synthetic_template,他今天沒有討厭雨傘,今天 雨傘 他 討厭 沒有,他,雨傘,今天,雨傘,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0780,synthetic_template,他今天買錢包,今天 錢包 他 買,他,錢包,今天,錢包,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0781,synthetic_template,他今天沒有買錢包,今天 錢包 他 買 沒有,他,錢包,今天,錢包,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0782,synthetic_template,他今天看錢包,今天 錢包 他 看,他,錢包,今天,錢包,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0783,synthetic_template,他今天沒有看錢包,今天 錢包 他 看 沒有,他,錢包,今天,錢包,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0784,synthetic_template,他今天喝錢包,今天 錢包 他 喝,他,錢包,今天,錢包,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0785,synthetic_template,他今天沒有喝錢包,今天 錢包 他 喝 沒有,他,錢包,今天,錢包,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0786,synthetic_template,他今天帶錢包,今天 錢包 他 帶,他,錢包,今天,錢包,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0787,synthetic_template,他今天沒有帶錢包,今天 錢包 他 帶 沒有,他,錢包,今天,錢包,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0788,synthetic_template,他今天寫錢包,今天 錢包 他 寫,他,錢包,今天,錢包,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0789,synthetic_template,他今天沒有寫錢包,今天 錢包 他 寫 沒有,他,錢包,今天,錢包,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0790,synthetic_template,他今天找錢包,今天 錢包 他 找,他,錢包,今天,錢包,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0791,synthetic_template,他今天沒有找錢包,今天 錢包 他 找 沒有,他,錢包,今天,錢包,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0792,synthetic_template,他今天喜歡錢包,今天 錢包 他 喜歡,他,錢包,今天,錢包,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0793,synthetic_template,他今天沒有喜歡錢包,今天 錢包 他 喜歡 沒有,他,錢包,今天,錢包,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0794,synthetic_template,他今天記得錢包,今天 錢包 他 記得,他,錢包,今天,錢包,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0795,synthetic_template,他今天沒有記得錢包,今天 錢包 他 記得 沒有,他,錢包,今天,錢包,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0796,synthetic_template,他今天忘記錢包,今天 錢包 他 忘記,他,錢包,今天,錢包,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0797,synthetic_template,他今天沒有忘記錢包,今天 錢包 他 忘記 沒有,他,錢包,今天,錢包,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0798,synthetic_template,他今天討厭錢包,今天 錢包 他 討厭,他,錢包,今天,錢包,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0799,synthetic_template,他今天沒有討厭錢包,今天 錢包 他 討厭 沒有,他,錢包,今天,錢包,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0800,synthetic_template,她今天買書,今天 書 她 買,她,書,今天,書,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0801,synthetic_template,她今天沒有買書,今天 書 她 買 沒有,她,書,今天,書,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0802,synthetic_template,她今天看書,今天 書 她 看,她,書,今天,書,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0803,synthetic_template,她今天沒有看書,今天 書 她 看 沒有,她,書,今天,書,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0804,synthetic_template,她今天喝書,今天 書 她 喝,她,書,今天,書,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0805,synthetic_template,她今天沒有喝書,今天 書 她 喝 沒有,她,書,今天,書,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0806,synthetic_template,她今天帶書,今天 書 她 帶,她,書,今天,書,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0807,synthetic_template,她今天沒有帶書,今天 書 她 帶 沒有,她,書,今天,書,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0808,synthetic_template,她今天寫書,今天 書 她 寫,她,書,今天,書,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0809,synthetic_template,她今天沒有寫書,今天 書 她 寫 沒有,她,書,今天,書,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0810,synthetic_template,她今天找書,今天 書 她 找,她,書,今天,書,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0811,synthetic_template,她今天沒有找書,今天 書 她 找 沒有,她,書,今天,書,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0812,synthetic_template,她今天喜歡書,今天 書 她 喜歡,她,書,今天,書,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0813,synthetic_template,她今天沒有喜歡書,今天 書 她 喜歡 沒有,她,書,今天,書,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0814,synthetic_template,她今天記得書,今天 書 她 記得,她,書,今天,書,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0815,synthetic_template,她今天沒有記得書,今天 書 她 記得 沒有,她,書,今天,書,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0816,synthetic_template,她今天忘記書,今天 書 她 忘記,她,書,今天,書,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0817,synthetic_template,她今天沒有忘記書,今天 書 她 忘記 沒有,她,書,今天,書,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0818,synthetic_template,她今天討厭書,今天 書 她 討厭,她,書,今天,書,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0819,synthetic_template,她今天沒有討厭書,今天 書 她 討厭 沒有,她,書,今天,書,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0820,synthetic_template,她今天買手機,今天 手機 她 買,她,手機,今天,手機,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0821,synthetic_template,她今天沒有買手機,今天 手機 她 買 沒有,她,手機,今天,手機,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0822,synthetic_template,她今天看手機,今天 手機 她 看,她,手機,今天,手機,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0823,synthetic_template,她今天沒有看手機,今天 手機 她 看 沒有,她,手機,今天,手機,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0824,synthetic_template,她今天喝手機,今天 手機 她 喝,她,手機,今天,手機,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0825,synthetic_template,她今天沒有喝手機,今天 手機 她 喝 沒有,她,手機,今天,手機,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0826,synthetic_template,她今天帶手機,今天 手機 她 帶,她,手機,今天,手機,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0827,synthetic_template,她今天沒有帶手機,今天 手機 她 帶 沒有,她,手機,今天,手機,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0828,synthetic_template,她今天寫手機,今天 手機 她 寫,她,手機,今天,手機,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0829,synthetic_template,她今天沒有寫手機,今天 手機 她 寫 沒有,她,手機,今天,手機,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0830,synthetic_template,她今天找手機,今天 手機 她 找,她,手機,今天,手機,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0831,synthetic_template,她今天沒有找手機,今天 手機 她 找 沒有,她,手機,今天,手機,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0832,synthetic_template,她今天喜歡手機,今天 手機 她 喜歡,她,手機,今天,手機,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0833,synthetic_template,她今天沒有喜歡手機,今天 手機 她 喜歡 沒有,她,手機,今天,手機,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0834,synthetic_template,她今天記得手機,今天 手機 她 記得,她,手機,今天,手機,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0835,synthetic_template,她今天沒有記得手機,今天 手機 她 記得 沒有,她,手機,今天,手機,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0836,synthetic_template,她今天忘記手機,今天 手機 她 忘記,她,手機,今天,手機,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0837,synthetic_template,她今天沒有忘記手機,今天 手機 她 忘記 沒有,她,手機,今天,手機,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0838,synthetic_template,她今天討厭手機,今天 手機 她 討厭,她,手機,今天,手機,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0839,synthetic_template,她今天沒有討厭手機,今天 手機 她 討厭 沒有,她,手機,今天,手機,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0840,synthetic_template,她今天買咖啡,今天 咖啡 她 買,她,咖啡,今天,咖啡,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0841,synthetic_template,她今天沒有買咖啡,今天 咖啡 她 買 沒有,她,咖啡,今天,咖啡,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0842,synthetic_template,她今天看咖啡,今天 咖啡 她 看,她,咖啡,今天,咖啡,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0843,synthetic_template,她今天沒有看咖啡,今天 咖啡 她 看 沒有,她,咖啡,今天,咖啡,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0844,synthetic_template,她今天喝咖啡,今天 咖啡 她 喝,她,咖啡,今天,咖啡,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0845,synthetic_template,她今天沒有喝咖啡,今天 咖啡 她 喝 沒有,她,咖啡,今天,咖啡,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0846,synthetic_template,她今天帶咖啡,今天 咖啡 她 帶,她,咖啡,今天,咖啡,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0847,synthetic_template,她今天沒有帶咖啡,今天 咖啡 她 帶 沒有,她,咖啡,今天,咖啡,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0848,synthetic_template,她今天寫咖啡,今天 咖啡 她 寫,她,咖啡,今天,咖啡,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0849,synthetic_template,她今天沒有寫咖啡,今天 咖啡 她 寫 沒有,她,咖啡,今天,咖啡,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0850,synthetic_template,她今天找咖啡,今天 咖啡 她 找,她,咖啡,今天,咖啡,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0851,synthetic_template,她今天沒有找咖啡,今天 咖啡 她 找 沒有,她,咖啡,今天,咖啡,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0852,synthetic_template,她今天喜歡咖啡,今天 咖啡 她 喜歡,她,咖啡,今天,咖啡,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0853,synthetic_template,她今天沒有喜歡咖啡,今天 咖啡 她 喜歡 沒有,她,咖啡,今天,咖啡,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0854,synthetic_template,她今天記得咖啡,今天 咖啡 她 記得,她,咖啡,今天,咖啡,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0855,synthetic_template,她今天沒有記得咖啡,今天 咖啡 她 記得 沒有,她,咖啡,今天,咖啡,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0856,synthetic_template,她今天忘記咖啡,今天 咖啡 她 忘記,她,咖啡,今天,咖啡,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0857,synthetic_template,她今天沒有忘記咖啡,今天 咖啡 她 忘記 沒有,她,咖啡,今天,咖啡,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0858,synthetic_template,她今天討厭咖啡,今天 咖啡 她 討厭,她,咖啡,今天,咖啡,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0859,synthetic_template,她今天沒有討厭咖啡,今天 咖啡 她 討厭 沒有,她,咖啡,今天,咖啡,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0860,synthetic_template,她今天買水,今天 水 她 買,她,水,今天,水,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0861,synthetic_template,她今天沒有買水,今天 水 她 買 沒有,她,水,今天,水,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0862,synthetic_template,她今天看水,今天 水 她 看,她,水,今天,水,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0863,synthetic_template,她今天沒有看水,今天 水 她 看 沒有,她,水,今天,水,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0864,synthetic_template,她今天喝水,今天 水 她 喝,她,水,今天,水,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0865,synthetic_template,她今天沒有喝水,今天 水 她 喝 沒有,她,水,今天,水,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0866,synthetic_template,她今天帶水,今天 水 她 帶,她,水,今天,水,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0867,synthetic_template,她今天沒有帶水,今天 水 她 帶 沒有,她,水,今天,水,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0868,synthetic_template,她今天寫水,今天 水 她 寫,她,水,今天,水,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0869,synthetic_template,她今天沒有寫水,今天 水 她 寫 沒有,她,水,今天,水,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0870,synthetic_template,她今天找水,今天 水 她 找,她,水,今天,水,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0871,synthetic_template,她今天沒有找水,今天 水 她 找 沒有,她,水,今天,水,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0872,synthetic_template,她今天喜歡水,今天 水 她 喜歡,她,水,今天,水,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0873,synthetic_template,她今天沒有喜歡水,今天 水 她 喜歡 沒有,她,水,今天,水,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0874,synthetic_template,她今天記得水,今天 水 她 記得,她,水,今天,水,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0875,synthetic_template,她今天沒有記得水,今天 水 她 記得 沒有,她,水,今天,水,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0876,synthetic_template,她今天忘記水,今天 水 她 忘記,她,水,今天,水,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0877,synthetic_template,她今天沒有忘記水,今天 水 她 忘記 沒有,她,水,今天,水,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0878,synthetic_template,她今天討厭水,今天 水 她 討厭,她,水,今天,水,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0879,synthetic_template,她今天沒有討厭水,今天 水 她 討厭 沒有,她,水,今天,水,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0880,synthetic_template,她今天買作業,今天 作業 她 買,她,作業,今天,作業,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0881,synthetic_template,她今天沒有買作業,今天 作業 她 買 沒有,她,作業,今天,作業,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0882,synthetic_template,她今天看作業,今天 作業 她 看,她,作業,今天,作業,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0883,synthetic_template,她今天沒有看作業,今天 作業 她 看 沒有,她,作業,今天,作業,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0884,synthetic_template,她今天喝作業,今天 作業 她 喝,她,作業,今天,作業,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0885,synthetic_template,她今天沒有喝作業,今天 作業 她 喝 沒有,她,作業,今天,作業,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0886,synthetic_template,她今天帶作業,今天 作業 她 帶,她,作業,今天,作業,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0887,synthetic_template,她今天沒有帶作業,今天 作業 她 帶 沒有,她,作業,今天,作業,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0888,synthetic_template,她今天寫作業,今天 作業 她 寫,她,作業,今天,作業,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0889,synthetic_template,她今天沒有寫作業,今天 作業 她 寫 沒有,她,作業,今天,作業,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0890,synthetic_template,她今天找作業,今天 作業 她 找,她,作業,今天,作業,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0891,synthetic_template,她今天沒有找作業,今天 作業 她 找 沒有,她,作業,今天,作業,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0892,synthetic_template,她今天喜歡作業,今天 作業 她 喜歡,她,作業,今天,作業,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0893,synthetic_template,她今天沒有喜歡作業,今天 作業 她 喜歡 沒有,她,作業,今天,作業,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0894,synthetic_template,她今天記得作業,今天 作業 她 記得,她,作業,今天,作業,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0895,synthetic_template,她今天沒有記得作業,今天 作業 她 記得 沒有,她,作業,今天,作業,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0896,synthetic_template,她今天忘記作業,今天 作業 她 忘記,她,作業,今天,作業,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0897,synthetic_template,她今天沒有忘記作業,今天 作業 她 忘記 沒有,她,作業,今天,作業,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0898,synthetic_template,她今天討厭作業,今天 作業 她 討厭,她,作業,今天,作業,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0899,synthetic_template,她今天沒有討厭作業,今天 作業 她 討厭 沒有,她,作業,今天,作業,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0900,synthetic_template,她今天買電影,今天 電影 她 買,她,電影,今天,電影,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0901,synthetic_template,她今天沒有買電影,今天 電影 她 買 沒有,她,電影,今天,電影,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0902,synthetic_template,她今天看電影,今天 電影 她 看,她,電影,今天,電影,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0903,synthetic_template,她今天沒有看電影,今天 電影 她 看 沒有,她,電影,今天,電影,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0904,synthetic_template,她今天喝電影,今天 電影 她 喝,她,電影,今天,電影,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0905,synthetic_template,她今天沒有喝電影,今天 電影 她 喝 沒有,她,電影,今天,電影,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0906,synthetic_template,她今天帶電影,今天 電影 她 帶,她,電影,今天,電影,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0907,synthetic_template,她今天沒有帶電影,今天 電影 她 帶 沒有,她,電影,今天,電影,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0908,synthetic_template,她今天寫電影,今天 電影 她 寫,她,電影,今天,電影,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0909,synthetic_template,她今天沒有寫電影,今天 電影 她 寫 沒有,她,電影,今天,電影,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0910,synthetic_template,她今天找電影,今天 電影 她 找,她,電影,今天,電影,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0911,synthetic_template,她今天沒有找電影,今天 電影 她 找 沒有,她,電影,今天,電影,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0912,synthetic_template,她今天喜歡電影,今天 電影 她 喜歡,她,電影,今天,電影,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0913,synthetic_template,她今天沒有喜歡電影,今天 電影 她 喜歡 沒有,她,電影,今天,電影,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0914,synthetic_template,她今天記得電影,今天 電影 她 記得,她,電影,今天,電影,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0915,synthetic_template,她今天沒有記得電影,今天 電影 她 記得 沒有,她,電影,今天,電影,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0916,synthetic_template,她今天忘記電影,今天 電影 她 忘記,她,電影,今天,電影,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0917,synthetic_template,她今天沒有忘記電影,今天 電影 她 忘記 沒有,她,電影,今天,電影,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0918,synthetic_template,她今天討厭電影,今天 電影 她 討厭,她,電影,今天,電影,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0919,synthetic_template,她今天沒有討厭電影,今天 電影 她 討厭 沒有,她,電影,今天,電影,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0920,synthetic_template,她今天買訊息,今天 訊息 她 買,她,訊息,今天,訊息,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0921,synthetic_template,她今天沒有買訊息,今天 訊息 她 買 沒有,她,訊息,今天,訊息,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0922,synthetic_template,她今天看訊息,今天 訊息 她 看,她,訊息,今天,訊息,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0923,synthetic_template,她今天沒有看訊息,今天 訊息 她 看 沒有,她,訊息,今天,訊息,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0924,synthetic_template,她今天喝訊息,今天 訊息 她 喝,她,訊息,今天,訊息,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0925,synthetic_template,她今天沒有喝訊息,今天 訊息 她 喝 沒有,她,訊息,今天,訊息,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0926,synthetic_template,她今天帶訊息,今天 訊息 她 帶,她,訊息,今天,訊息,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0927,synthetic_template,她今天沒有帶訊息,今天 訊息 她 帶 沒有,她,訊息,今天,訊息,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0928,synthetic_template,她今天寫訊息,今天 訊息 她 寫,她,訊息,今天,訊息,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0929,synthetic_template,她今天沒有寫訊息,今天 訊息 她 寫 沒有,她,訊息,今天,訊息,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0930,synthetic_template,她今天找訊息,今天 訊息 她 找,她,訊息,今天,訊息,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0931,synthetic_template,她今天沒有找訊息,今天 訊息 她 找 沒有,她,訊息,今天,訊息,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0932,synthetic_template,她今天喜歡訊息,今天 訊息 她 喜歡,她,訊息,今天,訊息,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0933,synthetic_template,她今天沒有喜歡訊息,今天 訊息 她 喜歡 沒有,她,訊息,今天,訊息,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0934,synthetic_template,她今天記得訊息,今天 訊息 她 記得,她,訊息,今天,訊息,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0935,synthetic_template,她今天沒有記得訊息,今天 訊息 她 記得 沒有,她,訊息,今天,訊息,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0936,synthetic_template,她今天忘記訊息,今天 訊息 她 忘記,她,訊息,今天,訊息,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0937,synthetic_template,她今天沒有忘記訊息,今天 訊息 她 忘記 沒有,她,訊息,今天,訊息,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0938,synthetic_template,她今天討厭訊息,今天 訊息 她 討厭,她,訊息,今天,訊息,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0939,synthetic_template,她今天沒有討厭訊息,今天 訊息 她 討厭 沒有,她,訊息,今天,訊息,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0940,synthetic_template,她今天買照片,今天 照片 她 買,她,照片,今天,照片,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0941,synthetic_template,她今天沒有買照片,今天 照片 她 買 沒有,她,照片,今天,照片,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0942,synthetic_template,她今天看照片,今天 照片 她 看,她,照片,今天,照片,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0943,synthetic_template,她今天沒有看照片,今天 照片 她 看 沒有,她,照片,今天,照片,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0944,synthetic_template,她今天喝照片,今天 照片 她 喝,她,照片,今天,照片,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0945,synthetic_template,她今天沒有喝照片,今天 照片 她 喝 沒有,她,照片,今天,照片,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0946,synthetic_template,她今天帶照片,今天 照片 她 帶,她,照片,今天,照片,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0947,synthetic_template,她今天沒有帶照片,今天 照片 她 帶 沒有,她,照片,今天,照片,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0948,synthetic_template,她今天寫照片,今天 照片 她 寫,她,照片,今天,照片,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0949,synthetic_template,她今天沒有寫照片,今天 照片 她 寫 沒有,她,照片,今天,照片,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0950,synthetic_template,她今天找照片,今天 照片 她 找,她,照片,今天,照片,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0951,synthetic_template,她今天沒有找照片,今天 照片 她 找 沒有,她,照片,今天,照片,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0952,synthetic_template,她今天喜歡照片,今天 照片 她 喜歡,她,照片,今天,照片,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0953,synthetic_template,她今天沒有喜歡照片,今天 照片 她 喜歡 沒有,她,照片,今天,照片,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0954,synthetic_template,她今天記得照片,今天 照片 她 記得,她,照片,今天,照片,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0955,synthetic_template,她今天沒有記得照片,今天 照片 她 記得 沒有,她,照片,今天,照片,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0956,synthetic_template,她今天忘記照片,今天 照片 她 忘記,她,照片,今天,照片,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0957,synthetic_template,她今天沒有忘記照片,今天 照片 她 忘記 沒有,她,照片,今天,照片,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0958,synthetic_template,她今天討厭照片,今天 照片 她 討厭,她,照片,今天,照片,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0959,synthetic_template,她今天沒有討厭照片,今天 照片 她 討厭 沒有,她,照片,今天,照片,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0960,synthetic_template,她今天買雨傘,今天 雨傘 她 買,她,雨傘,今天,雨傘,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0961,synthetic_template,她今天沒有買雨傘,今天 雨傘 她 買 沒有,她,雨傘,今天,雨傘,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0962,synthetic_template,她今天看雨傘,今天 雨傘 她 看,她,雨傘,今天,雨傘,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0963,synthetic_template,她今天沒有看雨傘,今天 雨傘 她 看 沒有,她,雨傘,今天,雨傘,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0964,synthetic_template,她今天喝雨傘,今天 雨傘 她 喝,她,雨傘,今天,雨傘,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0965,synthetic_template,她今天沒有喝雨傘,今天 雨傘 她 喝 沒有,她,雨傘,今天,雨傘,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0966,synthetic_template,她今天帶雨傘,今天 雨傘 她 帶,她,雨傘,今天,雨傘,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0967,synthetic_template,她今天沒有帶雨傘,今天 雨傘 她 帶 沒有,她,雨傘,今天,雨傘,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0968,synthetic_template,她今天寫雨傘,今天 雨傘 她 寫,她,雨傘,今天,雨傘,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0969,synthetic_template,她今天沒有寫雨傘,今天 雨傘 她 寫 沒有,她,雨傘,今天,雨傘,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0970,synthetic_template,她今天找雨傘,今天 雨傘 她 找,她,雨傘,今天,雨傘,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0971,synthetic_template,她今天沒有找雨傘,今天 雨傘 她 找 沒有,她,雨傘,今天,雨傘,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0972,synthetic_template,她今天喜歡雨傘,今天 雨傘 她 喜歡,她,雨傘,今天,雨傘,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0973,synthetic_template,她今天沒有喜歡雨傘,今天 雨傘 她 喜歡 沒有,她,雨傘,今天,雨傘,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0974,synthetic_template,她今天記得雨傘,今天 雨傘 她 記得,她,雨傘,今天,雨傘,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0975,synthetic_template,她今天沒有記得雨傘,今天 雨傘 她 記得 沒有,她,雨傘,今天,雨傘,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0976,synthetic_template,她今天忘記雨傘,今天 雨傘 她 忘記,她,雨傘,今天,雨傘,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0977,synthetic_template,她今天沒有忘記雨傘,今天 雨傘 她 忘記 沒有,她,雨傘,今天,雨傘,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0978,synthetic_template,她今天討厭雨傘,今天 雨傘 她 討厭,她,雨傘,今天,雨傘,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0979,synthetic_template,她今天沒有討厭雨傘,今天 雨傘 她 討厭 沒有,她,雨傘,今天,雨傘,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0980,synthetic_template,她今天買錢包,今天 錢包 她 買,她,錢包,今天,錢包,買,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0981,synthetic_template,她今天沒有買錢包,今天 錢包 她 買 沒有,她,錢包,今天,錢包,買,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0982,synthetic_template,她今天看錢包,今天 錢包 她 看,她,錢包,今天,錢包,看,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0983,synthetic_template,她今天沒有看錢包,今天 錢包 她 看 沒有,她,錢包,今天,錢包,看,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0984,synthetic_template,她今天喝錢包,今天 錢包 她 喝,她,錢包,今天,錢包,喝,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0985,synthetic_template,她今天沒有喝錢包,今天 錢包 她 喝 沒有,她,錢包,今天,錢包,喝,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0986,synthetic_template,她今天帶錢包,今天 錢包 她 帶,她,錢包,今天,錢包,帶,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0987,synthetic_template,她今天沒有帶錢包,今天 錢包 她 帶 沒有,她,錢包,今天,錢包,帶,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0988,synthetic_template,她今天寫錢包,今天 錢包 她 寫,她,錢包,今天,錢包,寫,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0989,synthetic_template,她今天沒有寫錢包,今天 錢包 她 寫 沒有,她,錢包,今天,錢包,寫,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0990,synthetic_template,她今天找錢包,今天 錢包 她 找,她,錢包,今天,錢包,找,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0991,synthetic_template,她今天沒有找錢包,今天 錢包 她 找 沒有,她,錢包,今天,錢包,找,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0992,synthetic_template,她今天喜歡錢包,今天 錢包 她 喜歡,她,錢包,今天,錢包,喜歡,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0993,synthetic_template,她今天沒有喜歡錢包,今天 錢包 她 喜歡 沒有,她,錢包,今天,錢包,喜歡,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0994,synthetic_template,她今天記得錢包,今天 錢包 她 記得,她,錢包,今天,錢包,記得,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0995,synthetic_template,她今天沒有記得錢包,今天 錢包 她 記得 沒有,她,錢包,今天,錢包,記得,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0996,synthetic_template,她今天忘記錢包,今天 錢包 她 忘記,她,錢包,今天,錢包,忘記,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0997,synthetic_template,她今天沒有忘記錢包,今天 錢包 她 忘記 沒有,她,錢包,今天,錢包,忘記,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL0998,synthetic_template,她今天討厭錢包,今天 錢包 她 討厭,她,錢包,今天,錢包,討厭,plain,word_order,none,false,none,時間在前；受語作主題
+TSL0999,synthetic_template,她今天沒有討厭錢包,今天 錢包 她 討厭 沒有,她,錢包,今天,錢包,討厭,plain,word_order,none,true,head_shake,時間在前；否定後置
+TSL1000,synthetic_template,我們今天買書,今天 書 我們 買,我們,書,今天,書,買,plain,word_order,none,false,none,時間在前；受語作主題

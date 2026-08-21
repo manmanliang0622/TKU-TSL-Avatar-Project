@@ -1,2 +1,19 @@
 .DS_Store
 .claude/settings.local.json
+
+# --- 下載素材與環境：不入版控、不散布 ---
+# data-sources.md 明訂影片與大型 JSON 不進版控，且 repo 需維持 private
+recordings/
+# 詞條切片快取：從 recordings/ 重新切得出來，1.6 GB，不入版控
+clip_cache/
+models/
+model_service/
+backups/
+logs/
+.venv/
+__pycache__/
+*.pyc
+*.bak-*
+*.prebump-*
+*.log
+*.pid
