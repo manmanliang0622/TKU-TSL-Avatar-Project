@@ -575,7 +575,10 @@ function convertToSignOrder(sentence) {
 // 預設同源：學校主機 bundle_server 直接提供 /translate；
 // 本機開發伺服器（8742）以代理轉發到 SSH 通道（127.0.0.1:8018 → 學校 8084）。
 // 連不上時自動退回內建對照表，前端仍可展示。可用 localStorage.glossApi 覆寫。
-const GLOSS_API = (localStorage.getItem("glossApi") || location.origin).replace(/\/$/, "");
+// pages.dev 等靜態部署：signavatar-config.js 的 apiBase 指向學校 GPU 通道。
+const GLOSS_API = (localStorage.getItem("glossApi")
+  || window.SignAvatarConfig?.apiBase
+  || location.origin).replace(/\/$/, "");
 let glossApiOnline = null;   // null=未測、true/false=已測
 
 async function translateViaModel(sentence, timeoutMs = 60000) {

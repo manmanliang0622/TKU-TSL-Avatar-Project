@@ -332,6 +332,14 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, format_string: str, *args: Any) -> None:
         print(f"[0813] {self.address_string()} {format_string % args}", flush=True)
 
+    def end_headers(self) -> None:
+        # pages.dev 等跨網域前端要在「每個」回應讀到 CORS 標頭，
+        # 只放在 OPTIONS 預檢的話，瀏覽器會擋下真正的 POST/GET 結果。
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        super().end_headers()
+
     def send_json(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -447,10 +455,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_OPTIONS(self) -> None:
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.end_headers()
+        self.end_headers()  # CORS 標頭由 end_headers 統一補上
 
     def do_GET(self) -> None:
         request_path = urlsplit(self.path).path
