@@ -1,4 +1,4 @@
-// ════════════════════════════════════════════
+﻿// ════════════════════════════════════════════
 //  手譯橋 SignBridge — Hero reveal + 雙向手語功能
 // ════════════════════════════════════════════
 
@@ -96,6 +96,7 @@ const recognitionSamples = {
 
 const generationSamples = {
   "我要喝水":  ["我", "水", "喝", "要"],
+  "我現在要出門": ["我", "現在", "出門", "要"],
   "請幫我一下": ["請", "我", "幫忙"],
   "我要掛號":  ["我", "掛號", "要"],
   "我想回家":  ["我", "家", "回", "想"],
@@ -119,7 +120,6 @@ const generationSamples = {
   "謝謝司機":  ["謝謝", "司機"],
 };
 
-const QUICK_PHRASES = ["你好", "謝謝", "我要喝水", "我要掛號", "請幫我一下", "我不舒服", "我要上課", "多少錢"];
 
 // ── DOM refs ──
 const previewVideo        = document.querySelector("#previewVideo");
@@ -144,7 +144,6 @@ const activeToken         = document.querySelector("#activeToken");
 const avatarFigure        = document.querySelector("#avatarFigure");
 const videoModeButton     = document.querySelector("#videoModeButton");
 const cameraModeButton    = document.querySelector("#cameraModeButton");
-const quickPhrases         = document.querySelector("#quickPhrases");
 const startPlaybackButton  = document.querySelector("#startPlayback");
 const pausePlaybackButton  = document.querySelector("#pausePlayback");
 
@@ -156,7 +155,7 @@ const recognitionSteps = [
 
 let recognitionTimer = null;
 let currentStream    = null;
-let currentGeneratedTokens = generationSamples["我要喝水"];
+let currentGeneratedTokens = [];
 let uploadedVideoUrl = null;
 
 // ── Page Navigation ──
@@ -188,6 +187,7 @@ function showPage(id, push = true) {
   if (id !== "recognition" && currentStream) {
     stopCameraStream();
     previewVideo.srcObject = null;
+    setCameraView(false);
     showPreview(Boolean(previewVideo.getAttribute("src")));
     cameraMessage.textContent = "已離開辨識頁，攝影機已自動關閉。";
   }
@@ -261,18 +261,6 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// ── Quick Phrases ──
-function renderQuickPhrases() {
-  quickPhrases.innerHTML = "";
-  QUICK_PHRASES.forEach(phrase => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "chip-btn sample-text";
-    btn.textContent = phrase;
-    btn.addEventListener("click", () => { textInput.value = phrase; updateGeneration(); });
-    quickPhrases.appendChild(btn);
-  });
-}
 
 // ── Avatar Player ──
 function createAvatarPlayer(figure, tokensEl, { onState, onToken } = {}) {
@@ -393,17 +381,26 @@ function createAvatarPlayer(figure, tokensEl, { onState, onToken } = {}) {
 function syncPlaybackControls(state, detail = {}) {
   const hasTokens = currentGeneratedTokens.length > 0;
   const playing = state === "playing";
-  startPlaybackButton.disabled = !hasTokens || playing;
+  // 只看有沒有句子可以打。原本播放中就把它關掉，於是點完詞卡的頭 850 毫秒
+  // 內「整句播放」是死的——那正是使用者最想按它的時候。
+  startPlaybackButton.disabled = !hasTokens;
   pausePlaybackButton.disabled = !playing;
-  startPlaybackButton.querySelector("span").textContent = state === "paused" ? "繼續播放" : "開始播放";
+  // 「整句播放」而不是「開始播放」：詞卡可以單獨試播，這顆鈕永遠是回到整句
+  startPlaybackButton.querySelector("span").textContent = state === "paused" ? "\u7e7c\u7e8c\u64ad\u653e" : "\u6574\u53e5\u64ad\u653e";
 
-  if (state === "playing") avatarStatus.textContent = "播放中";
-  else if (state === "paused") avatarStatus.textContent = "已暫停";
-  else if (state === "completed") {
-    avatarStatus.textContent = detail.singleToken && detail.token ? `「${detail.token}」播放完成` : "播放完成";
+  if (!hasTokens) {
+    avatarStatus.textContent = "";
+    activeToken.textContent = "";
+    return;
   }
-  else avatarStatus.textContent = "尚未播放";
-  if (state !== "playing" && state !== "paused") activeToken.textContent = "--";
+
+  if (state === "playing") avatarStatus.textContent = "\u64ad\u653e\u4e2d";
+  else if (state === "paused") avatarStatus.textContent = "\u5df2\u66ab\u505c";
+  else if (state === "completed") {
+    avatarStatus.textContent = detail.singleToken && detail.token ? `\u300c${detail.token}\u300d\u64ad\u653e\u5b8c\u6210` : "\u64ad\u653e\u5b8c\u6210";
+  }
+  else avatarStatus.textContent = "\u5c1a\u672a\u64ad\u653e";
+  if (state !== "playing" && state !== "paused") activeToken.textContent = "";
 }
 
 const genPlayer = createAvatarPlayer(avatarFigure, generationTokens, {
@@ -473,6 +470,14 @@ function showPreview(hasPreview) {
   emptyPreview.hidden = hasPreview;
 }
 
+// 攝影機模式與上傳模式的畫面差異：
+// 自拍要鏡像（CSS 同時翻轉 video 與 landmark canvas，骨架才不會跟畫面對不上），
+// 而即時串流沒有時間軸可拖，原生播放列只會擋住畫面。
+function setCameraView(on) {
+  previewBox.classList.toggle("is-camera", on);
+  previewVideo.controls = !on;
+}
+
 // ── Camera ──
 async function openCameraPreview() {
   if (!navigator.mediaDevices?.getUserMedia) {
@@ -487,6 +492,7 @@ async function openCameraPreview() {
     previewVideo.srcObject = currentStream;
     previewVideo.play();
     showPreview(true);
+    setCameraView(true);
     cameraMessage.textContent = "攝影機已開啟，請讓雙手完整出現在畫面中。";
     setPressed(videoModeButton, false);
     setPressed(cameraModeButton, true);
@@ -498,6 +504,7 @@ async function openCameraPreview() {
 function useUploadMode() {
   stopCameraStream();
   previewVideo.srcObject = null;
+  setCameraView(false);
   showPreview(Boolean(previewVideo.getAttribute("src")));
   setPressed(videoModeButton, true);
   setPressed(cameraModeButton, false);
@@ -556,21 +563,53 @@ function convertToSignOrder(sentence) {
   return generationSamples[sentence.trim()] || fallbackGeneration(sentence.trim());
 }
 
-function updateGeneration() {
+async function translateToSignOrder(sentence) {
+  if (window.Composer?.translate) {
+    try {
+      const result = await Composer.translate(sentence);
+      if (Array.isArray(result.glosses) && result.glosses.length) {
+        return { tokens: result.glosses, source: result.source || "gemma", translation: result };
+      }
+    } catch (ex) {
+      console.warn("Gemma translate failed; using local fallback.", ex);
+    }
+  }
+  return { tokens: convertToSignOrder(sentence), source: "fallback", translation: null };
+}
+
+async function updateGeneration() {
   const sentence = textInput.value.trim();
   if (!sentence) {
-    generationStatus.textContent = "請先輸入一句口語，例如：你好";
-    originalSentence.textContent = "尚未輸入內容";
+    generationStatus.textContent = "\u8acb\u5148\u8f38\u5165\u4e00\u53e5\u4e2d\u6587\u3002";
+    originalSentence.textContent = "";
     currentGeneratedTokens = [];
     renderGenerationTokens([]);
     genPlayer.load([]);
+    window.dispatchEvent(new CustomEvent("signavatar:generation-cleared"));
     return;
   }
-  currentGeneratedTokens = convertToSignOrder(sentence);
+
+  genPlayer.stop();
+  currentGeneratedTokens = [];
+  renderGenerationTokens([]);
+  genPlayer.load([]);
   originalSentence.textContent = sentence;
+  generationStatus.textContent = "\u6b63\u5728\u7528 Gemma \u7522\u751f\u53f0\u7063\u624b\u8a9e gloss...";
+  window.dispatchEvent(new CustomEvent("signavatar:generation-started", {
+    detail: { sentence },
+  }));
+
+  const translated = await translateToSignOrder(sentence);
+  currentGeneratedTokens = translated.tokens;
   renderGenerationTokens(currentGeneratedTokens);
   genPlayer.load(currentGeneratedTokens);
-  generationStatus.textContent = "已轉成台灣手語語序，自動播放中。";
+  generationStatus.textContent =
+    translated.source === "gemma"
+      ? "Gemma \u5df2\u7522\u751f gloss\uff0c\u6b63\u5728\u63a5\u4e0a\u865b\u64ec\u4eba\u64ad\u653e\u3002"
+      : "Gemma API \u672a\u9023\u7dda\uff0c\u5148\u4f7f\u7528\u672c\u6a5f fallback \u7522\u751f gloss\u3002";
+  window.dispatchEvent(new CustomEvent("signavatar:generation-updated", {
+    detail: { sentence, tokens: currentGeneratedTokens, translation: translated.translation },
+  }));
   playAvatarSequence();
 }
 
@@ -587,6 +626,7 @@ function loadVideoFile(file) {
   stopCameraStream();
   clearUploadedVideo();
   previewVideo.srcObject = null;
+  setCameraView(false);
   uploadedVideoUrl = URL.createObjectURL(file);
   previewVideo.src = uploadedVideoUrl;
   showPreview(true);
@@ -633,6 +673,7 @@ document.querySelector("#resetRecognition").addEventListener("click", () => {
   clearUploadedVideo();
   previewVideo.srcObject = null;
   previewVideo.removeAttribute("src");
+  setCameraView(false);
   showPreview(false);
   setPressed(videoModeButton, true);
   setPressed(cameraModeButton, false);
@@ -657,11 +698,14 @@ generationTokens.addEventListener("click", e => {
 document.querySelector("#clearText").addEventListener("click", () => {
   genPlayer.stop();
   textInput.value = "";
-  originalSentence.textContent = "尚未輸入內容";
+  originalSentence.textContent = "";
   currentGeneratedTokens = [];
   renderGenerationTokens([]);
   genPlayer.load([]);
-  generationStatus.textContent = "內容已清除，請重新輸入一句口語。";
+  generationStatus.textContent = "";
+  avatarStatus.textContent = "";
+  activeToken.textContent = "";
+  window.dispatchEvent(new CustomEvent("signavatar:generation-cleared"));
 });
 
 // Enter 直接轉換（Shift+Enter 換行）
@@ -687,7 +731,6 @@ kbdHelp?.addEventListener("click", e => { if (e.target === kbdHelp) kbdHelp.clos
 // ── Init ──
 const initialPage = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
 showPage(initialPage, false);
-renderQuickPhrases();
 renderGenerationTokens(currentGeneratedTokens);
 genPlayer.load(currentGeneratedTokens);
 showPreview(false);

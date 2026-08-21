@@ -18,6 +18,7 @@
     --place: #9d8cff;
     --dict: #5ecf9a;
     --new: #f0836a;
+    --surname: #d9a441;
     --mono: "Berkeley Mono", "JetBrains Mono", "IBM Plex Mono", "SF Mono",
             ui-monospace, Menlo, monospace;
   }
@@ -141,6 +142,7 @@ function kindOf(entry) {
   if (src.startsWith("placename:")) return "place";
   if (src.startsWith("twtsl:")) return "dict";
   if (src.startsWith("tasli:")) return "new";
+  if (src.startsWith("familyname:")) return "surname";
   return "manual";
 }
 
@@ -209,6 +211,18 @@ const SOURCES = [
       影片與萃取結果不散布、不入版控,引用須註明出處。`,
   },
   {
+    kind: "surname", dot: "var(--surname)",
+    name: "台灣手語姓氏網(姓氏)",
+    url: "https://jung-hsingchang.tw/name/familynames_database.php",
+    lic: { cls: "ok", text: "已取得同意;資料不公開" },
+    body: `張榮興台灣手語研究室的另一個資料庫,335 個姓氏,每個一支影片 +
+      逐字素構詞分析。台灣手語的姓氏多半<b>取字形</b>(刁 = 呈現「刁」之字形),
+      跟同字的一般詞是<b>不同手勢</b>——所以一姓收兩個鍵:
+      <code>林(姓)</code>(沿用詞庫既有寫法)與裸字 <code>林</code>;
+      裸字已被一般詞占用的(山、水、方、王…共 92 個)保留既有詞條,
+      姓氏打法只走 <code>X(姓)</code>。授權同地名網。`,
+  },
+  {
     kind: "manual", dot: "var(--manual)",
     name: "手動標註 / 其他影片",
     url: "",
@@ -220,7 +234,7 @@ const SOURCES = [
 ];
 
 function renderCards() {
-  const counts = { natural: 0, signed: 0, dict: 0, new: 0, place: 0, manual: 0 };
+  const counts = { natural: 0, signed: 0, dict: 0, new: 0, place: 0, surname: 0, manual: 0 };
   // 別名鍵指向同一段錄影，算進來會讓每個來源的詞數灌水
   for (const k in LEX) if (!LEX[k].alias_of) counts[kindOf(LEX[k])]++;
   const box = document.getElementById("src-cards");
@@ -289,6 +303,15 @@ function traceWord(word) {
         <span class="k">詞頁</span> <a href="${x.page || "#"}" target="_blank" rel="noopener">${x.page || "?"}</a><br>
         <span class="k">授權</span> ${x.license || "?"}<br>
         <span class="k">抓取</span> ${x.fetched_at || "?"}`;
+    } else if (src.startsWith("familyname:")) {
+      const x = EXT[src] || {};
+      const m = (x.morphemes || [])[0] || {};
+      originHTML = `
+        <span class="k">姓</span> ${x.word || "?"}（${x.stroke || "?"} 畫）<br>
+        <span class="k">造詞</span> ${m["表達方式"] || "?"}／${m["造詞策略"] || "?"}<br>
+        <span class="k">打法</span> ${m["打法描述"] || "?"}<br>
+        <span class="k">影片</span> <a href="${x.origin || "#"}" target="_blank" rel="noopener">${x.origin || "?"}</a><br>
+        <span class="k">授權</span> ${x.license || "?"}`;
     } else if (src.startsWith("placename:")) {
       const x = EXT[src] || {};
       const morph = (x.morphemes || [])
