@@ -239,6 +239,9 @@ kbd{
   font-size:clamp(18px,2.2vw,28px);
   line-height:1.1;
   letter-spacing:.5em;
+  /* 游標感應縮放由 script.js 以 transform 驅動：左上角為錨點，字往右下長 */
+  transform-origin:0 0;
+  will-change:transform;
   transition:letter-spacing .6s cubic-bezier(.2,.8,.2,1);
 }
 .brand-column span:hover{letter-spacing:.72em;}
@@ -299,14 +302,6 @@ kbd{
 .generation-page{
   max-width:none;
   padding:98px clamp(20px,5.625vw,108px) 8px;
-}
-/* 辨識頁鎖在一個視窗高度內：控制台維持自然高度，舞台吃掉剩下的空間 */
-.recognition-page{
-  height:100svh;
-  padding-bottom:var(--sp-6);
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
 }
 
 /* 頁面標題（0813 排版中為輔助技術保留、視覺隱藏） */
@@ -654,7 +649,7 @@ h2{
   display:flex;flex-direction:column;gap:clamp(10px,1.4vh,18px);
 }
 .stage-dock .player-toolbar,
-#generation .stage-dock .player-toolbar{position:static;left:auto;right:auto;bottom:auto;margin:0;}
+.stage-page .stage-dock .player-toolbar{position:static;left:auto;right:auto;bottom:auto;margin:0;}
 .stage-timeline{display:flex;flex-direction:column;gap:8px;}
 .stage-timeline[hidden]{display:none;}
 .timeline-meta{
@@ -803,28 +798,17 @@ h2{
 }
 
 /* ---------- CAPTURE STAGE（辨識頁：與生成頁同一套版面語彙） ---------- */
-.capture-panel{
-  flex:1 1 auto;
-  min-height:0;
-  margin:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
+.capture-panel{margin:0;}
 .capture-wrap{
   position:relative;
-  height:min(100%,calc(860px * 9 / 16));
-  width:auto;
-  aspect-ratio:16 / 9;
-  max-width:min(100%,860px);
-  margin:0;
+  width:100%;
   container-type:inline-size;
   container-name:stage;
 }
 .capture-stage{
   position:relative;
   width:100%;
-  height:100%;
+  aspect-ratio:16 / 9;
   border-radius:0;
   background:var(--black);
   overflow:hidden;
@@ -925,39 +909,78 @@ h2{
   .capture-stage .empty-preview svg{display:none;}
 }
 
-/* ---------- GENERATION 全屏舞台：黑舞台鋪滿視窗、輸入控制台浮在左上 ---------- */
-#generation{
+/* ---------- 全屏舞台（辨識／生成同一套）：黑舞台鋪滿視窗、控制台浮在左上 ---------- */
+.stage-page{
+  --stage-pad:clamp(20px,4vw,64px);
+  --stage-top:clamp(88px,13vh,124px);
+  --stage-bottom:clamp(96px,15vh,132px);
+  --console-w:min(400px,calc(100vw - 2 * var(--stage-pad)));
   position:relative;
+  display:block;
   height:100svh;
   overflow:hidden;
   max-width:none;
   padding:0;
 }
 /* 舞台從導覽列下緣開始：上方保留與首頁相同的奶茶點陣帶 */
-#generation .avatar-panel{position:absolute;inset:78px 0 0 0;}
-#generation .avatar-wrap{height:100%;}
-#generation .avatar-stage{
+.stage-page .avatar-panel,
+.stage-page .capture-panel{position:absolute;inset:78px 0 0 0;}
+.stage-page .avatar-wrap,
+.stage-page .capture-wrap{height:100%;}
+.stage-page .avatar-stage,
+.stage-page .capture-stage{
   aspect-ratio:auto;
   width:100%;height:100%;
   max-height:none;
 }
-#generation .player-toolbar{
-  left:clamp(20px,4vw,64px);
-  right:clamp(20px,4vw,64px);
+/* 舞台下緣的控制列：生成頁是播放控制，辨識頁是輸入來源 */
+.stage-page .player-toolbar,
+.stage-page .capture-toolbar{
+  top:auto;
+  left:var(--stage-pad);
+  right:var(--stage-pad);
   bottom:clamp(18px,3vh,32px);
 }
+.stage-page .capture-toolbar .mode-switch{gap:var(--sp-3);}
+/* 來源按鈕比照播放按鈕的分量 */
+.stage-page .source-btn{
+  min-height:clamp(46px,3.6vw,64px);
+  padding:clamp(11px,1vw,16px) clamp(20px,1.7vw,32px);
+  font-size:clamp(13px,1vw,16px);letter-spacing:.2em;
+}
+.stage-page .stage-status{
+  min-height:clamp(32px,2.2vw,42px);
+  padding:6px clamp(12px,1.1vw,20px);
+  font-size:clamp(11.5px,.85vw,14px);
+}
+/* 偵測徽章移到舞台右上，與控制台上緣切齊 */
+.stage-page .capture-stage .hands-badge{
+  left:auto;right:var(--stage-pad);
+  top:var(--stage-top);bottom:auto;
+  transform:none;
+  max-width:calc(100% - var(--console-w) - 3 * var(--stage-pad));
+}
+/* 影像與空狀態都收在控制台右邊的舞台區：
+   不被控制台壓到、原生播放列也不會撞上底部來源切換 */
+.stage-page .capture-stage video,
+.stage-page .capture-stage .landmark-canvas,
+.stage-page .capture-stage .empty-preview{
+  inset:var(--stage-top) var(--stage-pad) var(--stage-bottom)
+        calc(var(--console-w) + 2 * var(--stage-pad));
+  width:auto;height:auto;
+}
 /* 人偶右移（控制台在左，人偶偏右平衡構圖），抬到舞台中段 */
-#generation .avatar-stage .avatar-figure{
+.stage-page .avatar-stage .avatar-figure{
   left:64%;
   bottom:clamp(120px,24%,220px);
 }
-/* 輸入控制台浮在左側：無框，控制元件直接浮在黑舞台上 */
-#generation .generation-console{
+/* 控制台浮在左側：無框，控制元件直接浮在黑舞台上 */
+.stage-page .generation-console{
   position:absolute;z-index:3;
-  left:clamp(20px,4vw,64px);
-  top:clamp(88px,13vh,124px);
-  bottom:clamp(96px,15vh,132px);
-  width:min(400px,calc(100vw - 2 * clamp(20px,4vw,64px)));
+  left:var(--stage-pad);
+  top:var(--stage-top);
+  bottom:var(--stage-bottom);
+  width:var(--console-w);
   overflow:auto;
   margin:0;
   padding:0;
@@ -966,54 +989,62 @@ h2{
   color:var(--ivory);
 }
 /* 黑舞台上的元素反白 */
-#generation .generation-console :focus-visible{outline-color:var(--ivory);}
-#generation .generation-console .generation-section-title{color:var(--ivory);}
-#generation .generation-console .generation-field-label{color:rgba(233,234,228,.8);}
-#generation .generation-console textarea{
+.stage-page .generation-console :focus-visible{outline-color:var(--ivory);}
+.stage-page .generation-console .generation-section-title{color:var(--ivory);}
+.stage-page .generation-console .generation-field-label{color:rgba(233,234,228,.8);}
+.stage-page .generation-console .console-note{color:rgba(233,234,228,.72);}
+.stage-page .generation-console textarea{
   border-color:rgba(233,234,228,.5);
   color:var(--ivory);
   background:rgba(233,234,228,.14);
 }
-#generation .generation-console textarea::placeholder{color:rgba(233,234,228,.66);}
-#generation .generation-console textarea:hover,
-#generation .generation-console textarea:focus{border-color:var(--ivory);}
-#generation .generation-console .btn-primary{
+.stage-page .generation-console textarea::placeholder{color:rgba(233,234,228,.66);}
+.stage-page .generation-console textarea:hover,
+.stage-page .generation-console textarea:focus{border-color:var(--ivory);}
+.stage-page .generation-console .btn-primary{
   background:var(--ivory);color:var(--black);border-color:var(--ivory);
 }
-#generation .generation-console .btn-primary:hover{background:transparent;color:var(--ivory);}
-#generation .generation-console .btn-ghost{
+.stage-page .generation-console .btn-primary:hover{background:transparent;color:var(--ivory);}
+.stage-page .generation-console .btn-ghost{
   color:rgba(233,234,228,.85);border-bottom-color:rgba(233,234,228,.45);
 }
-#generation .generation-console .btn-ghost:hover{color:var(--ivory);border-color:var(--ivory);}
-#generation .generation-console .generation-output-row{border-top-color:rgba(233,234,228,.3);}
-#generation .generation-console .token{border-color:var(--ivory);color:var(--ivory);background:rgba(233,234,228,.14);}
-#generation .generation-console .token-button:hover{background:rgba(233,234,228,.12);}
-#generation .generation-console .token.is-highlighted{background:var(--ivory);color:var(--black);}
+.stage-page .generation-console .btn-ghost:hover{color:var(--ivory);border-color:var(--ivory);}
+.stage-page .generation-console .generation-output-row{border-top-color:rgba(233,234,228,.3);}
+.stage-page .generation-console .token{border-color:var(--ivory);color:var(--ivory);background:rgba(233,234,228,.14);}
+.stage-page .generation-console .token-button:hover{background:rgba(233,234,228,.12);}
+.stage-page .generation-console .token.is-highlighted{background:var(--ivory);color:var(--black);}
+/* 辨識流程的步驟卡同樣反白 */
+.stage-page .generation-console .step-item,
+.stage-page .generation-console .step-dot{border-color:rgba(233,234,228,.35);}
+.stage-page .generation-console .step-item.is-active,
+.stage-page .generation-console .step-item.is-complete{border-color:var(--ivory);}
+.stage-page .generation-console .step-item.is-active .step-dot,
+.stage-page .generation-console .step-item.is-complete .step-dot{
+  border-color:var(--ivory);background:var(--ivory);color:var(--black);
+}
 /* 控制台改直排：標籤在上、輸入在下 */
-#generation .generation-input-row{
+.stage-page .generation-input-row{
   grid-template-columns:1fr;
   gap:var(--sp-3);
   align-items:start;
 }
-#generation .generation-input-row textarea{
+.stage-page .generation-input-row textarea{
   height:clamp(72px,14vh,120px);
 }
-#generation .generation-actions{
+.stage-page .generation-actions{
   grid-column:auto;
   width:100%;
   justify-content:flex-start;
 }
-#generation .generation-actions .btn-ghost{margin-left:auto;}
-#generation .generation-output-row{
+.stage-page .generation-actions .btn-ghost{margin-left:auto;}
+.stage-page .generation-output-row{
   grid-template-columns:1fr;
   gap:var(--sp-2);
   align-items:start;
 }
 
 /* ---------- RECOGNITION CONSOLE（0813 × cipher） ---------- */
-.recognition-console{flex:0 0 auto;margin-top:var(--sp-6);}
 .recognition-console .generation-output-row{align-items:start;}
-.recognition-console .generation-section-label{padding-top:var(--sp-1);}
 .console-note{
   margin:0;
   font-size:12.5px;line-height:1.9;
@@ -1093,10 +1124,14 @@ h2{
   .generation-page{padding-top:98px;padding-bottom:40px;}
   .avatar-stage{aspect-ratio:16 / 9;}
   /* 全屏舞台退回上下堆疊：舞台在上、輸入在下 */
-  #generation{position:static;display:block;height:auto;overflow:visible;padding:98px 20px 40px;}
-  #generation .avatar-panel{position:static;}
-  #generation .avatar-stage{height:auto;aspect-ratio:16 / 9;}
-  #generation .generation-console{
+  .stage-page{position:static;display:block;height:auto;overflow:visible;padding:98px 20px 40px;}
+  .stage-page .avatar-panel,
+  .stage-page .capture-panel{position:static;}
+  .stage-page .avatar-wrap,
+  .stage-page .capture-wrap{height:auto;container-type:normal;}
+  .stage-page .avatar-stage,
+  .stage-page .capture-stage{height:auto;aspect-ratio:16 / 9;}
+  .stage-page .generation-console{
     position:static;width:auto;max-height:none;overflow:visible;
     margin-top:var(--sp-4);padding:var(--sp-4) 0;
     color:var(--black);
@@ -1113,25 +1148,32 @@ h2{
   .timeline-fill{background:rgba(0,0,0,.18);}
   .timeline-head{background:var(--black);}
   /* 回到奶茶底：反白文字全部還原成黑字 */
-  #generation .generation-console{color:var(--black);}
-  #generation .generation-console :focus-visible{outline-color:var(--black);}
-  #generation .generation-console .generation-section-title{color:var(--black);}
-  #generation .generation-console .generation-field-label{color:var(--muted);}
-  #generation .generation-console textarea{border-color:var(--faint);color:var(--black);background:rgba(0,0,0,.05);}
-  #generation .generation-console textarea::placeholder{color:var(--muted);}
-  #generation .generation-console textarea:hover,
-  #generation .generation-console textarea:focus{border-color:var(--black);}
-  #generation .generation-console .btn-primary{background:var(--black);color:var(--ivory);border-color:var(--black);}
-  #generation .generation-console .btn-primary:hover{background:transparent;color:var(--black);}
-  #generation .generation-console .btn-ghost{color:var(--muted);border-bottom-color:var(--faint);}
-  #generation .generation-console .btn-ghost:hover{color:var(--black);border-color:var(--black);}
-  #generation .generation-console .generation-output-row{border-top-color:var(--faint);}
-  #generation .generation-console .token{border-color:var(--black);color:var(--black);background:rgba(0,0,0,.05);}
-  #generation .generation-console .token-button:hover{background:rgba(0,0,0,.07);}
-  #generation .generation-console .token.is-highlighted{background:var(--black);color:var(--ivory);}
-  #generation .avatar-stage .avatar-figure{left:50%;}
-  #generation .generation-input-row textarea{height:56px;}
-  .player-toolbar{
+  .stage-page .generation-console :focus-visible{outline-color:var(--black);}
+  .stage-page .generation-console .generation-section-title{color:var(--black);}
+  .stage-page .generation-console .generation-field-label{color:var(--muted);}
+  .stage-page .generation-console .console-note{color:var(--muted);}
+  .stage-page .generation-console textarea{border-color:var(--faint);color:var(--black);background:rgba(0,0,0,.05);}
+  .stage-page .generation-console textarea::placeholder{color:var(--muted);}
+  .stage-page .generation-console textarea:hover,
+  .stage-page .generation-console textarea:focus{border-color:var(--black);}
+  .stage-page .generation-console .btn-primary{background:var(--black);color:var(--ivory);border-color:var(--black);}
+  .stage-page .generation-console .btn-primary:hover{background:transparent;color:var(--black);}
+  .stage-page .generation-console .btn-ghost{color:var(--muted);border-bottom-color:var(--faint);}
+  .stage-page .generation-console .btn-ghost:hover{color:var(--black);border-color:var(--black);}
+  .stage-page .generation-console .generation-output-row{border-top-color:var(--faint);}
+  .stage-page .generation-console .token{border-color:var(--black);color:var(--black);background:rgba(0,0,0,.05);}
+  .stage-page .generation-console .token-button:hover{background:rgba(0,0,0,.07);}
+  .stage-page .generation-console .token.is-highlighted{background:var(--black);color:var(--ivory);}
+  .stage-page .generation-console .step-item,
+  .stage-page .generation-console .step-dot{border-color:var(--faint);}
+  .stage-page .generation-console .step-item.is-active,
+  .stage-page .generation-console .step-item.is-complete{border-color:var(--black);}
+  .stage-page .generation-console .step-item.is-active .step-dot,
+  .stage-page .generation-console .step-item.is-complete .step-dot{border-color:var(--black);background:var(--black);color:var(--ivory);}
+  .stage-page .avatar-stage .avatar-figure{left:50%;}
+  .stage-page .generation-input-row textarea{height:56px;}
+  .stage-page .player-toolbar,
+  .stage-page .capture-toolbar{
     position:static;
     margin-top:var(--sp-4);
     padding:0 2px;
@@ -1190,25 +1232,20 @@ h2{
   }
   .generation-console .token-row{min-height:42px;gap:var(--sp-2);}
 
-  /* 辨識頁：窄螢幕控制台比視窗高，放回正常文件流讓頁面照常捲動 */
-  .recognition-page{height:auto;display:block;overflow:visible;}
-  .capture-panel{display:block;}
-  .capture-wrap{height:auto;width:100%;max-width:100%;aspect-ratio:auto;container-type:normal;}
-  .capture-stage{aspect-ratio:16 / 9;height:auto;}
-  .capture-toolbar{
-    position:static;
-    margin-top:var(--sp-4);
-    padding:0 2px;
-  }
-  .source-btn{
+  /* 辨識頁：舞台上的控制列落到奶茶底，配色跟著還原成黑字 */
+  .stage-page .source-btn{
     min-height:40px;
+    padding:8px 18px;
+    font-size:12.5px;letter-spacing:.14em;
     border-color:var(--black);
     background:transparent;color:var(--black);
-    font-size:12.5px;
   }
-  .source-btn:hover{border-color:var(--black);background:rgba(0,0,0,.07);}
-  .source-btn.is-active{background:var(--black);border-color:var(--black);color:var(--ivory);}
-  .stage-status{
+  .stage-page .source-btn:hover{border-color:var(--black);background:rgba(0,0,0,.07);}
+  .stage-page .source-btn.is-active{background:var(--black);border-color:var(--black);color:var(--ivory);}
+  .stage-page .stage-status{
+    min-height:40px;
+    padding:7px 15px;
+    font-size:11px;
     border-color:var(--faint);
     color:var(--muted);
     background:transparent;
@@ -1218,15 +1255,21 @@ h2{
   .stage-status[data-state="active"]::before{background:var(--black);}
   .stage-status[data-state="done"]{border-color:var(--black);background:var(--black);color:var(--ivory);}
   .stage-status[data-state="done"]::before{background:var(--ivory);}
-  .capture-stage .hands-badge{left:clamp(16px,2.2vw,26px);transform:none;top:clamp(16px,2.2vw,22px);}
-  .recognition-console{margin-top:var(--sp-2);}
+  .stage-page .capture-stage video,
+  .stage-page .capture-stage .landmark-canvas,
+  .stage-page .capture-stage .empty-preview{inset:0;width:100%;height:100%;}
+  .stage-page .capture-stage .hands-badge{
+    left:clamp(16px,2.2vw,26px);right:auto;
+    top:clamp(16px,2.2vw,22px);
+    transform:none;
+    max-width:calc(100% - 2 * clamp(16px,2.2vw,26px));
+  }
   .recognition-console .generation-output-row{align-items:stretch;}
-  .recognition-console .generation-section-label{padding-top:0;}
 }
 
 @media (max-width:600px){
-  .avatar-stage{aspect-ratio:4 / 3;}
-  .capture-stage{aspect-ratio:4 / 3;}
+  .stage-page .avatar-stage,
+  .stage-page .capture-stage{aspect-ratio:4 / 3;}
   .generation-console{padding:var(--sp-4);}
 }
 
@@ -1242,21 +1285,22 @@ h2{
   .meta-row{gap:var(--sp-3);}
   .ctas{width:100%;}
   .ctas a{flex:1;min-width:130px;padding:12px 14px;}
-  .generation-page{padding:84px 16px 40px;}
+  .stage-page{padding:84px 16px 40px;}
   .generation-console{padding:var(--sp-4);}
   .generation-actions{gap:18px;}
   .generation-actions .btn-primary{padding-left:22px;padding-right:22px;}
   .generation-console .token{min-width:0;}
-  .recognition-page{padding:84px 16px 40px;}
   .capture-toolbar{align-items:stretch;flex-direction:column;gap:var(--sp-3);}
   .capture-toolbar .mode-switch{width:100%;}
-  .source-btn{flex:1;padding:8px 10px;}
+  .stage-page .source-btn{flex:1;padding:8px 10px;}
   .stage-status{align-self:flex-start;}
 }
 
 @media (prefers-reduced-motion:reduce){
   .mark{animation:none;}
   .type-stack span,.brand-column span{transition:none;}
+  /* 減少動態：直欄不做游標縮放（JS 也會略過；!important 蓋掉可能殘留的 inline transform） */
+  .brand-column span{transform:none !important;}
   .token.is-highlighted,
   .kbd-dialog[open],
   .avatar-figure.is-signing .avatar-smile,
