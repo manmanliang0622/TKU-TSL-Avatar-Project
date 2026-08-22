@@ -214,7 +214,7 @@ function showPage(id, push = true) {
 // 瀏覽器返回／前進鍵
 window.addEventListener("hashchange", () => {
   const id = location.hash.slice(1);
-  showPage(PAGES.includes(id) ? id : "generation", false);
+  showPage(PAGES.includes(id) ? id : "home", false);
 });
 
 navLinks.forEach(a => {
@@ -770,9 +770,7 @@ document.querySelector("#kbdClose")?.addEventListener("click", () => kbdHelp?.cl
 kbdHelp?.addEventListener("click", e => { if (e.target === kbdHelp) kbdHelp.close(); });
 
 // ── Init ──
-// 預設直達「手語生成」：分享 https://站名.pages.dev 不用帶 #generation；
-// 首頁仍可從導覽列或 logo 回去
-const initialPage = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "generation";
+const initialPage = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
 showPage(initialPage, false);
 renderQuickPhrases();
 renderGenerationTokens(currentGeneratedTokens);
