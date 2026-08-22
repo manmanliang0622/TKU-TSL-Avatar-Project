@@ -8,7 +8,7 @@
   // cloudflared quick tunnel → 學校電腦 127.0.0.1:8084（0821 bundle_server）。
   // 注意：quick tunnel 重開網址會變，屆時改這一行重新部署，
   // 或在瀏覽器 console 用 localStorage.setItem("glossApi", "新網址") 臨時切換。
-  const DEFAULT_API = "https://meters-prepared-register-advertisers.trycloudflare.com";
+  const DEFAULT_API = "https://loved-loved-athletic-several.trycloudflare.com";
 
   let stored = "";
   try { stored = localStorage.getItem("glossApi") || ""; } catch { /* Safari 隱私模式 */ }
