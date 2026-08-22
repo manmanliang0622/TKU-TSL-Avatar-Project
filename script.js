@@ -204,7 +204,8 @@ function showPage(id, push = true) {
   const hash = "#" + id;
   if (location.hash !== hash) {
     if (push) history.pushState(null, "", hash);
-    else history.replaceState(null, "", hash);
+    // 裸網址（無 hash）進站時不補寫 #generation，分享的短網址保持乾淨
+    else if (location.hash) history.replaceState(null, "", hash);
   }
   window.dispatchEvent(new CustomEvent("pagechange", { detail: id }));
   window.scrollTo(0, 0);
@@ -213,7 +214,7 @@ function showPage(id, push = true) {
 // 瀏覽器返回／前進鍵
 window.addEventListener("hashchange", () => {
   const id = location.hash.slice(1);
-  showPage(PAGES.includes(id) ? id : "home", false);
+  showPage(PAGES.includes(id) ? id : "generation", false);
 });
 
 navLinks.forEach(a => {
@@ -769,7 +770,9 @@ document.querySelector("#kbdClose")?.addEventListener("click", () => kbdHelp?.cl
 kbdHelp?.addEventListener("click", e => { if (e.target === kbdHelp) kbdHelp.close(); });
 
 // ── Init ──
-const initialPage = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
+// 預設直達「手語生成」：分享 https://站名.pages.dev 不用帶 #generation；
+// 首頁仍可從導覽列或 logo 回去
+const initialPage = PAGES.includes(location.hash.slice(1)) ? location.hash.slice(1) : "generation";
 showPage(initialPage, false);
 renderQuickPhrases();
 renderGenerationTokens(currentGeneratedTokens);
