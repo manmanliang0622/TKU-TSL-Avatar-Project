@@ -28,7 +28,63 @@
     ty = y = heroRect.height * 0.58;
   }
   setInitial();
-  window.addEventListener('resize', () => { updateRect(); if (!hasMoved) setInitial(); });
+
+  // ── 左側「手譯橋」直欄：游標愈近，該行字愈大（純 transform，不觸發重排） ──
+  const brandCol  = document.querySelector('#home .brand-column');
+  const brandRows = brandCol ? Array.from(brandCol.children) : [];
+  const BRAND_AMP     = 0.42;  // 正對游標那行的最大放大幅度
+  const BRAND_FAR     = 0.28;  // 游標遠離直欄時仍保留的感應強度
+  const BRAND_SIGMA_X = 460;   // 水平感應半徑（px）
+  const BRAND_SIGMA_Y = 1.9;   // 垂直感應半徑（幾倍行高）
+  let rowGeom = [], colLeft = 0, colRight = 0;
+  const lastCss = [];   // 值沒變就不寫回，靜止時不必每幀觸發樣式重算
+
+  // 量測前先清掉 transform，取得未縮放的版面座標（與 x／y 同樣以 hero 左上角為原點）
+  function measureRows() {
+    if (!brandRows.length) return;
+    for (let i = 0; i < brandRows.length; i++) { brandRows[i].style.transform = ''; lastCss[i] = ''; }
+    const base = hero.getBoundingClientRect();
+    rowGeom = brandRows.map(el => {
+      const b = el.getBoundingClientRect();
+      return { top: b.top - base.top, h: b.height || 1 };
+    });
+    const c = brandCol.getBoundingClientRect();
+    colLeft  = c.left  - base.left;
+    colRight = c.right - base.left;
+  }
+  measureRows();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureRows);
+
+  function paintRows() {
+    if (reduced || !rowGeom.length) return;
+    const strength = Math.min(1, Math.max(0, r / RADIUS));   // 透鏡收起時同步收斂回原尺寸
+    const dxOut = Math.max(colLeft - x, x - colRight, 0);
+    const near  = BRAND_FAR + (1 - BRAND_FAR) * Math.exp(-Math.pow(dxOut / BRAND_SIGMA_X, 2));
+
+    const scales = [];
+    let extraTotal = 0;
+    for (let i = 0; i < rowGeom.length; i++) {
+      const g  = rowGeom[i];
+      const dy = y - (g.top + g.h / 2);
+      const w  = Math.exp(-Math.pow(dy / (g.h * BRAND_SIGMA_Y), 2));
+      const s  = 1 + BRAND_AMP * strength * near * w;
+      scales.push(s);
+      extraTotal += (s - 1) * g.h;
+    }
+    // 把撐開的高度平均分到上下兩側，直欄的視覺重心維持不動
+    let shift = -extraTotal / 2;
+    for (let i = 0; i < rowGeom.length; i++) {
+      const css = 'translateY(' + shift.toFixed(2) + 'px) scale(' + scales[i].toFixed(4) + ')';
+      if (css !== lastCss[i]) { brandRows[i].style.transform = css; lastCss[i] = css; }
+      shift += (scales[i] - 1) * rowGeom[i].h;
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    updateRect();
+    measureRows();
+    if (!hasMoved) setInitial();
+  });
 
   const mqMobile = window.matchMedia('(max-width: 900px)');
   const touchDevice = window.matchMedia('(hover:none)').matches;
@@ -76,6 +132,7 @@
     reveal.style.setProperty('--mx', x.toFixed(1) + 'px');
     reveal.style.setProperty('--my', y.toFixed(1) + 'px');
     reveal.style.setProperty('--r', Math.max(0, r).toFixed(1) + 'px');
+    paintRows();
     rafId = requestAnimationFrame(frame);
   }
 
@@ -85,7 +142,10 @@
   function syncLoop()  { (document.hidden || homeSection.hidden) ? stopLoop() : startLoop(); }
 
   document.addEventListener('visibilitychange', syncLoop);
-  window.addEventListener('pagechange', () => { syncLoop(); if (!homeSection.hidden) updateRect(); });
+  window.addEventListener('pagechange', () => {
+    syncLoop();
+    if (!homeSection.hidden) { updateRect(); measureRows(); }
+  });
   startLoop();
 })();
 
