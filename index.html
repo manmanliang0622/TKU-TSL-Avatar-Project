@@ -2,25 +2,32 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
+<script>
+/* 正式網址已改為 signbridge-2co.pages.dev；舊網域自動轉過去（保留 #分頁），
+   搜尋引擎會逐步把索引換成新網址 */
+if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
+  location.replace("https://signbridge-2co.pages.dev" + location.pathname + location.search + location.hash);
+}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="手譯橋 SignBridge：即時手語翻譯系統。將手語影像轉換為文字，也能把口語句子轉成台灣手語語序並播放動畫。">
 <meta name="theme-color" content="#E9EAE4">
 <title>手譯橋 SignBridge — 手語翻譯系統</title>
 <meta name="google-site-verification" content="8p95iFz6pA8p0foqyns39ckik2k76oWNKrs9THkAl70" />
-<link rel="canonical" href="https://tku-tsl-avatar-project.pages.dev/">
+<link rel="canonical" href="https://signbridge-2co.pages.dev/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="手譯橋 SignBridge">
 <meta property="og:title" content="手譯橋 SignBridge — 即時手語翻譯系統">
 <meta property="og:description" content="將手語影像即時轉換為文字，也能把口語句子轉成台灣手語語序並由虛擬人播放。聽人與聾人之間的每一段對話，都能被完整理解。">
-<meta property="og:url" content="https://tku-tsl-avatar-project.pages.dev/">
-<meta property="og:image" content="https://tku-tsl-avatar-project.pages.dev/og-image.jpg">
+<meta property="og:url" content="https://signbridge-2co.pages.dev/">
+<meta property="og:image" content="https://signbridge-2co.pages.dev/og-image.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="zh_TW">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="手譯橋 SignBridge — 即時手語翻譯系統">
 <meta name="twitter:description" content="將手語影像即時轉換為文字，也能把口語句子轉成台灣手語語序並由虛擬人播放。">
-<meta name="twitter:image" content="https://tku-tsl-avatar-project.pages.dev/og-image.jpg">
+<meta name="twitter:image" content="https://signbridge-2co.pages.dev/og-image.jpg">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +39,7 @@
   "@type": "WebApplication",
   "name": "手譯橋 SignBridge",
   "alternateName": "SignBridge",
-  "url": "https://tku-tsl-avatar-project.pages.dev/",
+  "url": "https://signbridge-2co.pages.dev/",
   "description": "即時手語翻譯系統：將手語影像轉換為文字，也能把口語句子轉成台灣手語語序並由虛擬人播放。",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "Web",

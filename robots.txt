@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://tku-tsl-avatar-project.pages.dev/sitemap.xml
+Sitemap: https://signbridge-2co.pages.dev/sitemap.xml
