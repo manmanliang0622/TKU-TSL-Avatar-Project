@@ -207,6 +207,8 @@ kbd{
   font-family:var(--sans);
   font-size:11px;font-weight:500;letter-spacing:.34em;
   color:var(--muted);
+  /* 這行是一整組標籤，寧可整體縮小也不要在 REAL-TIME 中間斷字 */
+  white-space:nowrap;
 }
 .type-stack span{
   display:block;
@@ -1116,6 +1118,8 @@ h2{
   .links a:last-child{border-bottom:none;}
   .links a::after{display:none;}
   .hero-frame{padding-top:96px;gap:18px;}
+  /* 窄螢幕：標語列隨寬度等比縮，約 449px 以下才開始作用，不換行也不溢出 */
+  .hero-tag{font-size:clamp(8.5px,2.45vw,11px);letter-spacing:.26em;}
   .brand-column{margin-left:clamp(4px,7vw,60px);}
   .mark-b{right:10%;}
   .app-page{padding-top:110px;}
