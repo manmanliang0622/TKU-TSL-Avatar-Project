@@ -5,6 +5,9 @@ const stageWrap = stage?.closest(".avatar-stage");
 // the transport controls are positioned against .avatar-wrap, not the stage
 // itself, so the dock that now holds them has to live in the same box
 const stageOuter = stage?.closest(".avatar-wrap") || stageWrap;
+// 虛擬人所在的分頁。showPage() 就是用 hidden 切分頁的，所以這個屬性
+// 直接就是「使用者現在看不看得到舞台」的權威來源，不必另外追事件。
+const stageSection = stage?.closest(".page-section");
 const textInput = document.querySelector("#textInput");
 const startButton = document.querySelector("#startPlayback");
 const pauseButton = document.querySelector("#pausePlayback");
@@ -23,12 +26,25 @@ let lastTs = performance.now();
 let ready = false;
 let initPromise = null;
 let buildToken = 0;          // 只認最後一次請求，舊的組完就丟掉
+/* 剛載完、或整句剛清掉時，休息姿勢還要幾百毫秒才從綁定姿勢收斂到定位。
+   這段期間就算人還在首頁也得繼續畫，不然等他切過來，第一眼會看到一個
+   還沒收攏的姿勢慢慢合起來。 */
+const SETTLE_MS = 1500;
+let settleUntil = 0;
 /* 「這一句是哪些詞」和「現在載進來的是哪些詞」是兩件事，必須分開記。
    單獨播一個詞卡會把 composed 換成那一個詞——如果只看 composed，按下播放
    就只會一直重播那個詞，整句再也回不來。 */
 let sentenceTokens = [];
 let composedTokens = [];
 const camera = { yaw: 0, pitch: 0.03, dist: 1.4 };
+
+// 找不到分頁容器（版面改過、或單獨嵌在別處）就一律當成看得見，
+// 寧可多畫也不要整個不動
+const stageOnScreen = () => !stageSection || !stageSection.hidden;
+
+function settle() {
+  settleUntil = performance.now() + SETTLE_MS;
+}
 
 function visibleTokens() {
   return [...(generationTokens?.querySelectorAll("[data-token-index], .token") || [])]
@@ -454,6 +470,7 @@ async function initAvatar() {
   buildTimeline();
   lexicon = await lexiconPromise;
   ready = true;
+  settle();
 }
 
 async function ensureAvatarReady() {
@@ -560,6 +577,7 @@ function clearSequence() {
   playing = false;
   paused = false;
   playhead = 0;
+  settle();
   renderSegments();
   paintTimeline();
 }
@@ -578,12 +596,18 @@ function tick(ts) {
       }
       paintTimeline();
     }
-    Avatar3D.setCamera(camera);
-    // with no sentence loaded there is no frame to show, and the bind pose is
-    // a T-pose; stand at rest instead, which is also where playback starts
-    if (composed) Avatar3D.update(frameAt(playhead), dt);
-    else Avatar3D.idle(dt);
-    Avatar3D.render();
+    /* 舞台沒露出來就不要每幀重畫一張一模一樣的靜止姿勢。idle() 不是空轉：
+       它每一幀都在解兩隻手臂的 IK、放鬆手指與手腕、更新整個 VRM，人在首頁
+       或辨識頁時這些全是白做的。播放狀態照常往前推（playhead、播放完成的
+       判定都不受影響），只是不畫。 */
+    if (stageOnScreen() || ts < settleUntil) {
+      Avatar3D.setCamera(camera);
+      // with no sentence loaded there is no frame to show, and the bind pose is
+      // a T-pose; stand at rest instead, which is also where playback starts
+      if (composed) Avatar3D.update(frameAt(playhead), dt);
+      else Avatar3D.idle(dt);
+      Avatar3D.render();
+    }
   }
   requestAnimationFrame(tick);
 }
