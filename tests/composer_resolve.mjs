@@ -6,8 +6,11 @@
 */
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const root = path.dirname(new URL(import.meta.url).pathname) + "/..";
+// fileURLToPath 而不是 new URL(...).pathname：這個 repo 的路徑有中文，
+// pathname 是百分號編碼過的，直接餵給 fs 會 ENOENT
+const root = path.dirname(fileURLToPath(import.meta.url)) + "/..";
 const lexPath = process.argv[2] || `${root}/recordings/lexicon.json`;
 globalThis.window = globalThis;
 new Function(fs.readFileSync(`${root}/composer.js`, "utf8"))();
@@ -15,26 +18,44 @@ const C = globalThis.Composer;
 const lex = JSON.parse(fs.readFileSync(lexPath, "utf8"));
 
 let failed = 0;
-function eq(gloss, expected, note = "") {
-  const got = C.resolve(gloss, lex).join("/");
+function eq(gloss, expected, note = "", lexicon = lex) {
+  const got = C.resolve(gloss, lexicon).join("/");
   const ok = got === expected;
   if (!ok) failed++;
   console.log(`${ok ? "ok  " : "FAIL"} ${gloss.padEnd(14)} → ${got || "(空)"}${ok ? "" : `   期望 ${expected || "(空)"}`}${note && ok ? "   " + note : ""}`);
 }
 
-console.log("# 數字逐位");
-eq("2009", "二/零/零/九");
-eq("1924", "一/九/二/四");
-eq("1", "一");
+/* 詞庫少了某幾個鍵時的行為。字面詞條會遮住後面的展開路徑,拿掉才測得到。 */
+function without(keys, gloss, expected, note = "") {
+  const trimmed = { ...lex };
+  for (const key of keys) delete trimmed[key];
+  eq(gloss, expected, note, trimmed);
+}
 
-console.log("# 外語:有既定手語就用整詞，不指拼");
-eq("Line", "LINE");
-eq("email", "EMAIL");
-eq("app", "APP");
+/* resolve 的第一步就是 `lexicon[gloss]`,所以只要詞庫收了字面詞條,
+   逐位數字與指拼都不會跑到。這是對的:語料庫那些片段是聾人受訪者實際
+   怎麼打「2009」「NIKE」的紀錄,比拆成四個數字手語或逐字母指拼更接近
+   真實手語。所以兩件事都要測——字面詞條在的時候優先,不在的時候才展開。 */
+console.log("# 數字:詞庫收了整串就用整串");
+eq("2009", "2009", "moc 語料庫標的整串年份");
+eq("1924", "1924");
+eq("1", "1");
 
-console.log("# 外語:沒有手語又沒有字母動作 → 空，不要亂拼");
-eq("KTV", "");
-eq("NIKE", "");
+console.log("# 數字:詞庫沒有整串才逐位展開");
+without(["2009"], "2009", "二/零/零/九");
+without(["1924"], "1924", "一/九/二/四");
+without(["1"], "1", "一");
+
+console.log("# 外語:詞庫收了這個寫法就直接用");
+eq("Line", "Line");
+eq("email", "email");
+eq("app", "app");
+eq("NIKE", "NIKE", "以前查不到整個跳過,現在有真的片段可播");
+
+console.log("# 外語:詞庫沒有這個寫法 → 大小寫折疊 → 指拼 → 空");
+without(["Line"], "Line", "LINE", "折疊到同義的 LINE");
+without(["NIKE"], "NIKE", "", "沒有字母動作就不要亂拼");
+eq("KTV", "", "詞庫從頭到尾就沒有 KTV");
 
 console.log("# 複合詞：詞庫沒有這個鍵，但拆成幾個既有動作連著打");
 eq("飛機起降", "飛機/起飛/降落");
@@ -60,6 +81,11 @@ const ktv = C.resolve("KTV", withFs).join("/");
 const ok = ktv === "fs:K/fs:T/fs:V";
 if (!ok) failed++;
 console.log(`${ok ? "ok  " : "FAIL"} KTV(有字母)   → ${ktv}`);
+// 字面詞條仍然優先:NIKE 有整詞就播整詞,拿掉才輪到指拼
+eq("NIKE", "NIKE", "整詞優先於指拼", withFs);
+const fsNoNike = { ...withFs };
+delete fsNoNike["NIKE"];
+eq("NIKE", "fs:N/fs:I/fs:K/fs:E", "沒有整詞才逐字母", fsNoNike);
 
 console.log(failed ? `\n${failed} 項失敗` : "\n全部通過");
 process.exit(failed ? 1 : 0);
