@@ -94,6 +94,50 @@
     return keys.every(k => lexicon[k]) ? keys : [];
   }
 
+  /* ── 方向動詞 ───────────────────────────────────────────────────────
+     語料庫把「動詞往誰打」標成一個 gloss:`相信我`、`幫你`、`看自己`。
+     詞庫裡有 `相信` 也有 `我`,就是沒有 `相信我` 這個鍵 —— 2026-08-22 盤點
+     有 14 個 gloss、36 次出現卡在這裡。台灣手語的方向動詞是把動作的去向
+     改成對方,虛擬人目前做不到改向,退而求其次打「詞根 + 人稱」:語意完整、
+     語序也是合法的手語語序,只是少了那個方向變化。
+     只認「結尾是人稱代名詞、去掉代名詞後剩下的整段是詞庫鍵」這一種形狀;
+     代名詞表寫死,長的先比(`你們` 不能被 `們` 前面的 `你` 截走)。
+     妳/她/它 詞庫未必有,折到 你/他。 */
+  const PRONOUNS = ["你們", "我們", "他們", "自己", "我", "你", "妳", "他", "她", "它"];
+  const PRONOUN_FOLD = { "妳": "你", "她": "他", "它": "他" };
+  function directional(word, lexicon) {
+    for (const p of PRONOUNS) {
+      if (word.length <= p.length || !word.endsWith(p)) continue;
+      const root = word.slice(0, -p.length);
+      const pron = lexicon[p] ? p : PRONOUN_FOLD[p];
+      if (lexicon[root] && pron && lexicon[pron]) return [root, pron];
+    }
+    return null;
+  }
+
+  /* ── 乾淨複合 ──────────────────────────────────────────────────────
+     `三個小時`、`兩者距離`、`我們三個`:整串不是詞庫鍵,但從頭到尾可以切成
+     幾個**都至少兩個字**的既有詞條,中間沒有破洞。這種切法多半是對的
+     (2026-08-22 盤點歸為「乾淨複合(多半打得對)」),所以當最後一道退路。
+     單字塊不收:`仔細看` 切成 `仔細`+`看` 看起來對,`張老師` 切成 `張`+`老師`
+     就打成姓氏手語,`之於` 更是兩個不相干的字 —— 這些要人看過才能進
+     COMPOUND 表。最長優先切,切不乾淨就整個不打,跟指拼同一個原則。 */
+  function cleanCompound(word, lexicon) {
+    const pieces = [];
+    let i = 0;
+    while (i < word.length) {
+      let hit = null;
+      for (let len = word.length - i; len >= 2; len--) {
+        const cand = word.slice(i, i + len);
+        if (lexicon[cand]) { hit = cand; break; }
+      }
+      if (!hit) return [];
+      pieces.push(hit);
+      i += hit.length;
+    }
+    return pieces.length >= 2 ? pieces : [];
+  }
+
   /* 大小寫索引:語料庫寫 Line,詞庫是 LINE / line;中文沒有大小寫,所以
      這個折疊只會影響含 ASCII 字母的鍵。實測 14,497 個鍵裡只有 3 組折疊後
      撞名(line/LINE、Email/EMAIL、youtube/YouTube),且每組兩邊同義,
@@ -130,7 +174,11 @@
       if (hit) return [hit];
       if (/^[A-Za-z]+$/.test(bare)) return fingerspell(bare, lexicon);
     }
-    return [];
+    // 到這裡都沒中才輪到規則退路;順序固定:方向動詞先(`看自己` 是
+    // 看+自己,不能被複合切成別的),再試乾淨複合
+    const dir = directional(bare, lexicon);
+    if (dir) return dir;
+    return cleanCompound(bare, lexicon);
   }
 
   /* greedy longest-match segmentation against lexicon keys (spaces also split) */
