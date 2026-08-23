@@ -160,10 +160,10 @@ kbd{
   position:relative;
   min-height:100svh;
   display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  gap:clamp(12px,2.2vh,22px);
-  padding:96px clamp(16px,4vw,48px) 44px;
-  text-align:center;
+  align-items:flex-start;justify-content:center;
+  gap:clamp(10px,1.8vh,18px);
+  padding:96px clamp(16px,4vw,48px) 112px clamp(28px,7vw,120px);
+  text-align:left;
   overflow:hidden;
   cursor:crosshair;
 }
@@ -185,8 +185,11 @@ kbd{
   --mx:62%;
   --my:52%;
   --r:0px;
-  -webkit-mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my), #000 50%, transparent 100%);
-          mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my), #000 50%, transparent 100%);
+  /* 0823：外圈從全透明改成 .18 —— 插圖平常就淡淡地在那裡，右半邊不再是一片空白，
+     游標掃過才變成實色。.reveal 自己的奶茶底＋點陣與 body 完全相同，
+     所以外圈變半透明也不會露出接縫，只有插圖會透出來。 */
+  -webkit-mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my), #000 50%, rgba(0,0,0,.18) 100%);
+          mask-image:radial-gradient(circle var(--r) at var(--mx) var(--my), #000 50%, rgba(0,0,0,.18) 100%);
 }
 .stage{
   position:absolute;
@@ -229,6 +232,13 @@ kbd{
   text-wrap:balance;
 }
 .type-stack .stack-sub:hover{letter-spacing:.3em;}
+/* 英文四行拿掉之後，中文成為唯一主標，放大到真正的主角尺寸。
+   .type-stack .stack-sub 權重（0,2,0）壓過這條（0,1,1），副標不受影響。 */
+.stack-close span{
+  font-size:clamp(26px,3.2vw,42px);
+  line-height:1.28;
+  letter-spacing:.1em;
+}
 .brand-column{
   align-self:flex-start;
   margin-left:clamp(8px,11vw,150px);
@@ -1322,3 +1332,20 @@ h2{
   .avatar-figure.is-signing .avatar-arm-r{animation-duration:2.4s;}
   .token{animation:none;}
 }
+
+
+/* ---------- 0823：hero 改成左右分工 ----------
+   .stage 是 right:4vw、寬 min(880px,68vw) —— 插圖只佔右半邊。
+   文字原本置中，正好撞進插圖左緣，透鏡一開就被蓋住。
+   改成文字全部靠左、寬度鎖在插圖之外，兩者各佔一邊互不干擾。 */
+.hero-tag,.type-stack,.ctas{max-width:min(560px,44vw);}
+.ctas{justify-content:flex-start;margin-top:clamp(30px,6vh,58px);}
+/* 英文降級成小字兩行：保留原本的編輯感，但不跟中文主標搶 */
+.stack-en span{
+  font-size:clamp(11px,1.05vw,14px);
+  letter-spacing:.26em;
+  line-height:1.9;
+  color:var(--muted);
+}
+.stack-close{margin-top:clamp(6px,1.2vh,14px);}
+.type-stack .stack-sub{margin-top:14px;letter-spacing:.2em;}

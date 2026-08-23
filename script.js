@@ -108,11 +108,44 @@
   hero.addEventListener('pointerdown', e => moveTo(e.clientX, e.clientY));
   hero.addEventListener('pointerleave', () => { tr = 0; hero.classList.remove('is-exploring'); });
 
+  // ── 進站自動掃過一次 ──
+  // 使用者不會知道游標可以揭開插圖，所以先演一次給他看：0.8 秒從插圖左緣
+  // 橫掃到右緣，半徑先張開、末段收回，掃完回到平常那層淡淡的樣子。
+  // 期間直接寫 x/y/r 繞過下面 frame() 的緩動 —— k=0.09 會把 0.8 秒拖成兩三秒。
+  // 使用者中途自己動滑鼠就立刻讓位，不跟他搶。
+  const INTRO_MS = 800;
+  let introStart = null;
+  if (!reduced) setTimeout(() => { if (!hasMoved) introStart = performance.now(); }, 260);
+
+  function runIntro(now) {
+    const t = Math.min(1, (now - introStart) / INTRO_MS);
+    const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    x = tx = heroRect.width * (0.42 + 0.48 * ease);   // 插圖左緣掃到右緣
+    y = ty = heroRect.height * 0.55;
+    const env = t < 0.18 ? t / 0.18 : (t > 0.72 ? (1 - t) / 0.28 : 1);
+    r = tr = RADIUS * Math.max(0, env);
+    if (t >= 1) introStart = null;
+  }
+
   // gentle automatic drift before first interaction (so touch users see the magic)
-  setTimeout(() => { if (!hasMoved && !reduced) idleActive = true; }, 1600);
+  // 2400ms：讓進站橫掃（260 + 800）跑完、留一拍靜止，再接上漫遊
+  setTimeout(() => { if (!hasMoved && !reduced) idleActive = true; }, 2400);
 
   let rafId = null;
   function frame() {
+    if (introStart !== null) {
+      if (hasMoved) {
+        introStart = null;               // 使用者自己動了，把控制權還給他
+      } else {
+        runIntro(performance.now());
+        reveal.style.setProperty('--mx', x.toFixed(1) + 'px');
+        reveal.style.setProperty('--my', y.toFixed(1) + 'px');
+        reveal.style.setProperty('--r', Math.max(0, r).toFixed(1) + 'px');
+        paintRows();
+        rafId = requestAnimationFrame(frame);
+        return;
+      }
+    }
     // 觸控裝置：放著不動 5 秒後恢復自動漫遊，透鏡效果不會就此消失
     if (touchDevice && !reduced && hasMoved && !idleActive &&
         performance.now() - lastInteraction > 5000) {
