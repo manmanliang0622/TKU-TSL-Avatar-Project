@@ -911,6 +911,11 @@ h2{
   .capture-stage .empty-preview svg{display:none;}
 }
 
+/* 生成頁的控制台收窄：詞卡不必跟輸入框一樣寬，讓虛擬人與文字之間鬆一點。
+   辨識頁維持 400px —— 它右邊是攝影機畫面，--console-w 同時決定影像的左緣
+   （見下方 .capture-stage video 的 inset），一起收窄會讓影像擠到邊上。 */
+#generation{--console-w:min(320px,calc(100vw - 2 * var(--stage-pad)));}
+
 /* ---------- 全屏舞台（辨識／生成同一套）：黑舞台鋪滿視窗、控制台浮在左上 ---------- */
 .stage-page{
   --stage-pad:clamp(20px,4vw,64px);
