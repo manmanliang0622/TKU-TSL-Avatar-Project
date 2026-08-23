@@ -92,6 +92,17 @@ eq("content-encoding 已拿掉", headers["content-encoding"], undefined);
 eq("CORS 標頭已拿掉", headers["access-control-allow-origin"], undefined);
 eq("cache-control 保留", headers["cache-control"], "public, max-age=604800, immutable");
 
+console.log("# 回應標頭要講出網址是哪裡來的");
+// binding 名字打錯時 env.TSL_CONFIG 是 undefined，會安靜退回保底值，
+// 而保底值多半就是當下能用的網址 —— 沒有這個標頭就看不出來
+eq("KV 有值 → kv", (await call("POST", "translate")).headers["x-tsl-api-base-source"], "kv");
+eq("KV 未綁定 → fallback",
+   (await call("POST", "translate", { env: {} })).headers["x-tsl-api-base-source"], "fallback");
+eq("KV 未綁定但有環境變數 → env",
+   (await call("POST", "translate", { env: { TUNNEL_ORIGIN: "https://x.example" } })).headers["x-tsl-api-base-source"], "env");
+eq("KV 空值 → fallback",
+   (await call("POST", "translate", { env: KV("  ") })).headers["x-tsl-api-base-source"], "fallback");
+
 console.log("# tunnel 掛掉時回 502，前端才好退回內建對照表");
 globalThis.fetch = async () => { throw new Error("tunnel down"); };
 eq("上游不通", (await call("POST", "clips")).status, 502);

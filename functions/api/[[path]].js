@@ -50,15 +50,23 @@ function json(status, payload) {
 }
 
 /* KV 讀取在邊緣有快取，cacheTtl 最小值是 30 秒，所以換址後最壞情況會有
-   半分鐘還轉到舊網址 —— 仍遠好過原本的三到五分鐘，而且不必動 repo。 */
+   半分鐘還轉到舊網址 —— 仍遠好過原本的三到五分鐘，而且不必動 repo。
+
+   回傳裡帶 source：binding 名字打錯時 env.TSL_CONFIG 是 undefined，會安靜
+   地退回保底值，而保底值多半就是當下那個能用的網址 —— 於是一切看起來都
+   正常，直到某天 tunnel 換址才發現自動換址從來沒生效過。把來源送進回應
+   標頭，這種無聲失敗一眼就看得出來。 */
 async function upstreamOrigin(env) {
   try {
     const stored = await env.TSL_CONFIG?.get("apiBase", { cacheTtl: 30 });
-    if (stored && stored.trim()) return stored.trim().replace(/\/+$/, "");
+    if (stored && stored.trim()) return { origin: stored.trim().replace(/\/+$/, ""), source: "kv" };
   } catch {
     // KV 不通就往下用保底值：少了自動換址，總比整站沒有虛擬人好
   }
-  return String(env.TUNNEL_ORIGIN || FALLBACK_ORIGIN).replace(/\/+$/, "");
+  return {
+    origin: String(env.TUNNEL_ORIGIN || FALLBACK_ORIGIN).replace(/\/+$/, ""),
+    source: env.TUNNEL_ORIGIN ? "env" : "fallback",
+  };
 }
 
 export async function onRequest({ request, env, params }) {
@@ -74,7 +82,7 @@ export async function onRequest({ request, env, params }) {
   // 同源請求本來就不會有預檢；這裡回一個空的 204 只是不讓別人踩到 405
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
 
-  const origin = await upstreamOrigin(env);
+  const { origin, source } = await upstreamOrigin(env);
   const target = `${origin}/${route}${new URL(request.url).search}`;
 
   const headers = new Headers();
@@ -93,12 +101,14 @@ export async function onRequest({ request, env, params }) {
   } catch (error) {
     // tunnel 掛了或還在重拉。前端的 fetch 已經有 catch，會退回內建對照表
     // （/translate）或直接顯示詞庫缺動畫（/clips），不會整頁壞掉。
-    return json(502, { error: `upstream unreachable: ${error?.message || error}` });
+    return json(502, { error: `upstream unreachable: ${error?.message || error}`, source });
   }
 
   const out = new Headers();
   for (const [name, value] of upstream.headers) {
     if (!DROP_RESPONSE_HEADERS.has(name.toLowerCase())) out.set(name, value);
   }
+  // 只講來源，不講網址：位址本身沒必要對外公開
+  out.set("X-Tsl-Api-Base-Source", source);
   return new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers: out });
 }

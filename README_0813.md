@@ -91,6 +91,16 @@ KV 免費方案每天只有 1000 次寫入，而 autopublish 是每 2 分鐘跑�
 KV 讀不到（還沒設好、namespace 被清掉）時，Function 會退回自己檔頭的
 `FALLBACK_ORIGIN`，站台不會整個掛掉。
 
+要確認 KV 真的有被讀到，看回應標頭 —— binding 名字打錯時會安靜地退回
+保底值，而保底值多半就是當下能用的網址，光看有沒有回 200 分不出來：
+
+```bash
+curl -sI https://signbridge-2co.pages.dev/api/health | grep -i x-tsl-api-base-source
+```
+
+`kv` 才是正常。`fallback` 代表 Function 沒讀到 KV —— 多半是 Pages 的
+binding 變數名不叫 `TSL_CONFIG`，或 Production／Preview 只加了一邊。
+
 ## 為什麼前端不直接抓 recordings/
 
 一個詞條是整支錄影檔裡的 0.3～3 秒：「我」是 `moc_G2D1P1.json`（11.5 MB、
