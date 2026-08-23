@@ -54,6 +54,20 @@ for var in CF_ACCOUNT_ID CF_KV_NAMESPACE_ID CF_KV_TOKEN; do
   fi
 done
 
+# Account ID 與 Namespace ID 都是 32 碼十六進位。填錯（最常見的是把
+# Account ID 填成登入用的 email）時 Cloudflare 只回一句
+# "perhaps your object identifier is invalid"，看不出是哪個欄位錯，
+# 所以在送出前先擋下來並講清楚去哪裡拿。
+for var in CF_ACCOUNT_ID CF_KV_NAMESPACE_ID; do
+  if [[ ! "${!var}" =~ ^[0-9a-fA-F]{32}$ ]]; then
+    echo "$var 看起來不是 32 碼十六進位：${!var}" >&2
+    echo "  Account ID：後台網址 https://dash.cloudflare.com/<ACCOUNT_ID>/... 那一段，" >&2
+    echo "              或 Workers & Pages 首頁右側欄。不是登入用的 email。" >&2
+    echo "  Namespace ID：Storage & Databases → KV → 該 namespace 那一列。" >&2
+    exit 1
+  fi
+done
+
 if [[ "$force" -eq 0 && -f "$STATE_FILE" ]] && [[ "$(cat "$STATE_FILE")" == "$url" ]]; then
   echo "apiBase unchanged ($url); not touching KV."
   exit 0
