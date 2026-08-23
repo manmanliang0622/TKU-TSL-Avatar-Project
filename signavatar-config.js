@@ -1,18 +1,28 @@
 "use strict";
 
-// 學校 GPU 後端（bundle_server，0821 / port 8084）的對外 HTTPS 入口。
-// pages.dev 是純靜態站，相對路徑打不到模型與動作片段服務，
-// 所以正式站要在這裡填絕對網址；留空則退回同源（本機開發、學校主機直開）。
-// 每個瀏覽器也可用 localStorage.glossApi 覆寫，方便換通道時免重新部署。
+// 後端（學校 GPU 上的 bundle_server，port 8084）的入口位址。
+//
+// 靜態部署（pages.dev）打不到學校那台，所以走同源的 /api/*：
+// functions/api/[[path]].js 這支 Pages Function 會轉過去，真正的 tunnel
+// 網址只存在 Cloudflare KV。換通道時這支檔案不用改、也不必重新部署。
+//
+// 學校主機直開、或本機用 bundle_server 起站時，/translate 與 /clips 本來
+// 就在同源上，用相對路徑直接打，不必繞 proxy。
 (() => {
-  // cloudflared quick tunnel → 學校電腦 127.0.0.1:8084（0821 bundle_server）。
-  // 注意：quick tunnel 重開網址會變，屆時改這一行重新部署，
-  // 或在瀏覽器 console 用 localStorage.setItem("glossApi", "新網址") 臨時切換。
-  const DEFAULT_API = "https://loved-loved-athletic-several.trycloudflare.com";
+  // 除錯用覆蓋：可以填絕對網址（直接打 tunnel，繞過 proxy），
+  // 也可以填 "/api"（例如 wrangler pages dev 在 localhost 上測 Function）。
+  let override = "";
+  try { override = (localStorage.getItem("glossApi") || "").trim(); } catch { /* Safari 隱私模式 */ }
 
-  let stored = "";
-  try { stored = localStorage.getItem("glossApi") || ""; } catch { /* Safari 隱私模式 */ }
-  const base = (stored || DEFAULT_API).replace(/\/$/, "");
+  // 這些主機上的頁面是 bundle_server 自己送出來的，API 就在同源
+  const servedByBackend =
+    location.protocol === "file:" ||
+    /^(localhost|127\.0\.0\.1|\[::1\]|::1)$/i.test(location.hostname) ||
+    /(^|\.)trycloudflare\.com$/i.test(location.hostname);
+
+  // 其餘一律當成靜態部署走 proxy —— 用排除法而不是列出 pages.dev，
+  // 之後接上自有網域也不必再動這裡
+  const base = (override || (servedByBackend ? "" : "/api")).replace(/\/+$/, "");
 
   window.SignAvatarConfig = base
     ? {

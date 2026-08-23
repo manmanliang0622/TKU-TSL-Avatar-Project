@@ -50,6 +50,47 @@ http://127.0.0.1:8083/
 
 所有執行日誌與 PID 都位於 `logs/`。
 
+## 線上站怎麼找到這台（固定 API 入口）
+
+cloudflared quick tunnel 每次重拉網址都會變。舊做法是讓 autopublish 改
+`signavatar-config.js`、push 上 GitHub、等 Pages 重新部署——偵測到換址算起
+三到五分鐘，這期間前端手上是死網址，`/clips` 打不到，虛擬人完全不動。
+
+現在前端一律打同源的 `/api/*`，由 `functions/api/[[path]].js`（Cloudflare
+Pages Function）轉給這台；真正的 tunnel 網址只存在 Workers KV。換通道時
+repo 完全不用動，秒級生效，順帶因為同源，CORS 也不需要了。
+
+只轉白名單內的 `translate`／`clips`／`clip`／`health`——這台同時也在服務
+`models/`、`recordings/`、`vendor/`，不設白名單那支 proxy 會變成整台機器的
+公開跳板。
+
+一次性設定（Cloudflare 儀表板）：
+
+1. Workers & Pages → KV → 建一個 namespace（例如 `tsl-config`）。
+2. Pages 專案 → Settings → Bindings → 加 KV namespace，變數名 **`TSL_CONFIG`**。
+3. My Profile → API Tokens → 建 token，權限只勾 **Workers KV Storage : Edit**。
+
+學校這台加一個 `~/.tsl-cf-kv.env`（`chmod 600`，不進版控）：
+
+```
+CF_ACCOUNT_ID=...
+CF_KV_NAMESPACE_ID=...
+CF_KV_TOKEN=...
+```
+
+然後 `autopublish.sh` 起完 cloudflared、拿到新網址之後呼叫：
+
+```bash
+/path/to/publish_api_base.sh "$TUNNEL_URL"
+```
+
+KV 免費方案每天只有 1000 次寫入，而 autopublish 是每 2 分鐘跑一次
+（720 次/天），所以 `publish_api_base.sh` 預設「值沒變就不寫」，只有真的
+換址才動 KV。它不會開背景行程，`9>&-` 那條規矩用不到。
+
+KV 讀不到（還沒設好、namespace 被清掉）時，Function 會退回自己檔頭的
+`FALLBACK_ORIGIN`，站台不會整個掛掉。
+
 ## 為什麼前端不直接抓 recordings/
 
 一個詞條是整支錄影檔裡的 0.3～3 秒：「我」是 `moc_G2D1P1.json`（11.5 MB、
