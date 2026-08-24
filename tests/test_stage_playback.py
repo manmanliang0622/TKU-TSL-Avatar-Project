@@ -182,5 +182,89 @@ class LoadingIconTests(unittest.TestCase):
         self.assertIn("setLoadingProgress", bridge)
 
 
+class TokenHighlightTests(unittest.TestCase):
+    """詞卡亮起與時間軸必須讀同一個時鐘。
+
+    script.js 的 2D 佔位播放器是固定 850ms 換一個詞，時間軸是照片段實際
+    長度走的。兩邊各亮各的時，整排詞卡常常在 3D 還沒動完之前就跑完了，
+    使用者看到的就是「詞條跟下方時間條亮起不一致」。
+    """
+
+    def test_the_2d_placeholder_yields_the_highlight_to_the_3d_bridge(self):
+        script = read("script.js")
+        update = script[script.index("function updateHighlight("):]
+        update = update[: update.index("\n  }")]
+        self.assertIn('dataset.playback === "3d"', update)
+        self.assertIn("return", update[: update.index("querySelectorAll")])
+
+    def test_the_2d_placeholder_also_yields_the_status_text_and_the_pause_button(self):
+        """同一個病的另一半：2D 跑完 850ms×n 就寫「播放完成」並把暫停鈕
+        變灰，那時 3D 常常還在播。整句播放鈕維持由 2D 管，它只看有沒有
+        句子可打，跟誰在播無關。"""
+        script = read("script.js")
+        sync = script[script.index("function syncPlaybackControls("):]
+        sync = sync[: sync.index("\n}")]
+        guard = sync.index('dataset.playback === "3d"')
+        self.assertLess(sync.index("startPlaybackButton.disabled"), guard)
+        for owned in ("pausePlaybackButton.disabled",
+                      "avatarStatus.textContent",
+                      "activeToken.textContent"):
+            self.assertGreater(sync.index(owned), guard, owned)
+
+    def test_the_bridge_writes_the_transport_while_it_owns_playback(self):
+        bridge = read("signavatar-bridge.js")
+        self.assertIn("function writeTransport(", bridge)
+        self.assertIn("syncTransport(here?.token);", bridge)
+        # 暫停不經過 paintTimeline，清除時主導權已交還，兩處都要自己收尾
+        pause = bridge[bridge.index('pauseButton?.addEventListener'):]
+        self.assertIn("syncTransport(", pause[: pause.index("\n});")])
+        clear = bridge[bridge.index("function clearSequence()"):]
+        self.assertIn("writeTransport(false, false, null);", clear[: clear.index("\n}")])
+
+    def test_the_chip_and_the_timeline_block_come_from_one_lookup(self):
+        """兩者都要由 paintTimeline 裡同一個 here 決定，否則又是兩個時鐘。"""
+        bridge = read("signavatar-bridge.js")
+        paint = bridge[bridge.index("function paintTimeline()"):]
+        paint = paint[: paint.index("\n}")]
+        self.assertIn("const here = currentSegments.find(", paint)
+        self.assertIn("hereIndex", paint)
+        self.assertIn("highlightChip(", paint)
+
+    def test_segments_are_mapped_to_chips_by_name_not_by_index(self):
+        """詞庫沒有的詞不會產生片段，段落索引與詞卡索引會錯開；
+        單詞試播時整排詞卡也還在，那一段要對到使用者按的那一張。"""
+        bridge = read("signavatar-bridge.js")
+        self.assertIn("segChipIndex", bridge)
+        self.assertIn("soloChipIndex", bridge)
+        mapper = bridge[bridge.index("function mapSegmentsToChips()"):]
+        mapper = mapper[: mapper.index("\n}")]
+        self.assertIn("chips[i] === seg.token", mapper)
+        self.assertIn("soloChipIndex", mapper)
+        # 單詞試播要記下按的是哪一張；整句播放、換句子、清除都要復位，
+        # 否則對照表會留在上一次單詞試播的狀態
+        self.assertIn("soloChipIndex = index;", bridge)
+        for name in ("async function playWholeSentence()",
+                     "function clearSequence()"):
+            body = bridge[bridge.index(name):]
+            self.assertIn("soloChipIndex = null;", body[: body.index("\n}")], name)
+        updated = bridge[bridge.index('"signavatar:generation-updated"'):]
+        self.assertIn("soloChipIndex = null;", updated[: updated.index("\n});")])
+
+    def test_the_bridge_only_claims_the_highlight_once_it_can_actually_play(self):
+        """搶在組建之前的話，片段組不出來或請求整個失敗（後端沒開）就會把
+        詞卡鎖死在一個永遠不會更新的主人手上，2D 也不再接手——後端一關，
+        整排詞卡就再也不會亮。"""
+        bridge = read("signavatar-bridge.js")
+        play = bridge[bridge.index("async function playTokens("):]
+        play = play[: play.index("\n}")]
+        self.assertIn("claimTokenHighlight(true);", play)
+        self.assertLess(play.index("composed = built;"), play.index("claimTokenHighlight(true);"))
+        prepare = bridge[bridge.index("async function prepare("): bridge.index("async function playTokens(")]
+        self.assertNotIn("claimTokenHighlight", prepare)
+        # 清掉整句時要把詞卡還給 2D
+        clear = bridge[bridge.index("function clearSequence()"):]
+        self.assertIn("claimTokenHighlight(false);", clear[: clear.index("\n}")])
+
+
 if __name__ == "__main__":
     unittest.main()

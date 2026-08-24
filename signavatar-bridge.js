@@ -15,6 +15,7 @@ const clearButton = document.querySelector("#clearText");
 const generationTokens = document.querySelector("#generationTokens");
 const generationStatus = document.querySelector("#generationStatus");
 const avatarStatus = document.querySelector("#avatarStatus");
+const activeTokenEl = document.querySelector("#activeToken");
 
 let lexicon = {};
 let composed = null;
@@ -256,6 +257,19 @@ let dock = null, track = null, fill = null, segsEl = null, headEl = null;
 let timeNow = null, timeTotal = null, tokenLabel = null;
 let scrubbing = false;
 let currentSegments = [];
+/* 詞卡亮起要跟時間軸同一個時鐘。
+ *
+ * script.js 的 2D 佔位播放器是固定 850ms 換一個詞，這裡的時間軸是照實際
+ * 片段長度走的，兩邊各亮各的必然對不上——而且 2D 在片段還在載的時候就
+ * 開始跑，整排詞卡常常在 3D 還沒動之前就亮完了。所以只要 3D 接得上，
+ * 詞卡就改由這裡畫，2D 那邊會讓開（見 script.js 的 updateHighlight）。
+ *
+ * 段落不見得對得上詞卡：詞庫沒有的詞不會產生片段，單詞試播時整排詞卡也
+ * 還在。segChipIndex 記下每一段對應哪一張詞卡，對不上就是 -1。 */
+let segChipIndex = [];
+let soloChipIndex = null;   // 單詞試播時使用者按的那張詞卡；整句播放為 null
+let lastChipIndex = null;   // 值沒變就不寫回，播放中不必每幀重設 class
+let lastTransport = "";     // 同上，控制列也不必每幀重寫
 
 const fmtTime = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, "0")}`;
 
@@ -352,6 +366,69 @@ function renderSegments() {
     track.setAttribute("aria-valuemax", total.toFixed(1));
     track.setAttribute("aria-valuemin", "0");
   }
+  mapSegmentsToChips();
+}
+
+const chipEls = () => [...(generationTokens?.querySelectorAll("[data-token-index]") || [])];
+
+/* 依序把段落配到同字的詞卡上：詞庫缺的詞沒有段落，直接被跳過，
+   所以只能往後找、不能用索引硬對。 */
+function mapSegmentsToChips() {
+  if (soloChipIndex !== null) {
+    segChipIndex = currentSegments.map(() => soloChipIndex);
+    return;
+  }
+  const chips = chipEls().map(el => el.textContent.trim());
+  let cursor = 0;
+  segChipIndex = currentSegments.map(seg => {
+    for (let i = cursor; i < chips.length; i++) {
+      if (chips[i] === seg.token) { cursor = i + 1; return i; }
+    }
+    return -1;
+  });
+}
+
+function highlightChip(chipIndex) {
+  if (chipIndex === lastChipIndex) return;
+  lastChipIndex = chipIndex;
+  chipEls().forEach((el, i) => {
+    const active = i === chipIndex;
+    el.classList.toggle("is-highlighted", active);
+    el.setAttribute("aria-pressed", String(active));
+  });
+}
+
+/* 主導權交接。只有 3D 真的接得上才搶，接不上（沒詞庫、後端沒開）就整個
+   放手，維持原本 2D 佔位播放器亮詞卡、寫狀態的行為。 */
+function claimTokenHighlight(on) {
+  if (!generationTokens) return;
+  if (on) {
+    generationTokens.dataset.playback = "3d";
+  } else {
+    delete generationTokens.dataset.playback;
+    lastChipIndex = null;
+    lastTransport = "";
+  }
+}
+
+const owns3D = () => generationTokens?.dataset.playback === "3d";
+
+/* 控制列（暫停鈕、整句播放鈕的字、目前詞）在 3D 主導時也得由這裡寫。
+   2D 佔位播放器是固定 850ms 一個詞，它會在 3D 還在播的時候就把「暫停」
+   變灰、把狀態寫成「播放完成」——跟詞卡對不上時間軸是同一個病。 */
+function writeTransport(isPlaying, isPaused, currentToken) {
+  if (pauseButton) pauseButton.disabled = !isPlaying;
+  const label = startButton?.querySelector("span");
+  if (label) label.textContent = isPaused ? "繼續播放" : "整句播放";
+  if (activeTokenEl) activeTokenEl.textContent = currentToken || "--";
+}
+
+function syncTransport(currentToken) {
+  if (!owns3D()) return;
+  const key = `${playing}|${paused}|${currentToken || ""}`;
+  if (key === lastTransport) return;
+  lastTransport = key;
+  writeTransport(playing, paused, currentToken);
 }
 
 function paintTimeline() {
@@ -368,9 +445,13 @@ function paintTimeline() {
     track.setAttribute("aria-valuenow", playhead.toFixed(1));
     track.setAttribute("aria-valuetext", `${playhead.toFixed(1)} 秒${here ? `，${here.token}` : ""}`);
   }
+  const hereIndex = here ? currentSegments.indexOf(here) : -1;
   [...(segsEl?.children || [])].forEach((block, i) => {
-    block.classList.toggle("is-current", currentSegments[i] === here);
+    block.classList.toggle("is-current", i === hereIndex);
   });
+  // 詞卡、控制列與時間軸讀同一個 here，三邊一定同時更新
+  highlightChip(hereIndex >= 0 ? segChipIndex[hereIndex] : -1);
+  syncTransport(here?.token);
 }
 
 function seek(seconds) {
@@ -532,6 +613,9 @@ async function playTokens(tokens, statusText) {
   playhead = 0;
   paused = false;
   playing = true;
+  // 真的有片段可播了才接手詞卡。搶在組建之前的話，組不出來或請求整個
+  // 失敗（後端沒開）就會把詞卡鎖死在一個永遠不會更新的主人手上。
+  claimTokenHighlight(true);
   renderSegments();
   paintTimeline();
   setStatus(statusText);
@@ -553,11 +637,16 @@ function currentSentence() {
 async function playWholeSentence() {
   const tokens = currentSentence();
   if (!tokens.length) return;
+  soloChipIndex = null;
   if (composed && sameTokens(composedTokens, tokens)) {
+    mapSegmentsToChips();   // 剛剛是單詞試播，對照表要換回整句的
     if (playhead >= duration()) playhead = 0;
     paused = false;
     playing = true;
     setStatus("3D 播放中");
+    // 這條捷徑不重建，控制列要自己更新——不能等下一個 rAF：分頁在背景時
+    // 迴圈是停的，暫停鈕會一直卡在上一個狀態
+    paintTimeline();
     return;
   }
   await playTokens(tokens, "3D 播放中");
@@ -566,6 +655,7 @@ async function playWholeSentence() {
 async function playSingleToken(index) {
   const token = visibleTokens()[index];
   if (!token || !Composer.resolve(token, lexicon).length) return;
+  soloChipIndex = index;
   await playTokens([token], `「${token}」3D 播放中`);
 }
 
@@ -574,10 +664,17 @@ function clearSequence() {
   composed = null;
   composedTokens = [];
   sentenceTokens = [];
+  soloChipIndex = null;
   playing = false;
   paused = false;
   playhead = 0;
   settle();
+  highlightChip(-1);
+  claimTokenHighlight(false);
+  /* 清除鈕上 script.js 的 listener 先跑（classic script 先於 module 註冊），
+     那時主導權還在 3D 手上，2D 那邊會直接讓開；等這裡放手已經沒人重畫，
+     所以控制列要由這裡收尾。 */
+  writeTransport(false, false, null);
   renderSegments();
   paintTimeline();
 }
@@ -634,6 +731,7 @@ window.addEventListener("signavatar:generation-updated", event => {
   endLoading("gloss");
   const tokens = Array.isArray(event.detail?.tokens) ? event.detail.tokens : [];
   sentenceTokens = [...tokens];   // 之後按整句播放就是回到這一句
+  soloChipIndex = null;
   const skipped = tokens.filter(token => !Composer.resolve(token, lexicon).length);
   playTokens(tokens, "3D 播放中")
     .then(() => {
@@ -666,6 +764,8 @@ pauseButton?.addEventListener("click", () => {
   paused = true;
   playing = false;
   setStatus("3D 已暫停");
+  syncTransport(currentSegments.find((seg, i) =>
+    playhead >= seg.start && (playhead < seg.end || i === currentSegments.length - 1))?.token);
 });
 
 generationTokens?.addEventListener("click", event => {

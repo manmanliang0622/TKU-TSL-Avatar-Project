@@ -394,6 +394,10 @@ function createAvatarPlayer(figure, tokensEl, { onState, onToken } = {}) {
   }
 
   function updateHighlight(activeIndex = -1) {
+    /* 3D 橋接接得上時由它畫詞卡：這裡是固定 850ms 一個詞，它是照實際片段
+       長度走的，兩邊各亮各的就會跟下方時間軸對不上。接不上（後端沒開、
+       詞庫沒有這些詞）時 dataset 不會被設，仍由這裡負責。 */
+    if (tokensEl.dataset.playback === "3d") return;
     tokensEl.querySelectorAll("[data-token-index]").forEach((el, i) => {
       const active = i === activeIndex;
       el.classList.toggle("is-highlighted", active);
@@ -493,6 +497,10 @@ function syncPlaybackControls(state, detail = {}) {
   // 只看有沒有句子可以打：原本播放中就鎖住，點完詞卡的頭 850ms 內
   // 「整句播放」是死的——那正是使用者最想按它的時候。
   startPlaybackButton.disabled = !hasTokens;
+  /* 3D 接上時，暫停鈕、鈕上的字、狀態文字與目前詞都由 signavatar-bridge
+     照實際片段進度寫。這裡是固定 850ms 的佔位時鐘，會在 3D 還在播的時候
+     就把暫停鈕變灰、把狀態寫成「播放完成」。 */
+  if (generationTokens.dataset.playback === "3d") return;
   pausePlaybackButton.disabled = !playing;
   // 「整句播放」而不是「開始播放」：詞卡可單獨試播，這顆鈕永遠是回到整句
   startPlaybackButton.querySelector("span").textContent = state === "paused" ? "繼續播放" : "整句播放";
@@ -508,7 +516,10 @@ function syncPlaybackControls(state, detail = {}) {
 
 const genPlayer = createAvatarPlayer(avatarFigure, generationTokens, {
   onState: syncPlaybackControls,
-  onToken: token => { activeToken.textContent = token; },
+  // 目前詞不經過 syncPlaybackControls，得各自擋一次：3D 主導時由橋接寫
+  onToken: token => {
+    if (generationTokens.dataset.playback !== "3d") activeToken.textContent = token;
+  },
 });
 
 document.querySelectorAll(".speed-btn[data-rate]").forEach(btn => {
