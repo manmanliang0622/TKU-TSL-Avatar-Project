@@ -234,6 +234,7 @@ const generationTokens    = document.querySelector("#generationTokens");
 const textInput           = document.querySelector("#textInput");
 const originalSentence    = document.querySelector("#originalSentence");
 const generationStatus    = document.querySelector("#generationStatus");
+const generationWarning   = document.querySelector("#generationWarning");
 const avatarStatus        = document.querySelector("#avatarStatus");
 const activeToken         = document.querySelector("#activeToken");
 const avatarFigure        = document.querySelector("#avatarFigure");
@@ -701,7 +702,7 @@ async function translateViaModel(sentence, timeoutMs = 60000) {
     const data = await res.json();
     if (!Array.isArray(data.gloss) || !data.gloss.length) throw new Error("空結果");
     glossApiOnline = true;
-    return { tokens: data.gloss, seconds: data.seconds };
+    return { tokens: data.gloss, seconds: data.seconds, data };
   } finally {
     clearTimeout(timer);
   }
@@ -721,11 +722,35 @@ async function translateToSignOrder(sentence) {
   }
   try {
     const r = await translateViaModel(sentence);
-    return { tokens: r.tokens, source: "gemma", seconds: r.seconds, translation: null };
+    return { tokens: r.tokens, source: "gemma", seconds: r.seconds, translation: r.data || null };
   } catch (err) {
     glossApiOnline = false;
     return { tokens: convertToSignOrder(sentence), source: "fallback", error: err, translation: null };
   }
+}
+
+// 翻譯可靠度警示。模型回應的 needs_review 是經機率校準的訊號
+// （服務端門檻在 dev 上選定）：true 代表候選拼不出完整句子或模型沒把握，
+// oov_items 是詞庫真的沒有的詞（不會播出）。前端拿到但過去沒顯示，
+// 使用者會誤以為看到的就是完整翻譯——這個警示把不確定性攤開來講。
+function renderGenerationWarning(translated) {
+  if (!generationWarning) return;
+  let msg = "";
+  if (translated.source !== "gemma") {
+    msg = "⚠ 未連上語言模型，此結果來自內建對照表，僅供離線展示。";
+  } else {
+    const t = translated.translation;
+    if (t?.needs_review) {
+      const oov = (Array.isArray(t.oov_items) ? t.oov_items : []).filter(Boolean);
+      msg = oov.length
+        ? `⚠ 此句可能不完整：詞庫暫缺「${oov.join("、")}」，缺少的詞不會播出。`
+        : "⚠ 此句可能不完整：模型判斷部分詞彙未必完整對應，重要場合請人工確認。";
+      const dropped = Array.isArray(t.dropped_ids) ? t.dropped_ids.length : 0;
+      if (dropped) msg += `另有 ${dropped} 個無法播放的詞已略過。`;
+    }
+  }
+  generationWarning.textContent = msg;
+  generationWarning.hidden = !msg;
 }
 
 async function updateGeneration() {
@@ -736,6 +761,7 @@ async function updateGeneration() {
     currentGeneratedTokens = [];
     renderGenerationTokens([]);
     genPlayer.load([]);
+    if (generationWarning) generationWarning.hidden = true;
     window.dispatchEvent(new CustomEvent("signavatar:generation-cleared"));
     return;
   }
@@ -746,6 +772,7 @@ async function updateGeneration() {
   genPlayer.load([]);
   originalSentence.textContent = sentence;
   generationStatus.textContent = "語言模型翻譯中…";
+  if (generationWarning) generationWarning.hidden = true;
   window.dispatchEvent(new CustomEvent("signavatar:generation-started", {
     detail: { sentence },
   }));
@@ -757,6 +784,7 @@ async function updateGeneration() {
   generationStatus.textContent = translated.source === "gemma"
     ? `語言模型（Gemma 4 微調）翻譯完成${translated.seconds ? `，耗時 ${translated.seconds}s` : ""}，正在接上虛擬人播放。`
     : `未連上語言模型（${translated.error?.message || "離線"}），改用內建對照表。`;
+  renderGenerationWarning(translated);
   window.dispatchEvent(new CustomEvent("signavatar:generation-updated", {
     detail: { sentence, tokens: currentGeneratedTokens, translation: translated.translation },
   }));
