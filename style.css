@@ -1349,18 +1349,3 @@ h2{
 }
 .stack-close{margin-top:clamp(6px,1.2vh,14px);}
 .type-stack .stack-sub{margin-top:14px;letter-spacing:.2em;}
-
-/* 翻譯可靠度警示（needs_review／離線 fallback）。
-   單色設計語言內不用彩色，改以虛線框＋提示符號表達「此結果未定案」。 */
-.generation-warning{
-  margin-top:var(--sp-2);
-  padding:var(--sp-2) var(--sp-3);
-  border:1px dashed currentColor;
-  /* 顏色跟著所在區塊的文字走（窄版黑字／寬版白字都對），不可硬編 */
-  color:inherit;
-  opacity:.72;
-  font-family:var(--sans-tc);
-  font-size:12.5px;
-  line-height:1.7;
-  letter-spacing:.06em;
-}
