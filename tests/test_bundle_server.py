@@ -3,6 +3,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
 from pathlib import Path
+import shutil
+import ssl
+import subprocess
+import tempfile
 import threading
 import time
 import unittest
@@ -77,6 +81,67 @@ class FakeModelHandler(BaseHTTPRequestHandler):
                     type(self).active_requests -= 1
         else:
             self._json(404, {"error": "not found"})
+
+
+class FakeRecognizerHandler(BaseHTTPRequestHandler):
+    """扮演 Knee42 webservice：永遠走 TLS（自簽），回應形狀照它的 API。"""
+
+    def log_message(self, *_args):
+        pass
+
+    def _json(self, status, payload):
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        if self.path == "/health":
+            self._json(200, {"ok": True, "model": "knee42_transformer", "classes": 42})
+        elif self.path == "/labels":
+            self._json(200, {"ok": True, "labels": [{"label": "K42_01", "text": "你好"}]})
+        else:
+            self._json(404, {"ok": False, "message": "no such route"})
+
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        request = json.loads(self.rfile.read(length))
+        if self.path == "/predict":
+            self._json(200, {
+                "ok": True,
+                "n_frames": len(request.get("frames", [])),
+                "whole": {"top": [{"label": "K42_14", "text": "我要喝水", "prob": 0.91}]},
+                "segments": [],
+            })
+        elif self.path == "/stream":
+            self._json(200, {
+                "ok": True,
+                "session": request.get("session", ""),
+                "state": "IDLE_BLANK",
+                "calibrated": True,
+                "buffered": 0,
+                "results": [],
+            })
+        else:
+            self._json(404, {"ok": False, "message": "no such route"})
+
+
+def self_signed_certificate(directory):
+    """openssl 一次性自簽憑證；沒有 openssl 的環境跳過相關測試。"""
+    certfile = Path(directory) / "server.crt"
+    keyfile = Path(directory) / "server.key"
+    subprocess.run(
+        [
+            "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "1",
+            "-subj", "/CN=localhost",
+            "-keyout", str(keyfile), "-out", str(certfile),
+        ],
+        check=True,
+        capture_output=True,
+    )
+    return certfile, keyfile
 
 
 class BundleServerBehaviorTests(unittest.TestCase):
@@ -265,6 +330,127 @@ class BundleServerBehaviorTests(unittest.TestCase):
         for path in ["/", "/style.css", "/script.js", "/models/avatar.vrm"]:
             with self.subTest(path=path):
                 self.assertEqual(self.static_status("GET", path), 200)
+
+
+class RecognizerProxyTests(unittest.TestCase):
+    """/recognize/* 只是轉發：白名單、身長上限、服務沒開時的明確 503。
+
+    Knee42 webservice 永遠把 socket 包進自簽 TLS，所以假伺服器也得是 HTTPS，
+    bundle_server 那端關驗證（憑證本來就驗不過）才連得上——這裡順便驗證
+    這件事真的成立。
+    """
+
+    def setUp(self):
+        self.bundle = load_bundle_server()
+
+    def request(self, method, path, payload=None, declared_length=None, recognizer_up=True):
+        recognizer_server = None
+        if recognizer_up:
+            if not shutil.which("openssl"):
+                self.skipTest("openssl unavailable; cannot fake the TLS recognizer")
+            self._tmp = tempfile.TemporaryDirectory()
+            self.addCleanup(self._tmp.cleanup)
+            certfile, keyfile = self_signed_certificate(self._tmp.name)
+            recognizer_server = ThreadingHTTPServer(("127.0.0.1", 0), FakeRecognizerHandler)
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context.load_cert_chain(certfile=str(certfile), keyfile=str(keyfile))
+            recognizer_server.socket = context.wrap_socket(
+                recognizer_server.socket, server_side=True
+            )
+            threading.Thread(target=recognizer_server.serve_forever, daemon=True).start()
+            self.bundle.RECOGNIZER_PORT = recognizer_server.server_address[1]
+        else:
+            # 保證沒人在聽的 port：綁一個再立刻關掉
+            probe = ThreadingHTTPServer(("127.0.0.1", 0), FakeRecognizerHandler)
+            self.bundle.RECOGNIZER_PORT = probe.server_address[1]
+            probe.server_close()
+
+        frontend_server = ThreadingHTTPServer(("127.0.0.1", 0), self.bundle.Handler)
+        threading.Thread(target=frontend_server.serve_forever, daemon=True).start()
+        try:
+            connection = http.client.HTTPConnection(
+                "127.0.0.1", frontend_server.server_address[1], timeout=10
+            )
+            if declared_length is not None:
+                # 上限檢查只看 Content-Length 標頭，超標會在讀 body 之前就回 400
+                # 並斷線——真送 32 MiB 只會換來 BrokenPipe，宣告長度就夠了
+                connection.putrequest(method, path)
+                connection.putheader("Content-Type", "application/json")
+                connection.putheader("Content-Length", str(declared_length))
+                connection.endheaders()
+            else:
+                body = None if payload is None else json.dumps(payload).encode("utf-8")
+                headers = {} if body is None else {"Content-Type": "application/json"}
+                connection.request(method, path, body=body, headers=headers)
+            response = connection.getresponse()
+            data = json.loads(response.read())
+            connection.close()
+            return response.status, data
+        finally:
+            frontend_server.shutdown()
+            frontend_server.server_close()
+            if recognizer_server is not None:
+                recognizer_server.shutdown()
+                recognizer_server.server_close()
+
+    def test_predict_and_stream_are_forwarded(self):
+        status, data = self.request(
+            "POST", "/recognize/predict", {"frames": [{"timestamp": 0.0, "hands": []}]}
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["whole"]["top"][0]["text"], "我要喝水")
+        status, data = self.request(
+            "POST", "/recognize/stream", {"session": "abc", "reset": True, "frames": []}
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["session"], "abc")
+        self.assertTrue(data["calibrated"])
+
+    def test_health_and_labels_are_forwarded(self):
+        status, data = self.request("GET", "/recognize/health")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["classes"], 42)
+        status, data = self.request("GET", "/recognize/labels")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["labels"][0]["text"], "你好")
+
+    def test_only_whitelisted_recognizer_routes_exist(self):
+        # 辨識服務還有 /analyze_url（會對外抓影片）等端點，不在白名單上的不轉
+        for method, path in [
+            ("POST", "/recognize/analyze_url"),
+            ("POST", "/recognize/analyze_upload"),
+            ("GET", "/recognize"),
+            ("GET", "/recognize/job/abc"),
+        ]:
+            with self.subTest(path=path):
+                payload = {"url": "https://example.com"} if method == "POST" else None
+                status, _data = self.request(method, path, payload)
+                self.assertEqual(status, 404)
+
+    def test_recognizer_down_is_a_clear_503(self):
+        status, data = self.request(
+            "POST", "/recognize/stream", {"session": "x", "frames": []}, recognizer_up=False
+        )
+        self.assertEqual(status, 503)
+        self.assertIn("recognizer unavailable", data["error"])
+
+    def test_recognize_body_limit_is_wider_but_bounded(self):
+        # landmark 幀比 /translate 的一句話大得多，上限放寬到 32 MiB，但仍有上限
+        self.assertEqual(self.bundle.RECOGNIZE_MAX_BODY, 32 * 1024 * 1024)
+        status, data = self.request(
+            "POST",
+            "/recognize/predict",
+            declared_length=self.bundle.RECOGNIZE_MAX_BODY + 1,
+            recognizer_up=False,
+        )
+        self.assertEqual(status, 400)
+        self.assertIn("between 1 byte", data["error"])
+
+    def test_translate_body_limit_is_not_widened(self):
+        status, data = self.request(
+            "POST", "/translate", declared_length=1_048_577, recognizer_up=False
+        )
+        self.assertEqual(status, 400)
 
 
 if __name__ == "__main__":

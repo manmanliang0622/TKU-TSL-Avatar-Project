@@ -82,6 +82,17 @@ eq("POST recordings", (await call("POST", "recordings")).status, 404);
 eq("GET clip/deep/path", (await call("GET", "clip/deep/path")).status, 404);
 eq("GET translate（錯的動詞）", (await call("GET", "translate")).status, 405);
 
+console.log("# 手語辨識掛在 recognize/ 底下，恰好兩段才轉");
+eq("POST recognize/stream", (await call("POST", "recognize/stream")).upstream, "https://kv.example/recognize/stream");
+eq("POST recognize/predict", (await call("POST", "recognize/predict")).upstream, "https://kv.example/recognize/predict");
+eq("GET recognize/health", (await call("GET", "recognize/health")).upstream, "https://kv.example/recognize/health");
+eq("GET recognize/labels", (await call("GET", "recognize/labels")).upstream, "https://kv.example/recognize/labels");
+// 辨識服務還有 /analyze_url（會對外抓影片）等端點，不在白名單上的不轉
+eq("POST recognize/analyze_url", (await call("POST", "recognize/analyze_url")).status, 404);
+eq("GET recognize（少一段）", (await call("GET", "recognize")).status, 404);
+eq("POST recognize/stream/x（多一段）", (await call("POST", "recognize/stream/x")).status, 404);
+eq("GET recognize/stream（錯的動詞）", (await call("GET", "recognize/stream")).status, 405);
+
 console.log("# KV 讀不到就用保底網址，不是整個壞掉");
 eq("KV 未綁定", (await call("POST", "translate", { env: {} })).upstream.endsWith("/translate"), true);
 eq("KV 空值", (await call("POST", "translate", { env: KV("  ") })).upstream.endsWith("/translate"), true);

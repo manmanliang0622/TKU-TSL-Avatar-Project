@@ -26,6 +26,16 @@ const ROUTES = {
   health: ["GET"],
 };
 
+// 手語辨識（Knee42）掛在 /api/recognize/* 下，bundle_server 會轉給同一台的
+// 辨識服務。一樣逐條列出：辨識服務還有 /analyze_url（會對外抓影片）等端點，
+// 不在白名單上的不轉。
+const RECOGNIZE_ROUTES = {
+  predict: ["POST", "OPTIONS"],
+  stream: ["POST", "OPTIONS"],
+  health: ["GET"],
+  labels: ["GET"],
+};
+
 // 模型冷啟動要幾十秒（前端自己抓 60s），留一點餘裕再放棄，
 // 免得請求卡在那裡直到執行環境把它砍掉、前端只看到一個沒有訊息的失敗。
 const UPSTREAM_TIMEOUT_MS = 90_000;
@@ -73,17 +83,29 @@ export async function onRequest({ request, env, params }) {
   const segments = (Array.isArray(params.path) ? params.path : [params.path]).filter(Boolean);
   const route = segments[0] || "";
 
-  // 白名單比對只看第一段，且不接受更深的路徑：/api/clip 可以，
-  // /api/recordings/xxx.json 或 /api/clip/../models 都擋掉
-  const allowed = Object.prototype.hasOwnProperty.call(ROUTES, route) ? ROUTES[route] : null;
-  if (!allowed || segments.length !== 1) return json(404, { error: "not found" });
+  // 白名單比對：一般路徑只看第一段；recognize 恰好兩段（/api/recognize/stream
+  // 可以，/api/recognize 或 /api/recognize/stream/xxx 都擋掉）。
+  // /api/recordings/xxx.json 或 /api/clip/../models 一律 404。
+  let allowed = null;
+  let upstreamPath = route;
+  if (route === "recognize") {
+    const sub = segments[1] || "";
+    allowed =
+      segments.length === 2 && Object.prototype.hasOwnProperty.call(RECOGNIZE_ROUTES, sub)
+        ? RECOGNIZE_ROUTES[sub]
+        : null;
+    upstreamPath = `recognize/${sub}`;
+  } else if (segments.length === 1 && Object.prototype.hasOwnProperty.call(ROUTES, route)) {
+    allowed = ROUTES[route];
+  }
+  if (!allowed) return json(404, { error: "not found" });
   if (!allowed.includes(request.method)) return json(405, { error: "method not allowed" });
 
   // 同源請求本來就不會有預檢；這裡回一個空的 204 只是不讓別人踩到 405
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
 
   const { origin, source } = await upstreamOrigin(env);
-  const target = `${origin}/${route}${new URL(request.url).search}`;
+  const target = `${origin}/${upstreamPath}${new URL(request.url).search}`;
 
   const headers = new Headers();
   const contentType = request.headers.get("content-type");

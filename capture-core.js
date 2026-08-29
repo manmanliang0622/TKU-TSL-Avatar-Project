@@ -12,6 +12,7 @@ const MP_VERSION = "0.10.35";
 const MP_BASE    = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}`;
 const HAND_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 const FACE_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+const POSE_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
 
 export const FEATURE_VERSION = 2;
 export const HAND_DIMS       = 126;
@@ -29,11 +30,24 @@ const HAND_CONNECTIONS = [
 ];
 
 // ── 模型載入（GPU 失敗自動退 CPU；同頁只載一次） ──
+// wasm 執行環境（vision bundle + FilesetResolver）各 landmarker 共用一份
+let visionPromise = null;
+function visionTasks() {
+  visionPromise ??= (async () => {
+    const module = await import(`${MP_BASE}/vision_bundle.mjs`);
+    const vision = await module.FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
+    return { module, vision };
+  })().catch(err => {
+    visionPromise = null;
+    throw err;
+  });
+  return visionPromise;
+}
+
 let loadPromise = null;
 export function loadLandmarkers() {
   loadPromise ??= (async () => {
-    const { FilesetResolver, HandLandmarker, FaceLandmarker } = await import(`${MP_BASE}/vision_bundle.mjs`);
-    const vision = await FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
+    const { module: { HandLandmarker, FaceLandmarker }, vision } = await visionTasks();
     const create = delegate => Promise.all([
       HandLandmarker.createFromOptions(vision, {
         baseOptions: { modelAssetPath: HAND_MODEL_URL, delegate },
@@ -59,6 +73,32 @@ export function loadLandmarkers() {
     throw err;
   });
   return loadPromise;
+}
+
+// 身體姿態（33 點）只有辨識頁要：Knee42 模型的特徵是 pose + 雙手，
+// 錄製工具（collect.js）的 v2 特徵用不到，所以獨立載入、不併進 loadLandmarkers。
+// lite 版模型 5 MB 出頭，與手部模型同一套 GPU→CPU 退路。
+let poseLoadPromise = null;
+export function loadPoseLandmarker() {
+  poseLoadPromise ??= (async () => {
+    const { module: { PoseLandmarker }, vision } = await visionTasks();
+    const create = delegate => PoseLandmarker.createFromOptions(vision, {
+      baseOptions: { modelAssetPath: POSE_MODEL_URL, delegate },
+      runningMode: "VIDEO",
+      numPoses: 1,
+    });
+    let poseLandmarker;
+    try {
+      poseLandmarker = await create("GPU");
+    } catch {
+      poseLandmarker = await create("CPU");
+    }
+    return poseLandmarker;
+  })().catch(err => {
+    poseLoadPromise = null;
+    throw err;
+  });
+  return poseLoadPromise;
 }
 
 // ── 特徵抽取 ──

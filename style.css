@@ -1072,6 +1072,14 @@ h2{
 .recognition-result{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0;}
 .recognition-console .steps-list{margin:0;gap:var(--sp-2);}
 .recognition-console .spoken-text{font-size:19px;}
+/* 42 句分類器的其他候選：小字排在口語句子下方，不搶主結果的視覺。
+   辨識台跟生成台一樣是黑舞台反白，顏色要用 ivory 系，用 --muted/--faint
+   （黑底 rgba）會整排隱形。 */
+.rec-candidates{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-2);}
+.rec-candidate{
+  font-family:var(--sans-tc);font-size:12px;letter-spacing:.04em;
+  color:rgba(233,234,228,.72);border:1px solid rgba(233,234,228,.35);padding:3px 8px;
+}
 
 /* ---------- DELIGHT ---------- */
 /* 播放到哪個詞卡，該詞卡輕輕一跳 */

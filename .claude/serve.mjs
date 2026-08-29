@@ -24,7 +24,9 @@ createServer(async (req, res) => {
 
   // 同源代理：嵌入式瀏覽器擋跨埠 loopback 請求，改由這裡轉發到通道
   // /recordings/* 先讀本地（lexicon.json 已抓回），缺檔再走通道拉整段錄製
-  const proxyPath = path === "/translate" || path === "/clips" || path === "/lexicon";
+  // /recognize/* 交給學校那台的 bundle_server 再轉 Knee42 辨識服務
+  const proxyPath = path === "/translate" || path === "/clips" || path === "/lexicon"
+    || path.startsWith("/recognize/");
   if (proxyPath) {
     const upstream = httpRequest(
       { ...GLOSS_PROXY_TARGET, path, method: req.method, headers: {

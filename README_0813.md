@@ -101,6 +101,77 @@ curl -sI https://signbridge-2co.pages.dev/api/health | grep -i x-tsl-api-base-so
 `kv` 才是正常。`fallback` 代表 Function 沒讀到 KV —— 多半是 Pages 的
 binding 變數名不叫 `TSL_CONFIG`，或 Production／Preview 只加了一邊。
 
+## 手語辨識（Knee42，Sign-Language-Recognition-Gemma）
+
+辨識方向（手語 → 文字）用的是
+[Mikullee/Sign-Language-Recognition-Gemma](https://github.com/Mikullee/Sign-Language-Recognition-Gemma)
+的 Knee42 Transformer（42 句固定詞句、CPU 推論），跑在學校這台上，
+與 0813 的 Gemma 完全分開：獨立 repo、獨立 venv、獨立 port（8642，只綁 loopback）。
+
+### 初次安裝（學校電腦，一次性）
+
+```bash
+cd ~
+git clone https://github.com/Mikullee/Sign-Language-Recognition-Gemma
+cd Sign-Language-Recognition-Gemma
+python3 -m venv .venv
+.venv/bin/pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+.venv/bin/pip install -r requirements-transformer.txt
+```
+
+模型 bundle（`artifacts/realtime/best_current/`）repo 內附，不必另外下載。
+MediaPipe 的 `.task` 檔與網頁資產**都不需要**：骨架抽取在使用者的瀏覽器做
+（本專案自己載 CDN 的 hand + pose landmarker），送到伺服器的只有座標。
+
+裝在別的位置就設 `KNEE42_ROOT` 再跑啟動腳本。
+
+### 日常啟動／停止
+
+```bash
+cd /home/b310ai/0813
+./start_knee42.sh    # 冪等：已在跑就只做健康檢查
+./stop_knee42.sh
+```
+
+日誌與 PID 一樣在 `logs/`（`knee42.log`、`knee42.err.log`、`knee42.pid`）。
+辨識服務掛了不影響翻譯與虛擬人；反過來也一樣。
+
+### 前端怎麼打到它
+
+瀏覽器永遠不直連 8642。路徑跟 `/translate` 同一套：
+
+- 學校主機／tunnel 直開：`bundle_server` 的 `/recognize/*`（白名單轉發到 8642）
+- 線上站（pages.dev）：同源 `/api/recognize/*` → Pages Function → tunnel → `bundle_server`
+
+只轉 `predict`／`stream`／`health`／`labels` 四條。辨識服務還有
+`/analyze_url`（會 shell 出 yt-dlp 對外抓影片）、`/analyze_upload` 等端點，
+刻意不轉——上傳影片在前端就地抽骨架走 `/predict`，影片檔不必離開瀏覽器。
+
+兩種輸入的分工：
+
+- **即時攝影機**：每 400ms 把累積的骨架送 `/recognize/stream`，起訖判定
+  （校準過的七百行狀態機）在伺服器上，比完把手放回身側就自動出結果。
+- **上傳影片**：影片播一次、逐格抽骨架，整段送 `/recognize/predict`，
+  伺服器切段＋逐段推論；單句影片常切不出段，整段結果才是答案。
+
+辨識出的句子會再丟回 Gemma `/translate` 取手語語序（伺服器端有快取），
+Gemma 離線就退回內建對照表——語序列是輔助顯示，不卡辨識結果。
+
+### 健康檢查
+
+```bash
+curl -k https://127.0.0.1:8642/health          # 辨識服務本體
+curl http://127.0.0.1:8083/recognize/health    # 經 bundle_server 轉發
+curl https://signbridge-2co.pages.dev/api/recognize/health   # 線上站全鏈路
+```
+
+前端連不到時會明講「請確認學校電腦已跑 start_knee42.sh」，不會退回假資料。
+
+### 已知限制（照實講給使用者聽）
+
+- 42 句是封閉集合，詞表外的手語一定會亂答；信心低於 50% 前端會標「信心不足」。
+- 模型 gate 是 PROVISIONAL，跨手語者準確率 72.9%–86.1%。
+
 ## 為什麼前端不直接抓 recordings/
 
 一個詞條是整支錄影檔裡的 0.3～3 秒：「我」是 `moc_G2D1P1.json`（11.5 MB、

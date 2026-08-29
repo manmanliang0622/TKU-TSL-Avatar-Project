@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 from pathlib import PurePosixPath
 import signal
+import ssl
 import subprocess
 import threading
 import time
@@ -31,6 +32,25 @@ MODEL_LOG = None
 MODEL_ERR = None
 EXPECTED_MODEL = "qlora_e4b_v11_holdout"
 INFERENCE_LOCK = threading.Lock()
+# 手語辨識（Knee42 Transformer，獨立 repo、獨立 venv）跑在同一台的另一個
+# port 上，這裡只轉發白名單內的路徑。它永遠走 TLS（webservice.server 起手
+# 就把 socket 包進自簽憑證），所以連 loopback 也得用 HTTPS，並關閉驗證——
+# 憑證是它自己簽給 localhost 的，鏈本來就驗不過。
+RECOGNIZER_PORT = int(os.environ.get("RECOGNIZER_PORT", "8642"))
+# 上傳影片走「瀏覽器抽 landmark、整段一次送」：三分鐘 30fps 約 10 MB，
+# 32 MiB 留足餘裕；/translate 與 /clips 維持原本 1 MiB，互不放寬。
+RECOGNIZE_MAX_BODY = 32 * 1024 * 1024
+# 路徑 → (方法, 上游路徑, 逾時)。/predict 整段影片切段＋逐段推論最慢，
+# 給到 120 秒；/stream 一次只吃 400ms 的 landmark，30 秒已經是壞掉等級。
+RECOGNIZE_ROUTES = {
+    "/recognize/predict": ("POST", "/predict", 120.0),
+    "/recognize/stream": ("POST", "/stream", 30.0),
+    "/recognize/health": ("GET", "/health", 5.0),
+    "/recognize/labels": ("GET", "/labels", 5.0),
+}
+_RECOGNIZER_TLS = ssl.create_default_context()
+_RECOGNIZER_TLS.check_hostname = False
+_RECOGNIZER_TLS.verify_mode = ssl.CERT_NONE
 STOP_EVENT = threading.Event()
 MODEL_RESTART_COUNT = 0
 MODEL_RESTART_EXHAUSTED = False
@@ -114,6 +134,24 @@ def model_request(
     timeout: float = 10.0,
 ) -> tuple[int, list[tuple[str, str]], bytes]:
     connection = http.client.HTTPConnection("127.0.0.1", MODEL_PORT, timeout=timeout)
+    try:
+        connection.request(method, path, body=body, headers=headers or {})
+        response = connection.getresponse()
+        return response.status, response.getheaders(), response.read()
+    finally:
+        connection.close()
+
+
+def recognizer_request(
+    method: str,
+    path: str,
+    body: bytes | None = None,
+    headers: dict[str, str] | None = None,
+    timeout: float = 10.0,
+) -> tuple[int, list[tuple[str, str]], bytes]:
+    connection = http.client.HTTPSConnection(
+        "127.0.0.1", RECOGNIZER_PORT, timeout=timeout, context=_RECOGNIZER_TLS
+    )
     try:
         connection.request(method, path, body=body, headers=headers or {})
         response = connection.getresponse()
@@ -368,6 +406,38 @@ class Handler(SimpleHTTPRequestHandler):
         if self.command != "HEAD":
             self.wfile.write(body)
 
+    def proxy_recognizer(self, route: str, body: bytes | None = None) -> None:
+        """Forward one whitelisted path to the Knee42 recognizer, or say it is down.
+
+        沒有 INFERENCE_LOCK：那把鎖是為了 v11 語言模型（一次只能吃一句），
+        辨識器自己會排隊（影片工作單執行緒、串流各自有 session），
+        在這裡再串行化只會讓兩位使用者互相卡住。
+        """
+        method, upstream_path, timeout = RECOGNIZE_ROUTES[route]
+        headers = {}
+        content_type = self.headers.get("Content-Type")
+        if content_type:
+            headers["Content-Type"] = content_type
+        try:
+            status, response_headers, payload = recognizer_request(
+                method, upstream_path, body=body, headers=headers, timeout=timeout
+            )
+        except (OSError, TimeoutError) as error:
+            # 前端把 503 當成「辨識服務沒開」，會顯示明確訊息而不是轉圈圈
+            self.send_json(503, {"error": "recognizer unavailable", "detail": str(error)})
+            return
+        self.send_response(status)
+        response_type = next(
+            (value for key, value in response_headers if key.lower() == "content-type"),
+            "application/json; charset=utf-8",
+        )
+        self.send_header("Content-Type", response_type)
+        self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(payload)
+
     def serve_clip_query(self) -> None:
         query = parse_qs(urlsplit(self.path).query)
         name = (query.get("name") or [""])[0]
@@ -462,6 +532,9 @@ class Handler(SimpleHTTPRequestHandler):
         if request_path == "/clip":
             self.serve_clip_query()
             return
+        if request_path in RECOGNIZE_ROUTES and RECOGNIZE_ROUTES[request_path][0] == "GET":
+            self.proxy_recognizer(request_path)
+            return
         if request_path != "/health":
             if not is_public_static_path(self.path):
                 self.send_json(404, {"error": "not found"})
@@ -516,7 +589,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         route = self.path.split("?", 1)[0]
-        if route not in {"/translate", "/clips"}:
+        recognize = route in RECOGNIZE_ROUTES and RECOGNIZE_ROUTES[route][0] == "POST"
+        if route not in {"/translate", "/clips"} and not recognize:
             self.send_json(404, {"error": "not found"})
             return
         try:
@@ -524,10 +598,14 @@ class Handler(SimpleHTTPRequestHandler):
         except ValueError:
             self.send_json(400, {"error": "invalid Content-Length"})
             return
-        if content_length <= 0 or content_length > 1_048_576:
-            self.send_json(400, {"error": "request body must be between 1 byte and 1 MiB"})
+        limit = RECOGNIZE_MAX_BODY if recognize else 1_048_576
+        if content_length <= 0 or content_length > limit:
+            self.send_json(400, {"error": f"request body must be between 1 byte and {limit} bytes"})
             return
         body = self.rfile.read(content_length)
+        if recognize:
+            self.proxy_recognizer(route, body)
+            return
         if route == "/clips":
             self.serve_clip_batch(body)
             return
@@ -590,15 +668,22 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def main() -> None:
-    global MODEL_PORT
+    global MODEL_PORT, RECOGNIZER_PORT
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8083")))
     parser.add_argument(
         "--model-port", type=int, default=int(os.environ.get("MODEL_PORT", "8877"))
     )
+    parser.add_argument(
+        "--recognizer-port",
+        type=int,
+        default=int(os.environ.get("RECOGNIZER_PORT", "8642")),
+        help="Knee42 手語辨識服務（start_knee42.sh）所在的 loopback port",
+    )
     args = parser.parse_args()
     MODEL_PORT = args.model_port
+    RECOGNIZER_PORT = args.recognizer_port
     if args.host not in {"127.0.0.1", "localhost", "::1"}:
         parser.error("0813 only supports a loopback host; use an SSH tunnel")
     LOG_DIR.mkdir(parents=True, exist_ok=True)

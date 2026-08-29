@@ -183,12 +183,6 @@
 })();
 
 // ── Vocabulary Data ──
-const recognitionSamples = {
-  drink:    { signOrder: ["我", "水", "喝", "要"], spokenText: "我要喝水" },
-  register: { signOrder: ["我", "掛號", "要"],     spokenText: "我要掛號" },
-  help:     { signOrder: ["請", "我", "幫忙"],     spokenText: "請幫我一下" },
-};
-
 const generationSamples = {
   "我要喝水":  ["我", "水", "喝", "要"],
   "請幫我一下": ["請", "我", "幫忙"],
@@ -249,7 +243,6 @@ const recognitionSteps = [
   document.querySelector("#recognitionStep3"),
 ];
 
-let recognitionTimer = null;
 let currentStream    = null;
 // 0813 排版：輸入框空白起始，不預載示範句
 let currentGeneratedTokens = [];
@@ -282,6 +275,7 @@ function showPage(id, push = true) {
 
   // 離開頁面時的清理：關閉攝影機、停止播放
   if (id !== "recognition" && currentStream) {
+    abortRecognition();
     stopCameraStream();
     previewVideo.srcObject = null;
     showPreview(Boolean(previewVideo.getAttribute("src")));
@@ -336,7 +330,7 @@ document.addEventListener("keydown", e => {
     case "2": showPage("recognition"); break;
     case "3": showPage("generation");  break;
     case "Enter":
-      if (recPage) simulateRecognition();
+      if (recPage) startRecognition();
       if (genPage) updateGeneration();
       break;
     case " ":
@@ -599,6 +593,7 @@ async function openCameraPreview() {
     return;
   }
   try {
+    abortRecognition();
     stopCameraStream();
     clearUploadedVideo();
     previewVideo.removeAttribute("src");
@@ -616,6 +611,7 @@ async function openCameraPreview() {
 }
 
 function useUploadMode() {
+  abortRecognition();
   stopCameraStream();
   previewVideo.srcObject = null;
   showPreview(Boolean(previewVideo.getAttribute("src")));
@@ -624,44 +620,261 @@ function useUploadMode() {
   cameraMessage.textContent = "請上傳手語影片，系統會先保留手語語序。";
 }
 
-// ── Recognition ──
-const recognitionKeys = Object.keys(recognitionSamples);
-let recognitionRound  = 0;
+// ── Recognition（Knee42 42 句模型，程式跑在學校電腦）──
+// 影像不出瀏覽器：MediaPipe 在本機抽骨架（recognition.js 的 Knee42Capture），
+// 只有座標送到 /recognize/*，由 bundle_server 轉給同一台的辨識服務。
+// 攝影機走 /recognize/stream（伺服器端狀態機自動判定起訖，不必按鍵），
+// 上傳影片播一次抽完幀後走 /recognize/predict（伺服器切段＋逐段推論）。
+const startRecognitionBtn = document.querySelector("#startRecognition");
+const recCandidates       = document.querySelector("#recCandidates");
 
-function simulateRecognition() {
-  const hasSource = Boolean(currentStream) || Boolean(previewVideo.getAttribute("src"));
-  if (!hasSource) {
-    setRecStatus("等待輸入", "idle");
-    cameraMessage.textContent = "請先點擊上方新增手語影片，或切換到即時攝影機。";
+// /stream 回的狀態機字串 → 給人看的話
+const REC_STATE_TEXT = {
+  IDLE_BLANK: "可以開始比劃",
+  SIGNING_ACTIVE: "比劃中",
+  END_CONFIRM: "確認結束中",
+  COOLDOWN: "冷卻中",
+  FORCED_FINALIZE_COOLDOWN: "冷卻中",
+};
+
+let recStreamTimer = null; // 攝影機串流模式的 setInterval id
+let recRun = 0;            // 每輪辨識 +1；重置後舊的 async 回呼看到不一致就放棄
+
+const recApi = path => `${GLOSS_API}/recognize/${path}`;
+
+function setStepState(index, state) {
+  const step = recognitionSteps[index];
+  step.classList.remove("is-active", "is-complete");
+  if (state) step.classList.add(`is-${state}`);
+}
+
+function renderRecCandidates(top) {
+  recCandidates.innerHTML = "";
+  recCandidates.hidden = !top || top.length < 2;
+  if (recCandidates.hidden) return;
+  top.slice(0, 3).forEach(({ text, prob }) => {
+    const row = document.createElement("span");
+    row.className = "rec-candidate";
+    row.textContent = `${text} ${(prob * 100).toFixed(0)}%`;
+    recCandidates.appendChild(row);
+  });
+}
+
+// 中斷目前這輪：讓還在路上的回呼失效，並停掉串流計時器
+function abortRecognition() {
+  recRun++;
+  if (recStreamTimer !== null) {
+    clearInterval(recStreamTimer);
+    recStreamTimer = null;
+  }
+  startRecognitionBtn.textContent = "開始辨識";
+  startRecognitionBtn.disabled = false;
+}
+
+function recognizerOffline(err) {
+  setRecStatus("等待輸入", "idle");
+  spokenResult.textContent = "尚未辨識";
+  cameraMessage.textContent =
+    `連不到辨識服務（${err?.message || "離線"}）。請確認學校電腦已跑 start_knee42.sh，或稍後再試。`;
+}
+
+/* 一段辨識完成後的共同收尾：口語句子直接來自 42 句分類器；
+   「手語語序」列把句子丟回 Gemma 取 gloss（同一台學校電腦、伺服器端有快取），
+   Gemma 離線就退回內建對照表——語序列是輔助顯示，不能反過來卡住辨識結果。 */
+async function showRecognitionResult(sentence, top) {
+  const run = recRun;
+  setStepState(0, "complete");
+  setStepState(1, "complete");
+  setStepState(2, "active");
+  setRecStatus("口語轉換", "active");
+  const best = top?.[0];
+  spokenResult.textContent = best && best.prob < 0.5
+    ? `${best.text}（信心不足 ${(best.prob * 100).toFixed(0)}%，可能不在 42 句內）`
+    : sentence;
+  renderRecCandidates(top);
+  let tokens;
+  try {
+    tokens = (await translateViaModel(sentence, 20000)).tokens;
+  } catch {
+    tokens = convertToSignOrder(sentence);
+  }
+  if (run !== recRun) return;
+  renderTokens(recognitionTokens, tokens);
+  setStepState(2, "complete");
+  setRecStatus("辨識完成", "done");
+}
+
+// ── 攝影機：每 400ms 把累積的骨架送 /recognize/stream，起訖判定在伺服器 ──
+function startCameraRecognition() {
+  const capture = window.Knee42Capture;
+  if (!capture?.isReady()) {
+    cameraMessage.textContent = "骨架偵測模型還在載入，請稍候再按一次。";
     return;
   }
-  const sample = recognitionSamples[recognitionKeys[recognitionRound++ % recognitionKeys.length]];
-  clearTimeout(recognitionTimer);
+  abortRecognition();
+  const run = recRun;
+  const session = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  capture.beginSession();
   resetRecognitionSteps();
+  setStepState(0, "active");
   renderTokens(recognitionTokens, []);
-  spokenResult.textContent = "辨識中，請稍候…";
-  setRecStatus("分析中", "active");
-  recognitionSteps[0].classList.add("is-active");
+  renderRecCandidates(null);
+  spokenResult.textContent = "校準中…";
+  setRecStatus("校準中", "active");
+  cameraMessage.textContent = "請先雙手垂放身側站好；校準完成後直接比劃，比完把手放回身側即可。";
+  startRecognitionBtn.textContent = "停止辨識";
 
-  recognitionTimer = setTimeout(() => {
-    recognitionSteps[0].classList.replace("is-active", "is-complete");
-    recognitionSteps[1].classList.add("is-active");
+  let first = true;     // 第一包帶 reset，伺服器重建這個 session 的狀態機
+  let inflight = false; // 上一包還沒回來就先不送，避免亂序
+  recStreamTimer = setInterval(async () => {
+    if (inflight || run !== recRun) return;
+    const frames = capture.drainFrames();
+    if (!frames.length && !first) return;
+    inflight = true;
+    try {
+      const res = await fetch(recApi("stream"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session, reset: first, frames }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.message || "stream failed");
+      first = false;
+      if (run !== recRun) return;
+      const results = data.results || [];
+      for (const segment of results) {
+        if (segment.top?.length) await showRecognitionResult(segment.top[0].text, segment.top);
+      }
+      if (!results.length) {
+        if (!data.calibrated) {
+          setRecStatus("校準中", "active");
+        } else if (data.state === "SIGNING_ACTIVE" || recognitionStatus.dataset.state !== "done") {
+          // 上一句的「辨識完成」在冷卻／待命時保留著；再次比劃就換回進行中
+          setRecStatus(REC_STATE_TEXT[data.state] || "偵測中", "active");
+          if (data.state === "SIGNING_ACTIVE") setStepState(0, "active");
+        }
+      }
+    } catch (err) {
+      if (run !== recRun) return;
+      abortRecognition();
+      recognizerOffline(err);
+    } finally {
+      inflight = false;
+    }
+  }, 400);
+}
+
+// ── 上傳影片：播一次抽完幀，整段送 /recognize/predict ──
+async function recognizeUploadedVideo() {
+  const capture = window.Knee42Capture;
+  if (!capture?.isReady()) {
+    cameraMessage.textContent = "骨架偵測模型還在載入，請稍候再按一次。";
+    return;
+  }
+  abortRecognition();
+  const run = recRun;
+  resetRecognitionSteps();
+  setStepState(0, "active");
+  renderTokens(recognitionTokens, []);
+  renderRecCandidates(null);
+  spokenResult.textContent = "影像分析中…";
+  setRecStatus("影像分析", "active");
+  cameraMessage.textContent = "正在逐格抽取骨架，影片會完整播放一次。";
+  startRecognitionBtn.disabled = true;
+
+  capture.beginSession();
+  try {
+    // 播放失敗是本機問題（分頁被背景暫停、檔案壞了），不能怪到學校電腦頭上
+    try {
+      previewVideo.muted = true;
+      previewVideo.currentTime = 0;
+      await previewVideo.play();
+      await new Promise((resolve, reject) => {
+        const done = () => { cleanup(); resolve(); };
+        const fail = () => { cleanup(); reject(new Error("影片播放失敗")); };
+        const cleanup = () => {
+          previewVideo.removeEventListener("ended", done);
+          previewVideo.removeEventListener("error", fail);
+        };
+        previewVideo.addEventListener("ended", done);
+        previewVideo.addEventListener("error", fail);
+      });
+    } catch (playErr) {
+      if (run !== recRun) return;
+      setRecStatus("等待輸入", "idle");
+      spokenResult.textContent = "尚未辨識";
+      cameraMessage.textContent = `影片無法播放（${playErr?.message || playErr}）。請保持分頁在前景，或換一個影片檔試試。`;
+      return;
+    }
+    if (run !== recRun) return;
+
+    const frames = capture.drainFrames();
+    const withPose = frames.filter(f => f.pose).length;
+    if (frames.length < 4 || withPose < 4) {
+      setRecStatus("等待輸入", "idle");
+      spokenResult.textContent = "尚未辨識";
+      cameraMessage.textContent =
+        `有效幀太少（共 ${frames.length} 幀、其中 ${withPose} 幀偵測到身體），無法辨識。請確認上半身完整入鏡。`;
+      return;
+    }
+    setStepState(0, "complete");
+    setStepState(1, "active");
     setRecStatus("語序辨識", "active");
-    renderTokens(recognitionTokens, sample.signOrder);
+    cameraMessage.textContent = `已送出 ${frames.length} 幀骨架，等待學校電腦推論…`;
 
-    recognitionTimer = setTimeout(() => {
-      recognitionSteps[1].classList.replace("is-active", "is-complete");
-      recognitionSteps[2].classList.add("is-active");
-      setRecStatus("口語轉換", "active");
+    const res = await fetch(recApi("predict"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ frames }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.message || "辨識失敗");
+    if (run !== recRun) return;
 
-      recognitionTimer = setTimeout(() => {
-        recognitionSteps[2].classList.replace("is-active", "is-complete");
-        spokenResult.textContent = sample.spokenText;
-        setRecStatus("辨識完成", "done");
-        cameraMessage.textContent = "已保留原始手語語序，並整理成口語句子。";
-      }, 700);
-    }, 800);
-  }, 700);
+    // 單句影片常切不出段，整段（whole）結果才是答案；長影片切出多段就逐段組句
+    const segments = (data.segments || []).filter(seg => seg.top?.length);
+    if (segments.length > 1) {
+      const sentence = segments.map(seg => seg.top[0].text).join("，");
+      cameraMessage.textContent = `影片切出 ${segments.length} 段動作，逐段辨識後組成句子。`;
+      await showRecognitionResult(sentence, null);
+      return;
+    }
+    const top = segments[0]?.top || data.whole?.top;
+    if (!top?.length) {
+      setRecStatus("等待輸入", "idle");
+      spokenResult.textContent = "尚未辨識";
+      cameraMessage.textContent = data.message || "影片中偵測不到可辨識的手語動作。";
+      return;
+    }
+    cameraMessage.textContent = "已保留原始手語語序，並整理成口語句子。";
+    await showRecognitionResult(top[0].text, top);
+  } catch (err) {
+    if (run !== recRun) return;
+    recognizerOffline(err);
+  } finally {
+    if (run === recRun) startRecognitionBtn.disabled = false;
+  }
+}
+
+function startRecognition() {
+  if (recStreamTimer !== null) {  // 正在即時辨識 → 這顆鈕是「停止辨識」
+    abortRecognition();
+    setRecStatus("已停止", "idle");
+    cameraMessage.textContent = "已停止即時辨識。";
+    return;
+  }
+  if (currentStream) {
+    startCameraRecognition();
+    return;
+  }
+  if (previewVideo.getAttribute("src")) {
+    recognizeUploadedVideo();
+    return;
+  }
+  setRecStatus("等待輸入", "idle");
+  cameraMessage.textContent = "請先點擊上方新增手語影片，或切換到即時攝影機。";
 }
 
 // ── Generation ──
@@ -773,6 +986,7 @@ function playAvatarSequence() {
 
 // ── Event Listeners ──
 function loadVideoFile(file) {
+  abortRecognition();
   stopCameraStream();
   clearUploadedVideo();
   previewVideo.srcObject = null;
@@ -809,12 +1023,13 @@ videoModeButton.addEventListener("click", () => {
   if (!previewVideo.getAttribute("src")) videoUpload.click();
 });
 cameraModeButton.addEventListener("click", openCameraPreview);
-document.querySelector("#startRecognition").addEventListener("click", simulateRecognition);
+startRecognitionBtn.addEventListener("click", startRecognition);
 
 document.querySelector("#resetRecognition").addEventListener("click", () => {
-  clearTimeout(recognitionTimer);
+  abortRecognition();
   resetRecognitionSteps();
   renderTokens(recognitionTokens, []);
+  renderRecCandidates(null);
   spokenResult.textContent = "尚未辨識";
   setRecStatus("等待輸入", "idle");
   // 一併清掉影像來源，回到初始狀態
