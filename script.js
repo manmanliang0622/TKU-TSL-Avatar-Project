@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════
-//  手譯橋 SignBridge — Hero reveal + 雙向手語功能
+//  譯手通 SignTranslate — Hero reveal + 雙向手語功能
 // ════════════════════════════════════════════
 
 // ── Hero Reveal Lens ──
@@ -29,7 +29,7 @@
   }
   setInitial();
 
-  // ── 左側「手譯橋」直欄：游標愈近，該行字愈大（純 transform，不觸發重排） ──
+  // ── 左側「譯手通」直欄：游標愈近，該行字愈大（純 transform，不觸發重排） ──
   const brandCol  = document.querySelector('#home .brand-column');
   const brandRows = brandCol ? Array.from(brandCol.children) : [];
   const BRAND_AMP     = 0.42;  // 正對游標那行的最大放大幅度
