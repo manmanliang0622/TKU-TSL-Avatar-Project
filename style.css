@@ -864,7 +864,7 @@ h2{
   gap:var(--sp-4);flex-wrap:wrap;
 }
 .capture-toolbar .mode-switch{margin:0;}
-.source-btn{
+.source-btn,.seg-btn{
   min-height:40px;
   padding:8px 18px;
   font-size:13px;
@@ -872,8 +872,8 @@ h2{
   border:1px solid rgba(233,234,228,.6);
   background:rgba(0,0,0,.45);
 }
-.source-btn:hover{background:rgba(233,234,228,.14);border-color:var(--ivory);}
-.source-btn.is-active{background:var(--ivory);border-color:var(--ivory);color:var(--black);}
+.source-btn:hover,.seg-btn:hover{background:rgba(233,234,228,.14);border-color:var(--ivory);}
+.source-btn.is-active,.seg-btn.is-active{background:var(--ivory);border-color:var(--ivory);color:var(--black);}
 
 /* 狀態徽章浮在舞台上（單色） */
 .stage-status{
@@ -908,7 +908,7 @@ h2{
 
 /* 視窗矮時舞台跟著縮，上緣那排東西依序讓位 */
 @container stage (max-width:640px){
-  .source-btn{min-height:34px;padding:6px 14px;font-size:12.5px;}
+  .source-btn,.seg-btn{min-height:34px;padding:6px 14px;font-size:12.5px;}
   .stage-status{min-height:34px;padding:6px 13px;font-size:10.5px;}
   .capture-stage .empty-preview .empty-sub{display:none;}
 }
@@ -960,7 +960,7 @@ h2{
 }
 .stage-page .capture-toolbar .mode-switch{gap:var(--sp-3);}
 /* 來源按鈕比照播放按鈕的分量 */
-.stage-page .source-btn{
+.stage-page .source-btn,.stage-page .seg-btn{
   min-height:clamp(46px,3.6vw,64px);
   padding:clamp(11px,1vw,16px) clamp(20px,1.7vw,32px);
   font-size:clamp(13px,1vw,16px);letter-spacing:.2em;
@@ -1252,15 +1252,15 @@ h2{
   .generation-console .token-row{min-height:42px;gap:var(--sp-2);}
 
   /* 辨識頁：舞台上的控制列落到奶茶底，配色跟著還原成黑字 */
-  .stage-page .source-btn{
+  .stage-page .source-btn,.stage-page .seg-btn{
     min-height:40px;
     padding:8px 18px;
     font-size:12.5px;letter-spacing:.14em;
     border-color:var(--black);
     background:transparent;color:var(--black);
   }
-  .stage-page .source-btn:hover{border-color:var(--black);background:rgba(0,0,0,.07);}
-  .stage-page .source-btn.is-active{background:var(--black);border-color:var(--black);color:var(--ivory);}
+  .stage-page .source-btn:hover,.stage-page .seg-btn:hover{border-color:var(--black);background:rgba(0,0,0,.07);}
+  .stage-page .source-btn.is-active,.stage-page .seg-btn.is-active{background:var(--black);border-color:var(--black);color:var(--ivory);}
   .stage-page .stage-status{
     min-height:40px;
     padding:7px 15px;
@@ -1311,7 +1311,7 @@ h2{
   .generation-console .token{min-width:0;}
   .capture-toolbar{align-items:stretch;flex-direction:column;gap:var(--sp-3);}
   .capture-toolbar .mode-switch{width:100%;}
-  .stage-page .source-btn{flex:1;padding:8px 10px;}
+  .stage-page .source-btn,.stage-page .seg-btn{flex:1;padding:8px 10px;}
   .stage-status{align-self:flex-start;}
 }
 
