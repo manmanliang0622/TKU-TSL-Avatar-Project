@@ -821,15 +821,21 @@ document.querySelector("#resetRecognition").addEventListener("click", () => {
   renderTokens(recognitionTokens, []);
   spokenResult.textContent = "尚未辨識";
   setRecStatus("等待輸入", "idle");
-  // 一併清掉影像來源，回到初始狀態
-  stopCameraStream();
-  clearUploadedVideo();
-  previewVideo.srcObject = null;
-  previewVideo.removeAttribute("src");
-  showPreview(false);
-  setPressed(videoModeButton, true);
-  setPressed(cameraModeButton, false);
-  cameraMessage.textContent = "系統先顯示手語語序，再整理成口語。";
+  // 重置只清結果與辨識狀態，輸入來源留在原本的模式
+  if (cameraModeButton.getAttribute("aria-pressed") === "true") {
+    // 攝影機模式：串流照舊（未開啟就維持未開啟），訊息歸位
+    cameraMessage.textContent = currentStream
+      ? "攝影機已開啟，請讓雙手完整出現在畫面中。"
+      : "系統先顯示手語語序，再整理成口語。";
+  } else {
+    // 上傳模式：清掉已載入的影片，回到「點擊新增影片」
+    stopCameraStream();
+    clearUploadedVideo();
+    previewVideo.srcObject = null;
+    previewVideo.removeAttribute("src");
+    showPreview(false);
+    cameraMessage.textContent = "請上傳手語影片，系統會先保留手語語序。";
+  }
 });
 
 document.querySelector("#generateSign").addEventListener("click", updateGeneration);
