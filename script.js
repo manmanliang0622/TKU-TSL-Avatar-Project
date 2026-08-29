@@ -885,3 +885,12 @@ renderQuickPhrases();
 renderGenerationTokens(currentGeneratedTokens);
 genPlayer.load(currentGeneratedTokens);
 showPreview(false);
+
+
+// ── 辨識頁預設即時攝影機：進頁時沒有任何影像來源就直接開鏡頭 ──
+function autoOpenCamera() {
+  const hasSource = Boolean(currentStream) || Boolean(previewVideo.getAttribute("src"));
+  if (!hasSource) openCameraPreview();
+}
+window.addEventListener("pagechange", e => { if (e.detail === "recognition") autoOpenCamera(); });
+if (!document.querySelector("#recognition").hidden) autoOpenCamera();

@@ -138,8 +138,8 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 
       <div class="capture-toolbar">
         <div class="mode-switch" role="group" aria-label="輸入模式">
-          <button type="button" class="chip-btn source-btn is-active" id="videoModeButton" data-mode="upload" aria-pressed="true">上傳影片</button>
-          <button type="button" class="chip-btn source-btn" id="cameraModeButton" data-mode="camera" aria-pressed="false">即時攝影機</button>
+          <button type="button" class="chip-btn source-btn is-active" id="cameraModeButton" data-mode="camera" aria-pressed="true">即時攝影機</button>
+          <button type="button" class="chip-btn source-btn" id="videoModeButton" data-mode="upload" aria-pressed="false">上傳影片</button>
         </div>
         <span class="status-dot stage-status" id="recognitionStatus" data-state="idle">等待輸入</span>
       </div>
@@ -321,7 +321,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 </dialog>
 
 <script src="signavatar-config.js?v=20260823-apiproxy"></script>
-<script src="script.js?v=20260825-tokensync"></script>
+<script src="script.js?v=20260829-camfirst"></script>
 <!-- 辨識頁改接 Knee42 後端（Pose+Hands 合約）；原 recognition.js（手+臉 178 維，供自訓模型）暫時下線 -->
 <script type="module" src="knee42-client.js?v=20260829-knee42"></script>
 <script type="importmap">
