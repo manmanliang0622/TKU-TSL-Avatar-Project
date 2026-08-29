@@ -142,8 +142,8 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
           <button type="button" class="chip-btn source-btn" id="videoModeButton" data-mode="upload" aria-pressed="false">上傳影片</button>
         </div>
         <div class="mode-switch" role="group" aria-label="切段方式" id="segModeSwitch">
-          <button type="button" class="chip-btn seg-btn is-active" id="autoSegButton" data-seg="auto" aria-pressed="true">自動切段</button>
-          <button type="button" class="chip-btn seg-btn" id="manualSegButton" data-seg="manual" aria-pressed="false">手動切段</button>
+          <button type="button" class="chip-btn seg-btn" id="autoSegButton" data-seg="auto" aria-pressed="false">自動切段</button>
+          <button type="button" class="chip-btn seg-btn is-active" id="manualSegButton" data-seg="manual" aria-pressed="true">手動切段</button>
         </div>
         <span class="status-dot stage-status" id="recognitionStatus" data-state="idle">等待輸入</span>
       </div>
@@ -328,7 +328,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <script src="signavatar-config.js?v=20260823-apiproxy"></script>
 <script src="script.js?v=20260829-resetmode"></script>
 <!-- 辨識頁改接 Knee42 後端（Pose+Hands 合約）；原 recognition.js（手+臉 178 維，供自訓模型）暫時下線 -->
-<script type="module" src="knee42-client.js?v=20260829-manualseg"></script>
+<script type="module" src="knee42-client.js?v=20260830-mdefault"></script>
 <script type="importmap">
 {
   "imports": {
@@ -339,8 +339,6 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <script type="module" src="avatar3d.js?v=20260825-tokensync"></script>
 <script src="composer.js?v=20260825-tokensync"></script>
 <script type="module" src="signavatar-bridge.js?v=20260825-tokensync"></script>
-<!-- 版本標記：肉眼判斷手機/LINE 開到的是哪一版；每次部署記得同步改 -->
-<div id="buildTag" style="position:fixed;left:8px;bottom:6px;z-index:99;font-size:10px;letter-spacing:.08em;color:#888;opacity:.75;pointer-events:none;font-family:monospace;">v0829d</div>
 <script>
 // 清掉任何殘留的 service worker（歷史版本若註冊過，會讓整個網域永遠拿到舊快取）
 if ("serviceWorker" in navigator) {

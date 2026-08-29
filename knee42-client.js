@@ -70,8 +70,8 @@ let latestFrame = null;          // 偵測迴圈的最新一幀 {pose, hands}
 let autoBuf = [], autoSession = "", autoT0 = 0, autoSending = false, autoTimer = null;
 let clipBuf = [], clipStart = 0, clipBusy = false;
 let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
-// 攝影機的切段方式（記住上次選擇）；上傳影片一律整段送 /predict，與此無關
-let segMode = localStorage.getItem("recognitionSegMode") === "manual" ? "manual" : "auto";
+// 攝影機的切段方式（記住上次選擇，預設手動）；上傳影片一律整段送 /predict，與此無關
+let segMode = localStorage.getItem("recognitionSegMode") === "auto" ? "auto" : "manual";
 
 function setStatus(text, state = "idle") {
   statusEl.textContent = text;
