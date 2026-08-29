@@ -336,7 +336,7 @@ document.addEventListener("keydown", e => {
     case "2": showPage("recognition"); break;
     case "3": showPage("generation");  break;
     case "Enter":
-      if (recPage) simulateRecognition();
+      if (recPage) window.Knee42 ? window.Knee42.toggle() : simulateRecognition();
       if (genPage) updateGeneration();
       break;
     case " ":
@@ -809,7 +809,11 @@ videoModeButton.addEventListener("click", () => {
   if (!previewVideo.getAttribute("src")) videoUpload.click();
 });
 cameraModeButton.addEventListener("click", openCameraPreview);
-document.querySelector("#startRecognition").addEventListener("click", simulateRecognition);
+// Knee42 模組載入成功時由它接手；載入失敗（如 CDN 不通）退回原本的示範動畫
+document.querySelector("#startRecognition").addEventListener("click", () => {
+  if (window.Knee42) window.Knee42.toggle();
+  else simulateRecognition();
+});
 
 document.querySelector("#resetRecognition").addEventListener("click", () => {
   clearTimeout(recognitionTimer);
