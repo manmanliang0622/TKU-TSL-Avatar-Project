@@ -141,6 +141,10 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
           <button type="button" class="chip-btn source-btn is-active" id="cameraModeButton" data-mode="camera" aria-pressed="true">即時攝影機</button>
           <button type="button" class="chip-btn source-btn" id="videoModeButton" data-mode="upload" aria-pressed="false">上傳影片</button>
         </div>
+        <div class="mode-switch" role="group" aria-label="切段方式" id="segModeSwitch">
+          <button type="button" class="chip-btn seg-btn is-active" id="autoSegButton" data-seg="auto" aria-pressed="true">自動切段</button>
+          <button type="button" class="chip-btn seg-btn" id="manualSegButton" data-seg="manual" aria-pressed="false">手動切段</button>
+        </div>
         <span class="status-dot stage-status" id="recognitionStatus" data-state="idle">等待輸入</span>
       </div>
     </div>
@@ -162,6 +166,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 
       <div class="action-row generation-actions">
         <button type="button" class="btn-primary" id="startRecognition">開始辨識</button>
+        <button type="button" class="btn-primary" id="manualSegmentButton" hidden>開始這句（空白鍵）</button>
         <button type="button" class="btn-ghost" id="resetRecognition">重置</button>
       </div>
     </div>
@@ -314,7 +319,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
   <dl class="kbd-list">
     <div><dt><kbd>1</kbd>–<kbd>3</kbd></dt><dd>切換頁面（首頁／辨識／生成）</dd></div>
     <div><dt><kbd>Enter</kbd></dt><dd>辨識頁：開始辨識；生成頁：轉成手語</dd></div>
-    <div><dt><kbd>Space</kbd></dt><dd>生成頁：開始／暫停播放</dd></div>
+    <div><dt><kbd>Space</kbd></dt><dd>生成頁：開始／暫停播放；辨識頁手動切段：開始／結束一句</dd></div>
     <div><dt><kbd>Esc</kbd></dt><dd>停止播放</dd></div>
     <div><dt><kbd>?</kbd></dt><dd>開啟／關閉此說明</dd></div>
   </dl>
@@ -323,7 +328,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <script src="signavatar-config.js?v=20260823-apiproxy"></script>
 <script src="script.js?v=20260829-camfirst"></script>
 <!-- 辨識頁改接 Knee42 後端（Pose+Hands 合約）；原 recognition.js（手+臉 178 維，供自訓模型）暫時下線 -->
-<script type="module" src="knee42-client.js?v=20260829-knee42"></script>
+<script type="module" src="knee42-client.js?v=20260829-manualseg"></script>
 <script type="importmap">
 {
   "imports": {

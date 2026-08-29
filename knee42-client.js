@@ -4,8 +4,9 @@
 // 鏡像只存在於 CSS 顯示層（previewBox.is-camera 翻轉 video 與 canvas），資料不動——
 // 前端做任何翻轉或左右交換都會讓推論落在與訓練不同的分布上。
 //
-// 兩種輸入 → 兩條路徑：
-//   即時攝影機 → POST /stream（伺服器端自動切段狀態機，每 400ms 送一批 landmark）
+// 兩種輸入 → 三條路徑：
+//   即時攝影機（自動切段）→ POST /stream（伺服器端自動切段狀態機，每 400ms 送一批 landmark）
+//   即時攝影機（手動切段）→ 空白鍵或按鈕控制一句的開始/結束，結束時整句 POST /predict
 //   上傳影片   → 播放中逐幀抽 landmark，播完 POST /predict（整段分類，適合單句影片）
 //
 // 後端位址：預設同源 /knee42/*（bundle_server 轉發到 127.0.0.1:8642 的 Knee42 webservice）。
@@ -49,6 +50,10 @@ const spoken   = document.querySelector("#spokenResult");
 const statusEl = document.querySelector("#recognitionStatus");
 const message  = document.querySelector("#cameraMessage");
 const startBtn = document.querySelector("#startRecognition");
+const segSwitch    = document.querySelector("#segModeSwitch");
+const autoSegBtn   = document.querySelector("#autoSegButton");
+const manualSegBtn = document.querySelector("#manualSegButton");
+const segActionBtn = document.querySelector("#manualSegmentButton");
 const steps = [
   document.querySelector("#recognitionStep1"),
   document.querySelector("#recognitionStep2"),
@@ -60,10 +65,13 @@ const ctx = canvas.getContext("2d");
 let handLm = null, poseLm = null, loadPromise = null;
 let looping = false, lastVideoTime = -1, lastDetectTs = 0;
 let lastBadgeKey = "";
-let mode = null;                 // null | "auto"（攝影機）| "clip"（上傳影片）
+let mode = null;                 // null | "auto"（攝影機自動切段）| "manual"（攝影機手動切段）| "clip"（上傳影片）
 let latestFrame = null;          // 偵測迴圈的最新一幀 {pose, hands}
 let autoBuf = [], autoSession = "", autoT0 = 0, autoSending = false, autoTimer = null;
 let clipBuf = [], clipStart = 0, clipBusy = false;
+let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
+// 攝影機的切段方式（記住上次選擇）；上傳影片一律整段送 /predict，與此無關
+let segMode = localStorage.getItem("recognitionSegMode") === "manual" ? "manual" : "auto";
 
 function setStatus(text, state = "idle") {
   statusEl.textContent = text;
@@ -136,6 +144,8 @@ function loop(now) {
 
   if (mode === "auto") {
     autoBuf.push({ pose, hands, timestamp: +((performance.now() - autoT0) / 1000).toFixed(4) });
+  } else if (mode === "manual" && manualRecording) {
+    manualBuf.push({ pose, hands });
   } else if (mode === "clip") {
     clipBuf.push({ pose, hands });
   }
@@ -293,6 +303,116 @@ function stopAuto() {
   startBtn.textContent = "開始辨識";
 }
 
+// ── /predict 共用送出（手動模式與影片模式）──
+async function postPredict(frames, duration) {
+  const res = await fetch(`${API_BASE}/predict`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      frames,
+      fps: +(frames.length / Math.max(duration, 1e-3)).toFixed(2),
+      duration: +duration.toFixed(3),
+    }),
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+  return data;
+}
+
+// ── 手動模式（攝影機 → 空白鍵/按鈕切一句 → /predict）──
+function startManual() {
+  mode = "manual";
+  manualRecording = false;
+  manualBuf = [];
+  resetSteps();
+  tokens.innerHTML = "";
+  spoken.textContent = "尚未辨識";
+  setStatus("待命", "active");
+  startBtn.textContent = "停止辨識";
+  if (segActionBtn) {
+    segActionBtn.hidden = false;
+    segActionBtn.disabled = false;
+    segActionBtn.textContent = "開始這句（空白鍵）";
+  }
+  message.textContent = "手動模式：按空白鍵或「開始這句」開始錄，比完再按一次結束並辨識。";
+}
+
+function manualToggleSegment() {
+  if (mode !== "manual" || manualBusy) return;
+  if (!manualRecording) {
+    manualRecording = true;
+    manualBuf = [];
+    manualT0 = performance.now();
+    showAnalyzing("錄製中：請比出這一句…");
+    setStatus("錄製中", "active");
+    if (segActionBtn) segActionBtn.textContent = "結束這句（空白鍵）";
+    message.textContent = "錄製中：比完後再按一次空白鍵（或「結束這句」）送出辨識。";
+  } else {
+    manualRecording = false;
+    finishManual();
+  }
+}
+
+function cancelManualSegment() {
+  if (mode !== "manual" || !manualRecording) return;
+  manualRecording = false;
+  manualBuf = [];
+  resetSteps();
+  if (segActionBtn) segActionBtn.textContent = "開始這句（空白鍵）";
+  spoken.textContent = "已取消這句。";
+  setStatus("待命", "active");
+  message.textContent = "已取消，按空白鍵或「開始這句」重新錄製。";
+}
+
+async function finishManual() {
+  const frames = manualBuf;
+  manualBuf = [];
+  const duration = (performance.now() - manualT0) / 1000;
+  if (segActionBtn) segActionBtn.textContent = "開始這句（空白鍵）";
+  const withPose = frames.filter(f => f.pose).length;
+  if (frames.length < MIN_FRAMES || withPose < MIN_FRAMES) {
+    spoken.textContent = "有效幀太少，無法辨識。";
+    setStatus("待命", "active");
+    message.textContent = `這句只錄到 ${frames.length} 幀（${withPose} 幀有偵測到身體）。請確認上半身完整入鏡後重錄一次。`;
+    return;
+  }
+  manualBusy = true;
+  if (segActionBtn) segActionBtn.disabled = true;
+  steps[0].classList.replace("is-active", "is-complete");
+  steps[1].classList.add("is-active");
+  spoken.textContent = "辨識中，請稍候…";
+  try {
+    const data = await postPredict(frames, duration);
+    // 手動切出來的就是一句，與上傳影片相同：讀整段 whole 結果
+    const top = data.whole?.top || data.segments?.[0]?.top || [];
+    if (!top.length) {
+      spoken.textContent = "未能辨識。";
+      setStatus(mode === "manual" ? "待命" : "等待輸入", mode === "manual" ? "active" : "idle");
+      message.textContent = data.message || "這句偵測不到足夠的骨架，請確認上半身完整入鏡後重錄。";
+    } else {
+      renderTop(top);
+      message.textContent = mode === "manual"
+        ? `這句辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀），按空白鍵繼續錄下一句。`
+        : `辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀）。`;
+    }
+  } catch (err) {
+    spoken.textContent = "辨識失敗。";
+    setStatus("連線失敗", mode === "manual" ? "active" : "idle");
+    message.textContent = `辨識後端連線失敗：${err.message}。請確認後端狀態後重錄這一句。`;
+  } finally {
+    manualBusy = false;
+    if (segActionBtn) segActionBtn.disabled = false;
+  }
+}
+
+function stopManual() {
+  manualRecording = false;
+  manualBuf = [];
+  if (mode === "manual") mode = null;
+  if (segActionBtn) segActionBtn.hidden = true;
+  startBtn.textContent = "開始辨識";
+}
+
 // ── 影片模式（上傳影片 → 播放抽幀 → /predict）──
 async function startClip() {
   mode = "clip";
@@ -325,17 +445,7 @@ async function finishClip() {
   steps[1].classList.add("is-active");
   spoken.textContent = "辨識中，請稍候…";
   try {
-    const res = await fetch(`${API_BASE}/predict`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        frames,
-        fps: +(frames.length / Math.max(duration, 1e-3)).toFixed(2),
-        duration: +duration.toFixed(3),
-      }),
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+    const data = await postPredict(frames, duration);
     // 整段結果優先：單句影片常切不出段落，whole 才是答案（見 analyze_frames docstring）
     const top = data.whole?.top || data.segments?.[0]?.top || [];
     if (!top.length) {
@@ -366,16 +476,17 @@ function stopClip() {
 
 function stopAll() {
   stopAuto();
+  stopManual();
   stopClip();
 }
 
 // ── 對外入口：script.js 的「開始辨識」與 Enter 鍵委派到這裡 ──
 function toggle() {
   if (mode) {         // 進行中 → 停止/取消
-    const wasAuto = mode === "auto";
+    const wasClip = mode === "clip";
     stopAll();
-    setStatus(wasAuto ? "已停止" : "已取消", "idle");
-    if (!wasAuto) video.pause();
+    setStatus(wasClip ? "已取消" : "已停止", "idle");
+    if (wasClip) video.pause();
     return;
   }
   const isCamera = Boolean(video.srcObject);
@@ -387,7 +498,7 @@ function toggle() {
   }
   loadLandmarkers()
     .then(() => startLoop())
-    .then(() => (isCamera ? startAuto() : startClip()))
+    .then(() => (isCamera ? (segMode === "manual" ? startManual() : startAuto()) : startClip()))
     .catch(() => {
       setStatus("等待輸入", "idle");
       message.textContent = "骨架偵測模型載入失敗，請檢查網路後重試。";
@@ -405,6 +516,78 @@ video.addEventListener("emptied", () => { stopAll(); stopLoop({ clear: true }); 
 document.querySelector("#resetRecognition")?.addEventListener("click", () => {
   stopAll();
 });
+
+// ── 切段方式（自動/手動）──
+function applySegChips() {
+  if (!autoSegBtn || !manualSegBtn) return;
+  autoSegBtn.classList.toggle("is-active", segMode === "auto");
+  autoSegBtn.setAttribute("aria-pressed", String(segMode === "auto"));
+  manualSegBtn.classList.toggle("is-active", segMode === "manual");
+  manualSegBtn.setAttribute("aria-pressed", String(segMode === "manual"));
+}
+
+function setSegMode(next) {
+  if (segMode !== next) {
+    segMode = next;
+    localStorage.setItem("recognitionSegMode", next);
+    // 辨識進行中切換 → 直接換成另一種切段方式，攝影機不中斷
+    if (mode === "auto" && next === "manual") { stopAuto(); startManual(); }
+    else if (mode === "manual" && next === "auto") { stopManual(); startAuto(); }
+    else if (!mode) {
+      message.textContent = next === "manual"
+        ? "手動切段：開始辨識後，用空白鍵或「開始這句」按鈕控制每一句的開始與結束。"
+        : "自動切段：開始辨識後，比完一句把手放回身側，系統會自動切段。";
+    }
+  }
+  applySegChips();
+}
+
+autoSegBtn?.addEventListener("click", () => setSegMode("auto"));
+manualSegBtn?.addEventListener("click", () => setSegMode("manual"));
+segActionBtn?.addEventListener("click", manualToggleSegment);
+applySegChips();
+
+// 切段方式只對攝影機有意義；上傳影片時把切換藏起來
+function updateSegSwitchVisibility() {
+  if (!segSwitch) return;
+  segSwitch.hidden = !video.srcObject && Boolean(video.getAttribute("src"));
+}
+video.addEventListener("loadeddata", updateSegSwitchVisibility);
+video.addEventListener("emptied", updateSegSwitchVisibility);
+document.querySelector("#videoModeButton")?.addEventListener("click", () => {
+  if (segSwitch) segSwitch.hidden = true;
+  // 切到上傳影片會停掉攝影機串流，進行中的攝影機辨識一併收掉
+  if (mode === "auto" || mode === "manual") {
+    stopAll();
+    setStatus("已停止", "idle");
+  }
+});
+document.querySelector("#cameraModeButton")?.addEventListener("click", () => { if (segSwitch) segSwitch.hidden = false; });
+
+// 空白鍵＝手動切段的開始/結束。用 capture 搶在 script.js 與按鈕原生空白鍵行為之前，
+// 避免焦點停在按鈕上時一次空白鍵觸發兩件事。
+document.addEventListener("keydown", e => {
+  if (e.key !== " " || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (!isPageVisible() || e.target.matches("input, textarea, select")) return;
+  if (mode === "manual") {
+    e.preventDefault();
+    e.stopPropagation();
+    manualToggleSegment();
+  } else if (!mode && segMode === "manual" && video.srcObject) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggle();   // 還沒開始就按空白鍵：直接進入手動待命，再按一次開始錄
+  }
+}, true);
+
+// Esc＝放棄正在錄的這一句（不送辨識）
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape" || !isPageVisible()) return;
+  if (mode === "manual" && manualRecording) {
+    e.stopPropagation();
+    cancelManualSegment();
+  }
+}, true);
 
 function isPageVisible() {
   return !document.querySelector("#recognition").hidden;
