@@ -10,14 +10,14 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 }
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="手譯橋 SignBridge：即時手語翻譯系統。將手語影像轉換為文字，也能把口語句子轉成台灣手語語序並播放動畫。">
+<meta name="description" content="譯手通 SignTranslate：臺灣手語辨識與虛擬人手語生成系統。將手語影像轉換為文字，也能把口語句子轉成台灣手語語序並播放動畫。">
 <meta name="theme-color" content="#E9EAE4">
-<title>手譯橋 SignBridge — 手語翻譯系統</title>
+<title>譯手通 — 手語辨識與生成系統</title>
 <meta name="google-site-verification" content="8p95iFz6pA8p0foqyns39ckik2k76oWNKrs9THkAl70" />
 <link rel="canonical" href="https://signbridge-2co.pages.dev/">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="手譯橋 SignBridge">
-<meta property="og:title" content="手譯橋 SignBridge — 即時手語翻譯系統">
+<meta property="og:site_name" content="譯手通 SignTranslate">
+<meta property="og:title" content="譯手通 — 臺灣手語辨識與虛擬人手語生成系統">
 <meta property="og:description" content="將手語影像即時轉換為文字，也能把口語句子轉成台灣手語語序並由虛擬人播放。聽人與聾人之間的每一段對話，都能被完整理解。">
 <meta property="og:url" content="https://signbridge-2co.pages.dev/">
 <meta property="og:image" content="https://signbridge-2co.pages.dev/og-image.jpg">
@@ -25,22 +25,22 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="zh_TW">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="手譯橋 SignBridge — 即時手語翻譯系統">
+<meta name="twitter:title" content="譯手通 — 臺灣手語辨識與虛擬人手語生成系統">
 <meta name="twitter:description" content="將手語影像即時轉換為文字，也能把口語句子轉成台灣手語語序並由虛擬人播放。">
 <meta name="twitter:image" content="https://signbridge-2co.pages.dev/og-image.jpg">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Archivo:wght@400;500;600&family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20260829-knee42">
+<link rel="stylesheet" href="style.css?v=20260830-segbtn">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "手譯橋 SignBridge",
-  "alternateName": "SignBridge",
+  "name": "譯手通 SignTranslate",
+  "alternateName": "SignTranslate",
   "url": "https://signbridge-2co.pages.dev/",
-  "description": "即時手語翻譯系統：將手語影像轉換為文字，也能把口語句子轉成台灣手語語序並由虛擬人播放。",
+  "description": "臺灣手語辨識與虛擬人手語生成系統：將手語影像轉換為文字，也能把口語句子轉成台灣手語語序並由虛擬人播放。",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "Web",
   "inLanguage": "zh-Hant",
@@ -54,9 +54,9 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 
 <!-- ======== NAV ======== -->
 <header class="nav">
-  <a class="brand" href="#home" aria-label="手譯橋 SignBridge 首頁">
-    <span class="wordmark" aria-hidden="true">sīgn·brĭdge</span>
-    <span class="zh">手譯橋</span>
+  <a class="brand" href="#home" aria-label="譯手通 SignTranslate 首頁">
+    <span class="wordmark" aria-hidden="true">sīgn·trănslate</span>
+    <span class="zh">譯手通</span>
   </a>
   <nav class="links" id="primaryNav" aria-label="主選單">
     <a href="#home" aria-current="page">首頁</a>
@@ -86,7 +86,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
            alt="">
     </div>
 
-    <h1 class="visually-hidden">手譯橋 SignBridge — 即時手語翻譯系統：手語轉文字、文字轉手語動畫</h1>
+    <h1 class="visually-hidden">譯手通 SignTranslate — 臺灣手語辨識與虛擬人手語生成系統：手語轉文字、文字轉手語動畫</h1>
 
     <p class="hero-tag" aria-hidden="true">( TAIWAN SIGN LANGUAGE · REAL-TIME AI )</p>
 
@@ -138,8 +138,12 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 
       <div class="capture-toolbar">
         <div class="mode-switch" role="group" aria-label="輸入模式">
-          <button type="button" class="chip-btn source-btn is-active" id="videoModeButton" data-mode="upload" aria-pressed="true">上傳影片</button>
-          <button type="button" class="chip-btn source-btn" id="cameraModeButton" data-mode="camera" aria-pressed="false">即時攝影機</button>
+          <button type="button" class="chip-btn source-btn is-active" id="cameraModeButton" data-mode="camera" aria-pressed="true">即時攝影機</button>
+          <button type="button" class="chip-btn source-btn" id="videoModeButton" data-mode="upload" aria-pressed="false">上傳影片</button>
+        </div>
+        <div class="mode-switch" role="group" aria-label="切段方式" id="segModeSwitch">
+          <button type="button" class="chip-btn seg-btn" id="autoSegButton" data-seg="auto" aria-pressed="false">自動切段</button>
+          <button type="button" class="chip-btn seg-btn is-active" id="manualSegButton" data-seg="manual" aria-pressed="true">手動切段</button>
         </div>
         <span class="status-dot stage-status" id="recognitionStatus" data-state="idle">等待輸入</span>
       </div>
@@ -162,6 +166,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 
       <div class="action-row generation-actions">
         <button type="button" class="btn-primary" id="startRecognition">開始辨識</button>
+        <button type="button" class="btn-primary" id="manualSegmentButton" hidden>開始這句（空白鍵）</button>
         <button type="button" class="btn-ghost" id="resetRecognition">重置</button>
       </div>
     </div>
@@ -315,15 +320,16 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
   <dl class="kbd-list">
     <div><dt><kbd>1</kbd>–<kbd>3</kbd></dt><dd>切換頁面（首頁／辨識／生成）</dd></div>
     <div><dt><kbd>Enter</kbd></dt><dd>辨識頁：開始辨識；生成頁：轉成手語</dd></div>
-    <div><dt><kbd>Space</kbd></dt><dd>生成頁：開始／暫停播放</dd></div>
+    <div><dt><kbd>Space</kbd></dt><dd>生成頁：開始／暫停播放；辨識頁手動切段：開始／結束一句</dd></div>
     <div><dt><kbd>Esc</kbd></dt><dd>停止播放</dd></div>
     <div><dt><kbd>?</kbd></dt><dd>開啟／關閉此說明</dd></div>
   </dl>
 </dialog>
 
 <script src="signavatar-config.js?v=20260823-apiproxy"></script>
-<script src="script.js?v=20260829-knee42"></script>
-<script type="module" src="recognition.js?v=20260829-knee42"></script>
+<script src="script.js?v=20260829-resetmode"></script>
+<!-- 辨識頁改接 Knee42 後端（Pose+Hands 合約）；原 recognition.js（手+臉 178 維，供自訓模型）暫時下線 -->
+<script type="module" src="knee42-client.js?v=20260830-mdefault"></script>
 <script type="importmap">
 {
   "imports": {
@@ -334,5 +340,13 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <script type="module" src="avatar3d.js?v=20260825-tokensync"></script>
 <script src="composer.js?v=20260825-tokensync"></script>
 <script type="module" src="signavatar-bridge.js?v=20260825-tokensync"></script>
+<script>
+// 清掉任何殘留的 service worker（歷史版本若註冊過，會讓整個網域永遠拿到舊快取）
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations()
+    .then(rs => rs.forEach(r => r.unregister()))
+    .catch(() => {});
+}
+</script>
 </body>
 </html>

@@ -26,14 +26,13 @@ const ROUTES = {
   health: ["GET"],
 };
 
-// 手語辨識（Knee42）掛在 /api/recognize/* 下，bundle_server 會轉給同一台的
-// 辨識服務。一樣逐條列出：辨識服務還有 /analyze_url（會對外抓影片）等端點，
-// 不在白名單上的不轉。
-const RECOGNIZE_ROUTES = {
-  predict: ["POST", "OPTIONS"],
-  stream: ["POST", "OPTIONS"],
+// 手語辨識端（Knee42）：bundle_server 的 /knee42/* 會再轉給同機 8642 的
+// Knee42 webservice。一樣採白名單，只放行這四條子路徑，其餘照擋。
+const KNEE42_ROUTES = {
   health: ["GET"],
   labels: ["GET"],
+  predict: ["POST", "OPTIONS"],
+  stream: ["POST", "OPTIONS"],
 };
 
 // 模型冷啟動要幾十秒（前端自己抓 60s），留一點餘裕再放棄，
@@ -83,18 +82,16 @@ export async function onRequest({ request, env, params }) {
   const segments = (Array.isArray(params.path) ? params.path : [params.path]).filter(Boolean);
   const route = segments[0] || "";
 
-  // 白名單比對：一般路徑只看第一段；recognize 恰好兩段（/api/recognize/stream
-  // 可以，/api/recognize 或 /api/recognize/stream/xxx 都擋掉）。
-  // /api/recordings/xxx.json 或 /api/clip/../models 一律 404。
+  // 白名單比對：一般路由只看第一段且不接受更深的路徑（/api/clip 可以，
+  // /api/recordings/xxx.json 或 /api/clip/../models 都擋掉）；
+  // knee42 是唯一的兩段式路由，第二段也要在白名單內。
   let allowed = null;
   let upstreamPath = route;
-  if (route === "recognize") {
-    const sub = segments[1] || "";
-    allowed =
-      segments.length === 2 && Object.prototype.hasOwnProperty.call(RECOGNIZE_ROUTES, sub)
-        ? RECOGNIZE_ROUTES[sub]
-        : null;
-    upstreamPath = `recognize/${sub}`;
+  if (route === "knee42") {
+    if (segments.length === 2 && Object.prototype.hasOwnProperty.call(KNEE42_ROUTES, segments[1])) {
+      allowed = KNEE42_ROUTES[segments[1]];
+      upstreamPath = `knee42/${segments[1]}`;
+    }
   } else if (segments.length === 1 && Object.prototype.hasOwnProperty.call(ROUTES, route)) {
     allowed = ROUTES[route];
   }

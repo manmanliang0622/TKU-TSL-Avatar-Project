@@ -1,0 +1,12 @@
+# Cloudflare Pages 自訂標頭：HTML 一律不快取。
+# 原因：LINE 等 App 的內建瀏覽器會無視 max-age=0/must-revalidate 硬用舊快取，
+# 導致同一條連結點進去還是舊版頁面。no-store 讓每次開啟都向伺服器拿最新 HTML；
+# JS/CSS 仍靠 index.html 裡的 ?v= 版本號換新，不受影響。
+/
+  Cache-Control: no-store
+
+/index.html
+  Cache-Control: no-store
+
+/collect.html
+  Cache-Control: no-store
