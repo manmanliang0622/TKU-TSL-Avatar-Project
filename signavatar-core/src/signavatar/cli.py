@@ -448,6 +448,38 @@ def _cmd_placenames_fetch(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_familynames_fetch(args: argparse.Namespace) -> int:
+    import json
+    import time
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    from signavatar.familynames import BASE_URL, fetch_all
+
+    dest_dir = Path(args.dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    names = fetch_all(sleep=lambda: time.sleep(args.delay))
+    data = {
+        "origin": f"{BASE_URL}familynames_database.php(台灣手語姓氏,張榮興台灣手語研究室)",
+        "license_note": "已取得張榮興台灣手語研究室使用同意;訓練資料不對外公開、不散布影片",
+        "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "surnames": [n.to_dict() for n in names],
+    }
+    out = dest_dir / "familynames.json"
+    out.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
+    morph = sum(len(n.morphemes) for n in names)
+    print(f"familynames saved: {out} ({len(names)} 姓, {morph} 字素構詞分析)")
+    return 0
+
+
+def _cmd_familynames_bulk(args: argparse.Namespace) -> int:
+    from signavatar.bulk import bulk_familynames
+
+    stats = bulk_familynames(args.dir, workers=args.workers, delay=args.delay, limit=args.limit)
+    print(f"bulk done: {stats}")
+    return 0
+
+
 def _cmd_tasli_fetch(args: argparse.Namespace) -> int:
     import json
     import time
@@ -712,6 +744,19 @@ def main(argv: list[str] | None = None) -> int:
     p_pbulk.add_argument("--delay", type=float, default=1.5, help="seconds between downloads")
     p_pbulk.add_argument("--limit", type=int, default=0, help="first N places only (0 = all)")
     p_pbulk.set_defaults(func=_cmd_placenames_bulk)
+
+    p_fn = sub.add_parser("familynames", help="台灣手語姓氏網: fetch metadata / bulk ingest")
+    fn_sub = p_fn.add_subparsers(dest="familynames_command", required=True)
+    p_ffetch = fn_sub.add_parser("fetch", help="爬索引頁與 335 個姓氏詳細頁")
+    p_ffetch.add_argument("--dir", default="recordings")
+    p_ffetch.add_argument("--delay", type=float, default=0.5)
+    p_ffetch.set_defaults(func=_cmd_familynames_fetch)
+    p_fbulk = fn_sub.add_parser("bulk", help="下載 + 萃取 + 加詞條 (resumable)")
+    p_fbulk.add_argument("--dir", default="recordings")
+    p_fbulk.add_argument("--workers", type=int, default=4)
+    p_fbulk.add_argument("--delay", type=float, default=1.5)
+    p_fbulk.add_argument("--limit", type=int, default=0)
+    p_fbulk.set_defaults(func=_cmd_familynames_bulk)
 
     p_ts = sub.add_parser("tasli", help="臺灣手語新詞數位學習網: fetch metadata / bulk ingest")
     ts_sub = p_ts.add_subparsers(dest="tasli_command", required=True)

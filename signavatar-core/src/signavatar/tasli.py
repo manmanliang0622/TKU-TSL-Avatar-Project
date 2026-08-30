@@ -6,6 +6,8 @@
 
 站是 Google Sites。導覽列與內文是前端渲染的,但 **連結與 iframe 的
 aria-label 都在原始 HTML 裡**,所以純 HTTP + regex 就抓得完,不必開瀏覽器。
+注意 aria-label 有兩種寫法:舊頁面寫「YouTube Video, <詞> 手語詞彙」,
+2025 之後的新頁面只寫「YouTube Video」——後者要靠出現順序分辨詞彙/例句。
 枚舉要靠索引頁聯集:每頁的導覽只展開當前區塊(約 163/518),把 15 個主題頁
 與 8 個年度頁掃過一遍才湊得齊。
 
@@ -31,6 +33,14 @@ _WORD_LINK_RE = re.compile(r'href="/新詞彙/(\d{5})_([^"]+)"')
 _VIDEO_RE = re.compile(
     r'aria-label="YouTube Video,\s*(.*?)"[^>]*src="https://www\.youtube\.com/embed/([\w-]{11})'
 )
+# 2025 以後新增的詞頁(約 00477 起)aria-label 只寫 "YouTube Video",沒有
+# 「手語詞彙／手語句子」那段標籤,上面那條規則整頁抓不到,詞條就變成沒有影片。
+# 這種頁面的版面固定:詞名底下第一支是詞彙影片,「詞彙解釋」底下第二支是例句,
+# 所以沒有標籤時就照出現順序補。
+_ANY_EMBED_RE = re.compile(
+    r'aria-label="YouTube Video[^"]*"[^>]*src="https://www\.youtube\.com/embed/([\w-]{11})'
+)
+_ORDERED_KINDS = ("手語詞彙", "手語句子")
 _PAGE_TITLE_RE = re.compile(r'"pageTitle":"\d{5}_([^"]+)"')
 _SENTENCE_MARK = re.compile(r"句子|例句")
 _UNSAFE_RE = re.compile(r'[/\\:*?"<>|\s]+')
@@ -114,6 +124,10 @@ def fetch_entry(wid: str, url_word: str, fetch: Callable[[str], str] = _get) -> 
     for label, vid in _VIDEO_RE.findall(html):
         kind = label.replace(word, "").replace(url_word, "").strip() or label.strip()
         videos.setdefault(kind, vid)
+    if not videos:
+        for i, vid in enumerate(dict.fromkeys(_ANY_EMBED_RE.findall(html))):
+            kind = _ORDERED_KINDS[i] if i < len(_ORDERED_KINDS) else f"影片{i + 1}"
+            videos.setdefault(kind, vid)
     return Entry(wid=wid, word=word, videos=videos)
 
 

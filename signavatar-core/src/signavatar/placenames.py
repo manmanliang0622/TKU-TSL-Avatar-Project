@@ -36,10 +36,12 @@ _LINK_RE = re.compile(r'areavideo\.php\?serno=(\d+)[^"]*"[^>]*>([^<]+)</a>')
 _VIDEO_RE = re.compile(r'<source\s+src="([^"]+\.mp4)"')
 _TITLE_RE = re.compile(r'<td colspan="5">\s*([^<>]+?)\s*<br\s*/?>')
 # 構詞分析表:每個字素一個灰底表頭「X」,底下每種欄位各一列
-_MORPH_HEAD_RE = re.compile(r'bgcolor="#D3D3D3"><span class="style7">「(.*?)」</span>', re.S)
+# class 在地名站是 style7、姓氏站是 style71 —— 同一套樣板不同頁改了編號,
+# 放寬成 style7\d* 讓兩邊共用這支解析
+_MORPH_HEAD_RE = re.compile(r'bgcolor="#D3D3D3"><span class="style7\d*">「(.*?)」</span>', re.S)
 _FIELD_RE = re.compile(
-    r'<span class="style7">(表達方式|造詞策略|運用手形|打法描述)</span></div></td>\s*'
-    r'<td[^>]*><span class="style7">(.*?)</span>',
+    r'<span class="style7\d*">(表達方式|造詞策略|運用手形|打法描述)</span></div></td>\s*'
+    r'<td[^>]*><span class="style7\d*">(.*?)</span>',
     re.S,
 )
 _TAG_RE = re.compile(r"<[^>]+>")

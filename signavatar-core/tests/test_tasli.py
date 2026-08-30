@@ -31,6 +31,15 @@ DETAIL_UBER = """
 """
 
 
+# 2025 之後的新頁面:aria-label 沒有「手語詞彙／句子」那段,只能靠順序
+DETAIL_UNLABELLED = """
+<script>{"pageTitle":"00480_酪梨"}</script>
+<iframe aria-label="YouTube Video" src="https://www.youtube.com/embed/VwAZQH_ICxY?x=1"></iframe>
+詞彙解釋
+<iframe aria-label="YouTube Video" src="https://www.youtube.com/embed/B28-y_UQUHo?x=1"></iframe>
+"""
+
+
 def _fetch(path):
     if path == "/年度檢索":
         return SECTIONS
@@ -40,6 +49,8 @@ def _fetch(path):
         return YEAR
     if path.startswith("/新詞彙/00001"):
         return DETAIL_UBER
+    if path.startswith("/新詞彙/00480"):
+        return DETAIL_UNLABELLED
     return DETAIL
 
 
@@ -172,3 +183,12 @@ def test_bulk_tasli_never_clobbers_an_existing_entry(tmp_path):
     lex = json.loads((tmp_path / "lexicon.json").read_text(encoding="utf-8"))
     assert lex["優步"]["source"] == "moc:G1"     # 自然手語詞條保留
     assert lex["Uber"]["source"] == "tasli:00001"  # 沒被占用的別名還是補得上
+
+
+def test_unlabelled_page_falls_back_to_document_order():
+    # 新頁面的 aria-label 沒有標籤文字,舊規則會抓到 0 支;順序 fallback 要救回來,
+    # 而且第一支必須是詞彙影片(詞條要的是這支),第二支才是例句。
+    entry = fetch_entry("00480", "酪梨", fetch=_fetch)
+    assert entry.word == "酪梨"
+    assert entry.videos == {"手語詞彙": "VwAZQH_ICxY", "手語句子": "B28-y_UQUHo"}
+    assert entry.word_video == "VwAZQH_ICxY"

@@ -382,6 +382,8 @@ def bulk_moe(
     return {"downloaded": downloaded, "extracted": extracted, "lexicon": len(lex)}
 
 
+from signavatar.placenames import BASE_URL as PN_BASE
+
 _TASLI_LICENSE = (
     "社團法人臺灣手語翻譯協會 臺灣手語新詞數位學習網;已取得使用同意"
     "(使用者 2026-08-18 確認)。訓練資料不對外公開、不散布影片;引用須註明出處"
@@ -466,6 +468,85 @@ def bulk_tasli(
             added += 1
     save_lexicon(lex, dest / "lexicon.json")
     log(f"lexicon: {len(lex)} entries (+{added} 新詞)")
+    return {"downloaded": downloaded, "extracted": extracted, "lexicon": len(lex)}
+
+
+def bulk_familynames(
+    dest_dir: str | Path,
+    workers: int = 4,
+    delay: float = 1.5,
+    limit: int = 0,
+    deps: dict | None = None,
+    log=print,
+    sleep=time.sleep,
+) -> dict:
+    """台灣手語姓氏網 335 個姓:download → extract → lexicon (resumable)。
+
+    需要 `recordings/familynames.json`(由 `signavatar familynames fetch` 產生)。
+    """
+    from signavatar.familynames import Surname, download_video
+
+    deps = deps or {}
+    dest = Path(dest_dir)
+    data = json.loads((dest / "familynames.json").read_text(encoding="utf-8"))
+    names = [Surname.from_dict(x) for x in data["surnames"]]
+    if limit:
+        names = names[:limit]
+
+    downloaded = 0
+    for sn in names:
+        if (dest / f"{sn.stem}.mp4").is_file():
+            continue
+        try:
+            deps.get("download_video", download_video)(sn, dest)
+            downloaded += 1
+        except Exception as ex:
+            log(f"  {sn.name}: download FAILED ({ex})")
+        sleep(_jittered(delay))
+
+    jobs = [
+        (dest / f"{sn.stem}.mp4", dest / f"{sn.stem}.json", f"姓氏 {sn.name}")
+        for sn in names
+        if (dest / f"{sn.stem}.mp4").is_file() and not (dest / f"{sn.stem}.json").is_file()
+    ]
+    log(f"downloads: {downloaded} new; extracting {len(jobs)} clips with {workers} workers")
+    extracted = _run_extractions(jobs, workers, deps, log)
+
+    lex = load_lexicon(dest / "lexicon.json")
+    added = 0
+    for sn in names:
+        out = dest / f"{sn.stem}.json"
+        if not out.is_file():
+            continue
+        _record_manifest(
+            dest,
+            "external_manifest.json",
+            f"familyname:{sn.serno}",
+            {
+                "origin": sn.video_url,
+                "page": f"{PN_BASE}namevideo.php?searchtp=10&&serno={sn.serno}",
+                "word": sn.name,
+                "stroke": sn.stroke,
+                "morphemes": sn.morphemes,
+                "license": _PLACENAME_LICENSE,
+            },
+        )
+        end = _recording_duration(out)
+        for key in sn.lexicon_keys():
+            if key in lex:      # 裸字多半已被一般詞占用(山、水、方…),保留既有的
+                continue
+            lex[key] = {
+                "recording": out.name,
+                "start": 0.0,
+                "end": end,
+                "gloss": key,
+                "source": f"familyname:{sn.serno}",
+                "text": sn.description,
+                "stroke": sn.stroke,
+            }
+            added += 1
+    save_lexicon(lex, dest / "lexicon.json")
+    log(f"lexicon: {len(lex)} entries (+{added} 姓氏)")
     return {"downloaded": downloaded, "extracted": extracted, "lexicon": len(lex)}
 
 
