@@ -654,7 +654,9 @@ h2{
 
 /* ---------- STAGE DOCK：時間軸＋播放控制（bridge 動態插入） ---------- */
 .stage-dock{
-  position:absolute;z-index:2;
+  /* 疊在控制台之上（控制台是 3）：就算兩者重疊，播放控制也不能被透明的
+     控制台擋住 */
+  position:absolute;z-index:4;
   left:clamp(20px,4vw,64px);
   right:clamp(20px,4vw,64px);
   bottom:clamp(18px,3vh,32px);
@@ -996,7 +998,11 @@ h2{
   position:absolute;z-index:3;
   left:var(--stage-pad);
   top:var(--stage-top);
-  bottom:var(--stage-bottom);
+  /* 下緣要讓開舞台底部的控制列。--stage-bottom 只夠放一排按鈕；時間軸一出現
+     控制列就長高，會伸進這個透明區塊底下，點「整句播放」全被控制台吃掉
+     （程式觸發的 click 不走命中測試，看不出來）。--dock-h 是
+     signavatar-bridge 量到的控制列實際高度，沒量到就退回 --stage-bottom。 */
+  bottom:max(var(--stage-bottom), calc(var(--dock-h, 0px) + clamp(18px,3vh,32px) + 16px));
   width:var(--console-w);
   overflow:auto;
   margin:0;

@@ -58,7 +58,7 @@ class PlaybackGateTests(unittest.TestCase):
         bridge = read("signavatar-bridge.js")
         play = bridge[bridge.index("async function playTokens"):]
         play = play[: play.index("\n}\n")]
-        self.assertLess(play.index("const built = await prepare(tokens)"), play.index("playing = true"))
+        self.assertLess(play.index("await prepare(tokens)"), play.index("playing = true"))
         self.assertIn("if (!built?.frames?.length)", play)
 
     def test_the_play_button_means_the_sentence_not_whatever_is_loaded(self):
@@ -261,9 +261,102 @@ class TokenHighlightTests(unittest.TestCase):
         self.assertLess(play.index("composed = built;"), play.index("claimTokenHighlight(true);"))
         prepare = bridge[bridge.index("async function prepare("): bridge.index("async function playTokens(")]
         self.assertNotIn("claimTokenHighlight", prepare)
-        # 清掉整句時要把詞卡還給 2D
+        # 清掉整句時要把詞卡還給 2D（handBackToPlaceholder 內含放手＋請 2D 重畫）
         clear = bridge[bridge.index("function clearSequence()"):]
-        self.assertIn("claimTokenHighlight(false);", clear[: clear.index("\n}")])
+        self.assertIn("handBackToPlaceholder();", clear[: clear.index("\n}")])
+
+
+class PlaybackHandbackTests(unittest.TestCase):
+    """3D 拿走詞卡與控制列的主導權之後，必須有辦法還回來。
+
+    第一版只在「第一次成功播放」時接手、只在清除時交還，於是後端掛掉後的
+    每一次失敗都讓 2D 佔位播放器繼續被靜音——畫面停在 3D 最後留下的樣子，
+    按鈕像壞掉一樣完全沒有回應。
+    """
+
+    def test_a_failed_build_hands_the_highlight_back(self):
+        bridge = read("signavatar-bridge.js")
+        play = bridge[bridge.index("async function playTokens("):]
+        play = play[: play.index("\n}")]
+        # 組不出片段、以及請求整個 throw，兩條路都要交還
+        self.assertIn("catch (err) {", play)
+        self.assertEqual(play.count("releaseIfNothingToPlay();"), 2)
+
+    def test_handing_back_asks_the_placeholder_to_repaint(self):
+        """只把旗標拿掉是不夠的：那一刻沒有人重畫，畫面會停在 3D 留下的樣子。"""
+        bridge = read("signavatar-bridge.js")
+        hand = bridge[bridge.index("function handBackToPlaceholder()"):]
+        hand = hand[: hand.index("\n}")]
+        self.assertIn("highlightChip(-1);", hand)
+        self.assertIn("claimTokenHighlight(false);", hand)
+        self.assertIn('"signavatar:playback-released"', hand)
+        script = read("script.js")
+        self.assertIn('"signavatar:playback-released"', script)
+        self.assertIn("genPlayer.resync()", script)
+        self.assertIn("function resync()", script)
+
+    def test_the_bridge_stops_painting_chips_once_it_has_handed_back(self):
+        """tick 還在跑，不能交還之後還跟 2D 搶著畫。"""
+        bridge = read("signavatar-bridge.js")
+        chip = bridge[bridge.index("function highlightChip("):]
+        chip = chip[: chip.index("\n}")]
+        self.assertIn("if (!owns3D()) return;", chip)
+
+    def test_it_keeps_the_highlight_while_it_still_has_something_to_play(self):
+        """手上還有能播的序列就不能交還，否則 3D 的時間軸與 2D 的詞卡會各跑各的
+        ——那正是這一系列修正要消滅的狀況。"""
+        bridge = read("signavatar-bridge.js")
+        rel = bridge[bridge.index("function releaseIfNothingToPlay()"):]
+        rel = rel[: rel.index("\n}")]
+        self.assertIn("buildsInFlight > 0", rel)
+        self.assertIn("composed", rel)
+
+    def test_pressing_play_at_the_end_restarts_instead_of_resuming(self):
+        """playhead >= duration() 是浮點精確比較。拖曳到最尾端時差那麼一點點，
+        比較不成立，按「整句播放」等於從結尾接著播——看起來就是沒反應。"""
+        bridge = read("signavatar-bridge.js")
+        self.assertNotIn("if (playhead >= duration()) playhead = 0;", bridge)
+        whole = bridge[bridge.index("async function playWholeSentence()"):]
+        whole = whole[: whole.index("\n}")]
+        self.assertIn("duration() - 0.05", whole)
+        self.assertIn("!paused ||", whole)
+
+    def test_an_unavailable_word_says_so_instead_of_doing_nothing(self):
+        """詞庫沒有的詞原本直接 return，而 2D 又被靜音，點下去毫無回應。"""
+        bridge = read("signavatar-bridge.js")
+        solo = bridge[bridge.index("async function playSingleToken("):]
+        solo = solo[: solo.index("\n}")]
+        self.assertIn("setNote(", solo)
+
+
+class ConsoleOverlapTests(unittest.TestCase):
+    """控制台是透明的絕對定位區塊，疊在舞台上。它的下緣原本只留給一排按鈕；
+    時間軸一出現，底部控制列長高、被推進控制台底下，滑鼠點「整句播放」全落在
+    控制台上——第一次播放之後這顆鈕就「按了沒效」。程式觸發的 click 不走命中
+    測試，所以自動化按得動、人按不動。
+    """
+
+    def test_the_console_bottom_follows_the_dock_height(self):
+        css = read("style.css")
+        console = css[css.index(".stage-page .generation-console{"):]
+        console = console[: console.index("}")]
+        self.assertIn("var(--dock-h", console)
+        self.assertIn("var(--stage-bottom)", console)   # 沒量到高度時退回原值
+        bridge = read("signavatar-bridge.js")
+        build = bridge[bridge.index("function buildTimeline()"):]
+        build = build[: build.index("\n}\n")]
+        self.assertIn("ResizeObserver", build)
+        self.assertIn('"--dock-h"', build)
+
+    def test_the_dock_sits_above_the_console(self):
+        css = read("style.css")
+        console = css[css.index(".stage-page .generation-console{"):]
+        console = console[: console.index("}")]
+        dock = css[css.index(".stage-dock{"):]
+        dock = dock[: dock.index("}")]
+        console_z = int(re.search(r"z-index:(\d+)", console).group(1))
+        dock_z = int(re.search(r"z-index:(\d+)", dock).group(1))
+        self.assertGreater(dock_z, console_z)
 
 
 if __name__ == "__main__":

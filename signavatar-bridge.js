@@ -270,6 +270,7 @@ let segChipIndex = [];
 let soloChipIndex = null;   // 單詞試播時使用者按的那張詞卡；整句播放為 null
 let lastChipIndex = null;   // 值沒變就不寫回，播放中不必每幀重設 class
 let lastTransport = "";     // 同上，控制列也不必每幀重寫
+let buildsInFlight = 0;     // 還在組片段的請求數
 
 const fmtTime = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, "0")}`;
 
@@ -341,6 +342,16 @@ function buildTimeline() {
   timeTotal = dock.querySelector("#timelineTotal");
   tokenLabel = dock.querySelector("#timelineToken");
   attachScrub();
+  /* 控制台是透明的絕對定位區塊，下緣原本只留給一排按鈕。時間軸一出現，
+     控制列長高、被推進控制台底下，滑鼠點「整句播放」全落在控制台上——
+     第一次播放（時間軸出現）之後這顆鈕就按不動，就是這個。把控制列的實際
+     高度寫成 CSS 變數，讓控制台的下緣跟著讓開（見 style.css 的
+     .stage-page .generation-console）。 */
+  if (stageSection && typeof ResizeObserver === "function") {
+    new ResizeObserver(() => {
+      stageSection.style.setProperty("--dock-h", `${Math.ceil(dock.offsetHeight)}px`);
+    }).observe(dock);
+  }
 }
 
 function renderSegments() {
@@ -389,6 +400,7 @@ function mapSegmentsToChips() {
 }
 
 function highlightChip(chipIndex) {
+  if (!owns3D()) return;   // 交還之後 tick 還在跑，不能再跟 2D 搶著畫詞卡
   if (chipIndex === lastChipIndex) return;
   lastChipIndex = chipIndex;
   chipEls().forEach((el, i) => {
@@ -412,6 +424,23 @@ function claimTokenHighlight(on) {
 }
 
 const owns3D = () => generationTokens?.dataset.playback === "3d";
+
+/* 交還主導權。單純把旗標拿掉是不夠的：交還的那一刻沒有人重畫，畫面就停在
+   3D 最後留下的樣子——詞卡亮著上一次的詞、控制列不動，使用者按「整句播放」
+   會覺得整顆鈕壞掉。所以要請 2D 佔位播放器照它自己的狀態重畫一次。 */
+function handBackToPlaceholder() {
+  highlightChip(-1);
+  claimTokenHighlight(false);
+  window.dispatchEvent(new CustomEvent("signavatar:playback-released"));
+}
+
+/* 這一次請求沒有東西可播就交還——組不出片段、或請求整個失敗（後端掛了）。
+   兩種情況不交還：還有別的組建在跑（那一份等一下就會接手），或手上還留著
+   能播的序列（時間軸仍然有效，交還了兩邊會各跑各的）。 */
+function releaseIfNothingToPlay() {
+  if (!owns3D() || buildsInFlight > 0 || composed) return;
+  handBackToPlaceholder();
+}
 
 /* 控制列（暫停鈕、整句播放鈕的字、目前詞）在 3D 主導時也得由這裡寫。
    2D 佔位播放器是固定 850ms 一個詞，它會在 3D 還在播的時候就把「暫停」
@@ -592,20 +621,32 @@ async function prepare(tokens) {
   await ensureAvatarReady();
   if (!ready || !tokens.length) return null;
   const mine = ++buildToken;
-  const clips = Composer.clipRequests(tokens, lexicon).length;
-  setLoadingProgress(clips ? 0 : null);
-  const built = await withLoading("clips", "動作載入中", () =>
-    Composer.build(tokens, lexicon, null, (done, total) => {
-      if (mine === buildToken && total) setLoadingProgress(done / total);
-    }));
-  if (mine !== buildToken) return null;   // a newer sentence overtook this one
-  return built;
+  buildsInFlight++;
+  try {
+    const clips = Composer.clipRequests(tokens, lexicon).length;
+    setLoadingProgress(clips ? 0 : null);
+    const built = await withLoading("clips", "動作載入中", () =>
+      Composer.build(tokens, lexicon, null, (done, total) => {
+        if (mine === buildToken && total) setLoadingProgress(done / total);
+      }));
+    if (mine !== buildToken) return null;   // a newer sentence overtook this one
+    return built;
+  } finally {
+    buildsInFlight--;
+  }
 }
 
 async function playTokens(tokens, statusText) {
-  const built = await prepare(tokens);
+  let built = null;
+  try {
+    built = await prepare(tokens);
+  } catch (err) {
+    releaseIfNothingToPlay();
+    throw err;
+  }
   if (!built?.frames?.length) {
     if (!composed) setStatus("詞庫缺少對應動畫");
+    releaseIfNothingToPlay();
     return;
   }
   composed = built;
@@ -640,7 +681,10 @@ async function playWholeSentence() {
   soloChipIndex = null;
   if (composed && sameTokens(composedTokens, tokens)) {
     mapSegmentsToChips();   // 剛剛是單詞試播，對照表要換回整句的
-    if (playhead >= duration()) playhead = 0;
+    /* 停在尾端就重頭播。原本是 playhead >= duration() 的精確比較——拖曳到
+       最尾端時 playhead 會差一點點（一格 30fps 是 33ms），比較不成立，按下去
+       等於「從結尾接著播」，畫面上就是沒反應。只有真的暫停在句中才接著播。 */
+    if (!paused || playhead >= duration() - 0.05) playhead = 0;
     paused = false;
     playing = true;
     setStatus("3D 播放中");
@@ -654,7 +698,12 @@ async function playWholeSentence() {
 
 async function playSingleToken(index) {
   const token = visibleTokens()[index];
-  if (!token || !Composer.resolve(token, lexicon).length) return;
+  if (!token) return;
+  if (!Composer.resolve(token, lexicon).length) {
+    // 直接 return 的話，2D 又被靜音，這一下點擊完全沒有任何回應
+    setNote(`詞庫沒有「${token}」的動作，整句播放時這個詞會被跳過。`);
+    return;
+  }
   soloChipIndex = index;
   await playTokens([token], `「${token}」3D 播放中`);
 }
@@ -669,12 +718,10 @@ function clearSequence() {
   paused = false;
   playhead = 0;
   settle();
-  highlightChip(-1);
-  claimTokenHighlight(false);
   /* 清除鈕上 script.js 的 listener 先跑（classic script 先於 module 註冊），
-     那時主導權還在 3D 手上，2D 那邊會直接讓開；等這裡放手已經沒人重畫，
-     所以控制列要由這裡收尾。 */
-  writeTransport(false, false, null);
+     那時主導權還在 3D 手上，2D 那邊會直接讓開，所以交還後要請它重畫。 */
+  if (owns3D()) handBackToPlaceholder();
+  else writeTransport(false, false, null);
   renderSegments();
   paintTimeline();
 }

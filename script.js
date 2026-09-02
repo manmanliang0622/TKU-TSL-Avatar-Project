@@ -488,7 +488,14 @@ function createAvatarPlayer(figure, tokensEl, { onState, onToken } = {}) {
     else play();
   }
 
-  return { load, play, playToken, pause, resume, stop, setRate, toggle, getState: () => state };
+  /* 3D 交還主導權時用：把詞卡與控制列重畫成這個播放器當下的狀態。
+     交還的瞬間如果沒人重畫，畫面會停在 3D 最後留下的樣子。 */
+  function resync() {
+    updateHighlight(state === "playing" ? index : -1);
+    emitState(state);
+  }
+
+  return { load, play, playToken, pause, resume, stop, setRate, toggle, resync, getState: () => state };
 }
 
 function syncPlaybackControls(state, detail = {}) {
@@ -521,6 +528,9 @@ const genPlayer = createAvatarPlayer(avatarFigure, generationTokens, {
     if (generationTokens.dataset.playback !== "3d") activeToken.textContent = token;
   },
 });
+
+// 3D 播不出來（後端掛了、詞庫缺片段）時橋接會把主導權還回來，這裡接手重畫
+window.addEventListener("signavatar:playback-released", () => genPlayer.resync());
 
 document.querySelectorAll(".speed-btn[data-rate]").forEach(btn => {
   btn.addEventListener("click", () => {
