@@ -38,17 +38,17 @@
     border-bottom: 1px solid var(--line);
     flex-wrap: wrap;
   }
-  header .brand { font-size: 0.85rem; letter-spacing: 0.18em; }
+  header .brand { font-size: 1.7rem; letter-spacing: 0.18em; }
   #back-link {
     color: var(--ink-dim);
     text-decoration: none;
-    font-size: 1rem;
+    font-size: 1.9rem;
     padding: 0 0.3rem;
   }
   #back-link:hover { color: var(--right); }
   header .brand b { color: var(--right); font-weight: 700; }
   header .label {
-    font-size: 0.72rem;
+    font-size: 1.3rem;
     color: var(--bg);
     background: var(--ink);
     padding: 0.1rem 0.55rem;
@@ -58,11 +58,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  header .meta { font-size: 0.7rem; color: var(--ink-dim); letter-spacing: 0.06em; }
+  header .meta { font-size: 1.3rem; color: var(--ink-dim); letter-spacing: 0.06em; }
   header .spacer { flex: 1; }
   header button {
     font: inherit;
-    font-size: 0.7rem;
+    font-size: 1.3rem;
     letter-spacing: 0.12em;
     color: var(--ink);
     background: none;
@@ -75,7 +75,7 @@
   header button:disabled { opacity: 0.4; cursor: default; }
   header select {
     font: inherit;
-    font-size: 0.7rem;
+    font-size: 1.3rem;
     color: var(--ink);
     background: var(--bg);
     border: 1px solid var(--line);
@@ -83,7 +83,7 @@
     padding: 0.22rem 0.4rem;
   }
   #export-btn.recording { color: #ff6b6b; border-color: #ff6b6b; }
-  #job-status { font-size: 0.7rem; color: var(--right); letter-spacing: 0.08em; }
+  #job-status { font-size: 1.3rem; color: var(--right); letter-spacing: 0.08em; }
   #job-status.error { color: #ff6b6b; }
 
   /* ── expression readout ─────────────────────────────── */
@@ -91,7 +91,7 @@
     position: absolute;
     top: 5.2rem;
     right: 1.1rem;
-    font-size: 0.62rem;
+    font-size: 1.3rem;
     text-align: right;
     pointer-events: none;
     color: var(--ink-dim);
@@ -128,7 +128,7 @@
     position: absolute;
     top: 0.7rem;
     left: 1.1rem;
-    font-size: 0.68rem;
+    font-size: 1.3rem;
     color: var(--ink-dim);
     line-height: 1.7;
     pointer-events: none;
@@ -138,7 +138,7 @@
     position: absolute;
     top: 0.7rem;
     right: 1.1rem;
-    font-size: 0.68rem;
+    font-size: 1.3rem;
     text-align: right;
     line-height: 1.7;
     pointer-events: none;
@@ -170,7 +170,7 @@
     align-items: center;
     gap: 0.7rem;
     padding: 0.3rem 0.55rem;
-    font-size: 0.62rem;
+    font-size: 1.3rem;
     letter-spacing: 0.1em;
     color: var(--ink-dim);
     border-top: 1px solid var(--line);
@@ -204,13 +204,13 @@
     flex-direction: column;
     gap: 0.9rem;
     padding: 0.9rem;
-    font-size: 0.7rem;
+    font-size: 1.3rem;
     overflow-y: auto;
     z-index: 5;
   }
   #compose-panel.open { transform: translateX(0); }
   #compose-panel h3 {
-    font-size: 0.7rem;
+    font-size: 1.3rem;
     letter-spacing: 0.15em;
     color: var(--ink-dim);
     font-weight: 400;
@@ -249,7 +249,7 @@
   }
   #compose-panel button.mini {
     font: inherit;
-    font-size: 0.66rem;
+    font-size: 1.3rem;
     color: var(--ink);
     background: none;
     border: 1px solid var(--line);
@@ -272,7 +272,7 @@
   }
   #lexicon-list .sign:hover { border-color: var(--ink-dim); }
   #lexicon-list .sign b { font-weight: 700; color: var(--ink); }
-  #lexicon-list .sign .meta { color: var(--ink-dim); font-size: 0.62rem; margin-left: auto; }
+  #lexicon-list .sign .meta { color: var(--ink-dim); font-size: 1.3rem; margin-left: auto; }
   #lexicon-list .sign .del { color: var(--ink-dim); cursor: pointer; padding: 0 0.2rem; }
   #lexicon-list .sign .del:hover { color: #ff6b6b; }
   #mark-info { color: var(--ink-dim); }
@@ -287,11 +287,11 @@
     justify-content: center;
     gap: 0.8rem;
     color: var(--ink-dim);
-    font-size: 0.8rem;
+    font-size: 1.4rem;
     letter-spacing: 0.1em;
     pointer-events: none;
   }
-  #drop-hint .big { font-size: 2.2rem; color: var(--ink); letter-spacing: 0.3em; }
+  #drop-hint .big { font-size: 4.3rem; color: var(--ink); letter-spacing: 0.3em; }
   body.dragover #stage-wrap { outline: 2px dashed var(--right); outline-offset: -12px; }
   .hidden { display: none !important; }
 
@@ -314,7 +314,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    font-size: 0.72rem;
+    font-size: 1.3rem;
   }
   #play {
     font: inherit;
@@ -334,7 +334,7 @@
   .speed { display: flex; gap: 0.15rem; }
   .speed button {
     font: inherit;
-    font-size: 0.68rem;
+    font-size: 1.3rem;
     color: var(--ink-dim);
     background: none;
     border: 1px solid transparent;
@@ -345,7 +345,7 @@
   .speed button.on { color: var(--ink); border-color: var(--line); background: var(--bg); }
   label.toggle { display: flex; align-items: center; gap: 0.4rem; color: var(--ink-dim); cursor: pointer; }
   label.toggle input { accent-color: var(--right); }
-  .keys { margin-left: auto; color: var(--ink-dim); font-size: 0.64rem; letter-spacing: 0.08em; }
+  .keys { margin-left: auto; color: var(--ink-dim); font-size: 1.3rem; letter-spacing: 0.08em; }
 </style>
 </head>
 <body>

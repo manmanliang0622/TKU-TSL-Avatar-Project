@@ -37,19 +37,19 @@
     z-index: 3;
     background: var(--bg);
   }
-  header a.back { color: var(--ink-dim); text-decoration: none; font-size: 1rem; }
+  header a.back { color: var(--ink-dim); text-decoration: none; font-size: 1.9rem; }
   header a.back:hover { color: var(--ink); }
   header .brand { font-weight: 700; letter-spacing: 0.14em; }
   header .brand em { color: var(--right); font-style: normal; }
   header .sep { color: var(--ink-dim); }
-  header .title { letter-spacing: 0.3em; font-size: 0.8rem; color: var(--ink-dim); }
+  header .title { letter-spacing: 0.3em; font-size: 1.4rem; color: var(--ink-dim); }
   header .spacer { flex: 1; }
   select#model {
     background: var(--panel);
     color: var(--ink);
     border: 1px solid var(--line);
     font-family: var(--mono);
-    font-size: 0.72rem;
+    font-size: 1.3rem;
     padding: 0.3rem 0.5rem;
     border-radius: 4px;
   }
@@ -66,12 +66,12 @@
   }
   #stage-hint {
     position: absolute; top: 0.8rem; left: 1.1rem;
-    color: var(--ink-dim); font-size: 0.68rem; letter-spacing: 0.08em;
+    color: var(--ink-dim); font-size: 1.3rem; letter-spacing: 0.08em;
   }
   #loading {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    color: var(--ink-dim); letter-spacing: 0.3em; font-size: 0.8rem;
+    color: var(--ink-dim); letter-spacing: 0.3em; font-size: 1.4rem;
   }
 
   /* ── bottom generation bar ─────────────────────────── */
@@ -92,7 +92,7 @@
     border-radius: 6px;
     color: var(--ink);
     font-family: var(--mono);
-    font-size: 1rem;
+    font-size: 1.9rem;
     padding: 0.65rem 0.8rem;
     outline: none;
   }
@@ -104,7 +104,7 @@
     color: #1a1205;
     font-family: var(--mono);
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 1.8rem;
     padding: 0 1.3rem;
     cursor: pointer;
     white-space: nowrap;
@@ -116,22 +116,22 @@
     color: var(--ink-dim);
     font-weight: 400;
     padding: 0.35rem 0.7rem;
-    font-size: 0.72rem;
+    font-size: 1.3rem;
   }
   button.ghost:hover:enabled { color: var(--ink); border-color: var(--ink-dim); }
 
   #result-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-height: 1.7rem; }
-  #result-row .lbl { color: var(--ink-dim); font-size: 0.72rem; letter-spacing: 0.15em; }
+  #result-row .lbl { color: var(--ink-dim); font-size: 1.3rem; letter-spacing: 0.15em; }
   .gloss {
     background: var(--bg);
     border: 1px solid var(--line);
     border-radius: 4px;
     padding: 0.2rem 0.55rem;
-    font-size: 0.85rem;
+    font-size: 1.7rem;
   }
   .gloss.active { border-color: var(--right); color: var(--right); }
   .tag {
-    font-size: 0.68rem;
+    font-size: 1.3rem;
     border-radius: 3px;
     padding: 0.15rem 0.45rem;
     letter-spacing: 0.1em;
@@ -139,17 +139,17 @@
   .tag.q { background: rgba(79, 216, 232, 0.14); color: var(--left); }
   .tag.n { background: rgba(255, 107, 107, 0.14); color: #ff6b6b; }
   .tag.src { background: rgba(232, 228, 217, 0.08); color: var(--ink-dim); }
-  #msg { color: var(--ink-dim); font-size: 0.78rem; }
+  #msg { color: var(--ink-dim); font-size: 1.4rem; }
   #msg.err { color: #ff6b6b; }
 
   #examples { display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
-  #examples .lbl { color: var(--ink-dim); font-size: 0.68rem; letter-spacing: 0.15em; }
+  #examples .lbl { color: var(--ink-dim); font-size: 1.3rem; letter-spacing: 0.15em; }
   #examples button.ex {
     background: transparent;
     border: 1px dashed var(--line);
     color: var(--ink-dim);
     font-weight: 400;
-    font-size: 0.75rem;
+    font-size: 1.4rem;
     padding: 0.25rem 0.6rem;
     border-radius: 4px;
   }
@@ -157,8 +157,19 @@
 
   #controls { display: flex; align-items: center; gap: 0.5rem; }
   #speed { display: flex; gap: 0.25rem; }
-  #speed button { font-size: 0.68rem; }
+  #speed button { font-size: 1.3rem; }
   #speed button.on { color: var(--right); border-color: var(--right); }
+
+  /* 0912：字級放大後，窄螢幕讓標題列與輸入列可換行，按鈕不再被切到畫面外 */
+  @media (max-width: 640px) {
+    header { flex-wrap: wrap; gap: 0.5rem 0.8rem; }
+    header .title { letter-spacing: 0.12em; }
+    header .spacer { flex: 1 1 100%; display: none; }
+    select#model { margin-left: auto; }
+    #input-row { flex-wrap: wrap; }
+    #text { flex: 1 1 100%; min-width: 0; width: 100%; }
+    button#go { flex: 1 1 100%; padding: 0.7rem 1rem; }
+  }
 </style>
 </head>
 <body>
@@ -169,7 +180,7 @@
   <span class="sep">▸</span>
   <span class="title">手語生成 TEXT&nbsp;→&nbsp;SIGN</span>
   <span class="spacer"></span>
-  <a href="corpus.html" style="color:var(--ink-dim);text-decoration:none;font-size:0.72rem;border:1px solid var(--line);border-radius:4px;padding:0.3rem 0.7rem;margin-right:0.6rem">詞庫總覽</a>
+  <a href="corpus.html" style="color:var(--ink-dim);text-decoration:none;font-size:1.3rem;border:1px solid var(--line);border-radius:4px;padding:0.3rem 0.7rem;margin-right:0.6rem">詞庫總覽</a>
   <select id="model" title="切換虛擬人"></select>
 </header>
 
@@ -187,7 +198,7 @@
   </div>
   <div id="result-row">
     <span class="lbl">TSL</span>
-    <span id="glosses"><span style="color:var(--ink-dim);font-size:0.78rem">—</span></span>
+    <span id="glosses"><span style="color:var(--ink-dim);font-size:1.4rem">—</span></span>
     <span id="msg"></span>
     <span style="flex:1"></span>
     <span id="controls">
