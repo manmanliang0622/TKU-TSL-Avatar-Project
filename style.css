@@ -1490,6 +1490,36 @@ h2{
   .rail .action-row{gap:var(--sp-3);}
 }
 
+/* ---------- 手機（≤600px）：播放速率不要浮在人偶臉上 ----------
+   桌機／平板維持原本「浮在舞台右上角」的作法，這段只在手機生效。
+   手機版是上下堆疊的，把速率列改成一般流排在舞台正下方、
+   自成一條深色控制列，四顆按鈕平分寬度 —— 不會擋到虛擬人。 */
+@media (max-width:600px){
+  .stage-speed{
+    position:static;
+    width:100%;
+    display:flex;flex-wrap:nowrap;align-items:center;
+    justify-content:flex-start;
+    gap:6px;
+    padding:8px clamp(14px,3.5vw,18px) 9px;
+    background:var(--rail);
+    border-bottom:1px solid rgba(233,234,228,.14);
+  }
+  /* 標籤收到同一排的左邊，整條控制列就只有一行高 */
+  .stage-speed .speed-label{
+    width:auto;flex:0 0 auto;
+    text-align:left;
+    margin:0 4px 0 0;
+    font-size:13px;
+  }
+  .stage-speed .speed-btn{
+    flex:1 1 0;min-width:0;
+    min-height:34px;
+    padding:5px 4px;
+    font-size:14px;
+  }
+}
+
 @media (prefers-reduced-motion:reduce){
   .mark{animation:none;}
   .type-stack span,.brand-column span{transition:none;}
