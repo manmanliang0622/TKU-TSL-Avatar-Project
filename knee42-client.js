@@ -70,8 +70,11 @@ let latestFrame = null;          // 偵測迴圈的最新一幀 {pose, hands}
 let autoBuf = [], autoSession = "", autoT0 = 0, autoSending = false, autoTimer = null;
 let clipBuf = [], clipStart = 0, clipBusy = false;
 let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
-// 攝影機的切段方式（記住上次選擇，預設手動）；上傳影片一律整段送 /predict，與此無關
-let segMode = localStorage.getItem("recognitionSegMode") === "auto" ? "auto" : "manual";
+// 攝影機的切段方式；上傳影片一律整段送 /predict，與此無關。
+// 每次開頁一律從「手動切段」開始 —— 不從 localStorage 還原上次的選擇。
+// （要改回記住上次選擇的話，換成：
+//   localStorage.getItem("recognitionSegMode") === "auto" ? "auto" : "manual"）
+let segMode = "manual";
 
 function setStatus(text, state = "idle") {
   statusEl.textContent = text;
@@ -234,7 +237,12 @@ function renderTop(top) {
     return;
   }
   if (best.prob < CONF_THRESHOLD) {
-    spoken.textContent = `${best.text}（信心不足 ${(best.prob * 100).toFixed(0)}%，可能不在支援的 42 句內）`;
+    // 主句歸主句、附註歸附註：附註另起一行並收小字級（樣式見 .spoken-note）
+    spoken.textContent = best.text;
+    const note = document.createElement("span");
+    note.className = "spoken-note";
+    note.textContent = `（信心不足 ${(best.prob * 100).toFixed(0)}%，可能不在支援的 42 句內）`;
+    spoken.appendChild(note);
     setStatus("信心不足", "active");
   } else {
     spoken.textContent = best.text;
