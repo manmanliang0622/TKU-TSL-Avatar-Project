@@ -24,7 +24,7 @@
   --fs-body:clamp(17px,min(1.25vw,3vh),19px);         /* 內文／輸入 */
   --fs-title:clamp(22px,min(2.1vw,3.9vh),30px);       /* 側欄標題 */
   --fs-token:clamp(20px,min(1.6vw,3.6vh),24px);       /* 詞卡 */
-  --fs-result:clamp(28px,min(3.2vw,5.6vh),46px);      /* 主結果：口語句子 */
+  --fs-result:clamp(26px,min(2.85vw,4.9vh),40px);     /* 主結果：口語句子 */
   /* ── 中文不吃拉丁字母的寬字距；寬字距只留給拉丁大寫標籤 ── */
   --tr-zh:.02em;
   --tr-en:.18em;
@@ -1009,7 +1009,7 @@ h2{
 .rail-head{
   display:flex;flex-direction:column;
   gap:clamp(8px,1.3vh,13px);
-  padding:clamp(12px,1.8vh,26px) clamp(20px,2vw,28px) clamp(10px,1.4vh,18px);
+  padding:clamp(18px,2.6vh,30px) clamp(20px,2vw,28px) clamp(10px,1.4vh,18px);
   border-bottom:var(--hair);
 }
 .rail-head-top{
@@ -1043,6 +1043,21 @@ h2{
           mask-image:linear-gradient(to bottom,transparent 0,#000 16px,#000 calc(100% - 20px),transparent 100%);
 }
 .rail-body::-webkit-scrollbar{width:0;height:0;}
+/* 這三個區塊都是 flex column：子元素一律不准被壓縮，
+   高度不夠就讓容器自己捲，否則子元素會被壓到比內容矮、文字直接疊在一起 */
+.rail-body > *,
+.rail-result > *,
+.rail-foot > *{flex:0 0 auto;}
+/* 例外：候選詞卡可能排到兩三列，高度不夠時讓它自己內捲（至少留一列），
+   把位置讓給下面的「台灣口語」——那是這一頁真正的答案，不能被切 */
+.rail-result > .token-row{
+  flex:0 1 auto;
+  min-height:clamp(46px,7.2vh,52px);
+  align-content:flex-start;
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:none;
+}
+.rail-result > .token-row::-webkit-scrollbar{width:0;height:0;}
 .rail-group{display:flex;flex-direction:column;gap:clamp(8px,1.3vh,12px);min-width:0;}
 /* 輸入設定：標籤靠左、控制靠右的橫列。
    標籤各自佔一行太吃高度——一般筆電的可視高度只有 625–730px，
@@ -1188,7 +1203,7 @@ h2{
   display:block;
   margin-top:6px;
   font-family:var(--sans-tc);
-  font-size:clamp(15px,min(1.55vw,2.9vh),22px);
+  font-size:clamp(15px,min(1.4vw,2.6vh),20px);
   font-weight:400;
   letter-spacing:var(--tr-zh);
   line-height:1.6;
