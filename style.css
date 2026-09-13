@@ -1439,9 +1439,14 @@ h2{
   .stage-page .capture-wrap{height:auto;container-type:normal;}
   .stage-page .avatar-stage,
   .stage-page .capture-stage{
-    position:static;
+    /* 一定要 relative 不能 static：舞台裡的 3D canvas／video／骨架圖層都是
+       position:absolute;inset:0，舞台若不是定位基準，它們會改用外層
+       .avatar-wrap 當基準而長到舞台外面，overflow:hidden 也裁不到，
+       就會蓋住下方的控制列（而且擋住點擊） */
+    position:relative;
     height:auto;aspect-ratio:16 / 9;
     border-radius:0;
+    overflow:hidden;
   }
   .stage-page .generation-console{
     position:static;display:block;
@@ -1496,7 +1501,7 @@ h2{
    自成一條深色控制列，四顆按鈕平分寬度 —— 不會擋到虛擬人。 */
 @media (max-width:600px){
   .stage-speed{
-    position:static;
+    position:relative;z-index:2;
     width:100%;
     display:flex;flex-wrap:nowrap;align-items:center;
     justify-content:flex-start;
