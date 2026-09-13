@@ -1086,10 +1086,15 @@ h2{
 
 /* 主結果不參與捲動：辨識出來的口語句子是這一頁的答案，
    它不該是第一個被捲走的東西，所以獨立成一列釘在動作列上方 */
-/* 高度不夠時：標題列與動作列固定不動，設定區與結果區各讓一點 */
+/* 空間怎麼分：
+   輸入設定固定是它內容的高度（一開始就是剛剛好兩排，不會撐大也不會縮），
+   多出來的高度一律給結果區 —— 還沒辨識時結果區就是一塊大的空位，
+   詞卡一多也不必先擠掉別人。高度真的不夠時兩邊才各讓一點，設定區有 64px 底線。 */
 .rail-head,.rail-foot{flex:0 0 auto;}
-.rail-body{flex:1 1 auto;min-height:64px;}
-.rail-result{flex:0 1 auto;}
+.rail-body{flex:0 0 auto;}
+.rail-result{flex:1 1 auto;}
+/* 生成頁沒有結果區，改由輸入區吃掉多餘高度，動作列才會留在最下面 */
+#generation .rail-body{flex:1 1 auto;}
 .rail-result{
   display:flex;flex-direction:column;gap:clamp(6px,1vh,8px);
   min-height:0;
