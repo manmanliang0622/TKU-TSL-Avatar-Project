@@ -1179,20 +1179,22 @@ h2{
 
 /* 流程：用一條線串起來，看得出是序列，不是三顆獨立的方塊 */
 .rail .steps-list{
-  display:flex;flex-wrap:wrap;align-items:center;
-  gap:clamp(4px,.9vh,8px) clamp(9px,1vw,14px);list-style:none;
+  /* 固定一排：三步平均分佈在側欄寬度上，間隔自動撐開。
+     nowrap 保證第三步不會掉到第二排；最窄的側欄（440px）扣掉內距還有
+     400px，三步的文字加圓點合計約 310px，留給兩個間隔各 45px，不會被切 */
+  display:flex;flex-wrap:nowrap;align-items:center;
+  justify-content:space-between;
+  gap:clamp(10px,1.4vw,22px);
+  list-style:none;
 }
+.rail .step-item{white-space:nowrap;}
 .rail .step-item{
   border:none;border-radius:0;
   padding:2px 0;gap:10px;
   font-size:clamp(15px,min(1.15vw,2.7vh),17px);
   color:rgba(233,234,228,.46);
 }
-/* 步驟之間用一小段短線接起來，看得出是序列不是三顆獨立的東西 */
-.rail .step-item:not(:last-child)::after{
-  content:"";width:14px;height:1px;margin-left:4px;
-  background:rgba(233,234,228,.24);
-}
+
 .rail .step-item strong{font-weight:500;}
 .rail .step-dot{
   width:26px;height:26px;
