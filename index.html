@@ -33,7 +33,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Archivo:wght@400;500;600&family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20260913-ui3">
+<link rel="stylesheet" href="style.css?v=20260913-ui4">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -155,11 +155,27 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
   <article class="generation-console recognition-console rail" aria-labelledby="recognition-console-title">
 
     <header class="rail-head">
-      <div class="rail-heading">
-        <p class="rail-eyebrow">SIGN TO TEXT</p>
-        <h3 class="rail-title" id="recognition-console-title">手語辨識</h3>
+      <div class="rail-head-top">
+        <div class="rail-heading">
+          <p class="rail-eyebrow">SIGN TO TEXT</p>
+          <h3 class="rail-title" id="recognition-console-title">手語辨識</h3>
+        </div>
+        <span class="status-dot stage-status" id="recognitionStatus" data-state="idle">等待輸入</span>
       </div>
-      <span class="status-dot stage-status" id="recognitionStatus" data-state="idle">等待輸入</span>
+      <ol class="steps-list" aria-label="辨識流程">
+        <li class="step-item" id="recognitionStep1">
+          <span class="step-dot" aria-hidden="true">1</span>
+          <strong>影像分析</strong>
+        </li>
+        <li class="step-item" id="recognitionStep2">
+          <span class="step-dot" aria-hidden="true">2</span>
+          <strong>手語語序辨識</strong>
+        </li>
+        <li class="step-item" id="recognitionStep3">
+          <span class="step-dot" aria-hidden="true">3</span>
+          <strong>口語轉換</strong>
+        </li>
+      </ol>
     </header>
 
     <div class="rail-body">
@@ -178,24 +194,6 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
           <button type="button" class="chip-btn seg-btn is-active" id="manualSegButton" data-seg="manual" aria-pressed="true">手動切段</button>
           <button type="button" class="chip-btn seg-btn" id="autoSegButton" data-seg="auto" aria-pressed="false">自動切段</button>
         </div>
-      </div>
-
-      <div class="rail-group rail-group-steps">
-        <span class="group-label">辨識流程</span>
-        <ol class="steps-list" aria-label="辨識流程">
-          <li class="step-item" id="recognitionStep1">
-            <span class="step-dot" aria-hidden="true">1</span>
-            <strong>影像分析</strong>
-          </li>
-          <li class="step-item" id="recognitionStep2">
-            <span class="step-dot" aria-hidden="true">2</span>
-            <strong>手語語序辨識</strong>
-          </li>
-          <li class="step-item" id="recognitionStep3">
-            <span class="step-dot" aria-hidden="true">3</span>
-            <strong>口語轉換</strong>
-          </li>
-        </ol>
       </div>
 
 
@@ -276,9 +274,11 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
   <article class="generation-console rail" aria-labelledby="generation-console-title">
 
     <header class="rail-head">
-      <div class="rail-heading">
-        <p class="rail-eyebrow">TEXT TO SIGN</p>
-        <h3 class="rail-title" id="generation-console-title">手語生成</h3>
+      <div class="rail-head-top">
+        <div class="rail-heading">
+          <p class="rail-eyebrow">TEXT TO SIGN</p>
+          <h3 class="rail-title" id="generation-console-title">手語生成</h3>
+        </div>
       </div>
     </header>
 

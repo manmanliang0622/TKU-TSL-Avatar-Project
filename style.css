@@ -19,12 +19,12 @@
   --sp-6:24px; --sp-7:28px; --sp-8:36px; --sp-9:44px;
 
   /* ── 改版：字級階層。原本全站落在 10.5–15px，最需要被讀懂的說明文反而最小 ── */
-  --fs-label:16px;                       /* 群組標籤 */
-  --fs-note:17px;                        /* 說明文 */
-  --fs-body:19px;                        /* 內文／輸入 */
-  --fs-title:clamp(24px,2.1vw,30px);     /* 側欄標題 */
-  --fs-token:24px;                       /* 詞卡 */
-  --fs-result:clamp(33px,3.2vw,46px);    /* 主結果：口語句子 */
+  --fs-label:clamp(14px,min(1.05vw,2.5vh),16px);      /* 群組標籤 */
+  --fs-note:clamp(15px,min(1.15vw,2.8vh),17px);       /* 說明文 */
+  --fs-body:clamp(17px,min(1.25vw,3vh),19px);         /* 內文／輸入 */
+  --fs-title:clamp(22px,min(2.1vw,3.9vh),30px);       /* 側欄標題 */
+  --fs-token:clamp(20px,min(1.6vw,3.6vh),24px);       /* 詞卡 */
+  --fs-result:clamp(28px,min(3.2vw,5.6vh),46px);      /* 主結果：口語句子 */
   /* ── 中文不吃拉丁字母的寬字距；寬字距只留給拉丁大寫標籤 ── */
   --tr-zh:.02em;
   --tr-en:.18em;
@@ -236,7 +236,7 @@ kbd{
 .type-stack span{
   display:block;
   font-family:var(--serif);
-  font-size:clamp(18px,2.3vw,30px);
+  font-size:clamp(15px,min(2.3vw,3.4vh),30px);
   line-height:1.16;
   letter-spacing:.11em;
   transition:letter-spacing .6s cubic-bezier(.2,.8,.2,1);
@@ -246,7 +246,7 @@ kbd{
 .type-stack .stack-sub{
   margin-top:10px;
   font-family:var(--serif-tc);
-  font-size:clamp(15px,1.45vw,20px);
+  font-size:clamp(13px,min(1.45vw,2.3vh),20px);
   letter-spacing:.16em;
   color:var(--muted);
   text-wrap:balance;
@@ -255,7 +255,7 @@ kbd{
 /* 英文四行拿掉之後，中文成為唯一主標，放大到真正的主角尺寸。
    .type-stack .stack-sub 權重（0,2,0）壓過這條（0,1,1），副標不受影響。 */
 .stack-close span{
-  font-size:clamp(32px,4vw,54px);
+  font-size:clamp(27px,min(4vw,6.6vh),54px);
   line-height:1.26;
   letter-spacing:.08em;
 }
@@ -628,7 +628,7 @@ h2{
   border:1px solid var(--ivory);border-radius:999px;
   background:transparent;color:var(--ivory);
   font-family:var(--sans-tc);
-  font-size:clamp(17px,1.3vw,20px);font-weight:600;letter-spacing:.04em;
+  font-size:clamp(16px,min(1.3vw,3vh),20px);font-weight:600;letter-spacing:.04em;
   border-radius:2px;
   cursor:pointer;
   transition:background .2s ease,color .2s ease,opacity .2s ease;
@@ -967,11 +967,11 @@ h2{
    ═══════════════════════════════════════════════════════════════════ */
 
 /* 生成頁的側欄可以窄一點：右邊是人偶，不需要跟辨識頁一樣寬 */
-#generation{--rail-w:clamp(370px,27vw,460px);}
+#generation{--rail-w:clamp(400px,29vw,500px);}
 
 .stage-page{
   --stage-pad:0px;
-  --rail-w:clamp(400px,31vw,500px);
+  --rail-w:clamp(440px,34vw,580px);
   --nav-h:60px;
   --hair:1px solid rgba(233,234,228,.18);
   position:relative;
@@ -988,10 +988,12 @@ h2{
 .stage-page .generation-console{
   position:relative;z-index:1;
   grid-column:1;grid-row:1;
-  display:grid;
-  grid-template-rows:auto minmax(0,1fr) auto;
+  display:flex;
+  flex-direction:column;
   min-height:0;
   margin:0;padding:0;
+  /* 辨識頁多一列「結果」：設定區保底 96px（至少看得到一整排切換鈕），
+     剩下的高度給結果區，兩邊都不夠時各自內捲，不會有一邊被壓成細縫 */
   border:none;
   border-radius:0;
   background:var(--rail);
@@ -1001,11 +1003,18 @@ h2{
 }
 .stage-page .generation-console :focus-visible{outline-color:var(--ivory);}
 
+/* 標題列：頁名＋狀態＋辨識流程。
+   流程是「系統回報」不是「使用者設定」，放在固定的標題列裡，
+   就不會在矮視窗被可捲區擠出畫面（可捲區只留輸入設定） */
 .rail-head{
-  display:flex;align-items:flex-start;justify-content:space-between;
-  gap:var(--sp-3);
-  padding:clamp(18px,1.9vw,26px) clamp(20px,2vw,28px) clamp(14px,1.5vw,20px);
+  display:flex;flex-direction:column;
+  gap:clamp(8px,1.3vh,13px);
+  padding:clamp(12px,1.8vh,26px) clamp(20px,2vw,28px) clamp(10px,1.4vh,18px);
   border-bottom:var(--hair);
+}
+.rail-head-top{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  flex-wrap:wrap;gap:var(--sp-3);width:100%;
 }
 .rail-eyebrow{
   font-family:var(--sans);
@@ -1014,6 +1023,7 @@ h2{
   color:rgba(233,234,228,.46);
   margin-bottom:5px;
 }
+.rail-heading{min-width:0;}
 .rail-title{
   font-family:var(--serif-tc);
   font-weight:700;font-size:var(--fs-title);letter-spacing:.06em;
@@ -1025,15 +1035,15 @@ h2{
 .rail-body{
   min-height:0;
   overflow-y:auto;overscroll-behavior:contain;
-  padding:clamp(18px,1.9vw,24px) clamp(20px,2vw,28px);
+  padding:clamp(10px,1.7vh,24px) clamp(20px,2vw,28px);
   display:flex;flex-direction:column;
-  gap:clamp(18px,2.2vh,28px);
+  gap:clamp(9px,1.6vh,24px);
   scrollbar-width:none;
   -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16px,#000 calc(100% - 20px),transparent 100%);
           mask-image:linear-gradient(to bottom,transparent 0,#000 16px,#000 calc(100% - 20px),transparent 100%);
 }
 .rail-body::-webkit-scrollbar{width:0;height:0;}
-.rail-group{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0;}
+.rail-group{display:flex;flex-direction:column;gap:clamp(8px,1.3vh,12px);min-width:0;}
 /* 輸入設定：標籤靠左、控制靠右的橫列。
    標籤各自佔一行太吃高度——一般筆電的可視高度只有 625–730px，
    這兩行省下來的位置正好夠讓結果與動作都不用捲 */
@@ -1046,12 +1056,20 @@ h2{
 
 /* 主結果不參與捲動：辨識出來的口語句子是這一頁的答案，
    它不該是第一個被捲走的東西，所以獨立成一列釘在動作列上方 */
+/* 高度不夠時：標題列與動作列固定不動，設定區與結果區各讓一點 */
+.rail-head,.rail-foot{flex:0 0 auto;}
+.rail-body{flex:1 1 auto;min-height:64px;}
+.rail-result{flex:0 1 auto;}
 .rail-result{
-  display:flex;flex-direction:column;gap:var(--sp-2);
-  padding:clamp(14px,1.5vw,20px) clamp(20px,2vw,28px);
+  display:flex;flex-direction:column;gap:clamp(6px,1vh,8px);
+  min-height:0;
+  overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:none;
+  padding:clamp(8px,1.2vh,16px) clamp(20px,2vw,28px);
   border-top:var(--hair);
 }
-.rail-result .result-label-spoken{margin-top:var(--sp-4);}
+.rail-result::-webkit-scrollbar{width:0;height:0;}
+.rail-result .result-label-spoken{margin-top:clamp(6px,1.1vh,12px);}
 .group-label{
   font-family:var(--sans-tc);
   font-size:var(--fs-label);font-weight:500;letter-spacing:.06em;
@@ -1060,22 +1078,27 @@ h2{
 
 /* 主要動作釘在底部：不管上面捲到哪，這一排永遠看得到 */
 .rail-foot{
-  display:flex;flex-direction:column;gap:var(--sp-3);
-  padding:clamp(14px,1.5vw,18px) clamp(20px,2vw,28px) clamp(18px,1.9vw,26px);
+  display:flex;flex-direction:column;gap:clamp(8px,1.2vh,12px);
+  padding:clamp(9px,1.4vh,18px) clamp(20px,2vw,28px) clamp(12px,1.8vh,26px);
   border-top:var(--hair);
   background:rgba(0,0,0,.22);
 }
-.rail .action-row{gap:var(--sp-4);}
+.rail .action-row,
+.rail .generation-actions{
+  gap:var(--sp-3) var(--sp-4);
+  flex-wrap:wrap;
+}
 .rail .btn-primary{
   flex:1 1 auto;justify-content:center;
-  /* 字放大但框維持原高 */
-  min-height:58px;
-  font-size:20px;
+  /* 字放大但框維持原高；橫向 padding 收窄，讓兩顆主要按鈕併排時不會撐破側欄 */
+  min-height:clamp(46px,7.6vh,58px);
+  padding-left:20px;padding-right:20px;
+  font-size:clamp(18px,min(1.35vw,3.2vh),20px);
   background:var(--ivory);color:var(--black);border-color:var(--ivory);
 }
 .rail .btn-primary:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
 .rail .btn-ghost{
-  flex:none;margin-left:0;
+  flex:none;margin-left:auto;
   color:rgba(233,234,228,.68);border-bottom-color:rgba(233,234,228,.4);
 }
 .rail .btn-ghost:hover{color:var(--ivory);border-color:var(--ivory);}
@@ -1084,28 +1107,28 @@ h2{
    由上而下就是使用順序——先轉換，再播放。中間一條髮絲線分開兩個階段 */
 .rail-playback{
   display:flex;gap:var(--sp-3);
-  padding-top:var(--sp-3);
+  padding-top:clamp(9px,1.4vh,12px);
   border-top:var(--hair);
 }
 .rail-playback .player-btn{
   flex:1 1 0;min-width:0;
-  min-height:50px;
+  min-height:clamp(44px,7vh,50px);
   padding:10px 14px;
 }
 
 /* 分段控制：一個外框兩格，不是兩顆各自為政的藥丸 */
 .segmented{
   display:grid;grid-auto-flow:column;grid-auto-columns:1fr;
-  padding:3px;
+  padding:2px;
   border:1px solid rgba(233,234,228,.3);
   border-radius:3px;
   background:rgba(233,234,228,.05);
 }
 .segmented .chip-btn{
   /* 字放大但框維持原高：橫向 padding 收窄換字級 */
-  min-height:50px;
+  min-height:clamp(42px,6vh,48px);
   padding:8px 10px;
-  font-size:20px;
+  font-size:clamp(18px,min(1.35vw,3.2vh),20px);
   border:none;border-radius:2px;background:transparent;
   color:rgba(233,234,228,.68);
   transition:background .18s ease,color .18s ease;
@@ -1116,11 +1139,12 @@ h2{
 /* 流程：用一條線串起來，看得出是序列，不是三顆獨立的方塊 */
 .rail .steps-list{
   display:flex;flex-wrap:wrap;align-items:center;
-  gap:8px 14px;list-style:none;
+  gap:clamp(4px,.9vh,8px) clamp(9px,1vw,14px);list-style:none;
 }
 .rail .step-item{
   border:none;border-radius:0;
   padding:2px 0;gap:10px;
+  font-size:clamp(15px,min(1.15vw,2.7vh),17px);
   color:rgba(233,234,228,.46);
 }
 /* 步驟之間用一小段短線接起來，看得出是序列不是三顆獨立的東西 */
@@ -1141,14 +1165,14 @@ h2{
 .rail .step-item.is-complete .step-dot{border-color:var(--ivory);background:var(--ivory);color:var(--black);}
 
 /* 詞卡 */
-.rail .token-row{min-height:52px;align-items:center;gap:var(--sp-2);}
+.rail .token-row{min-height:clamp(46px,7.2vh,52px);align-items:center;gap:var(--sp-2);}
 .rail .token-row:empty::before{
   content:"—";
   font-size:var(--fs-token);
   color:rgba(233,234,228,.28);
 }
 .rail .token{
-  min-height:52px;
+  min-height:clamp(46px,7.2vh,52px);
   display:inline-flex;align-items:center;justify-content:center;
   border-color:rgba(233,234,228,.4);
   color:var(--ivory);
@@ -1164,7 +1188,7 @@ h2{
   display:block;
   margin-top:6px;
   font-family:var(--sans-tc);
-  font-size:clamp(17px,1.55vw,22px);
+  font-size:clamp(15px,min(1.55vw,2.9vh),22px);
   font-weight:400;
   letter-spacing:var(--tr-zh);
   line-height:1.6;
@@ -1174,7 +1198,7 @@ h2{
 /* 輸入框 */
 .rail textarea{
   width:100%;
-  min-height:clamp(96px,15vh,150px);
+  min-height:clamp(74px,13vh,150px);
   resize:none;
   font-family:var(--sans-tc);
   font-size:var(--fs-body);line-height:1.7;letter-spacing:var(--tr-zh);
@@ -1191,6 +1215,7 @@ h2{
 /* 狀態徽章回到側欄標題列：它是系統狀態，不是舞台上的東西 */
 .rail .stage-status{
   flex:none;
+  white-space:nowrap;
   min-height:34px;padding:6px 14px;
   border-color:rgba(233,234,228,.28);
   color:rgba(233,234,228,.72);
@@ -1269,66 +1294,6 @@ h2{
 }
 .stage-speed .speed-label{width:100%;text-align:right;}
 
-/* 矮視窗（1366×768 這類筆電）：側欄收緊，讓「台灣口語」這個主結果
-   盡量留在第一屏，而不是一開頁就得先捲一段 */
-@media (max-height:900px) and (min-width:901px){
-  .rail-head{padding-top:15px;padding-bottom:12px;}
-  .rail-body{gap:15px;padding-top:15px;padding-bottom:15px;}
-  .rail-foot{padding-top:12px;padding-bottom:15px;}
-  .rail-group{gap:9px;}
-  .rail .steps-list{gap:6px 12px;}
-  .rail .step-dot{width:23px;height:23px;}
-  .rail textarea{min-height:84px;}
-  .rail .btn-primary{min-height:50px;font-size:20px;}
-  .segmented .chip-btn{min-height:46px;}
-  .rail-playback .player-btn{min-height:46px;}
-  .rail-result{padding-top:12px;padding-bottom:12px;}
-  .rail-result .result-label-spoken{margin-top:var(--sp-3);}
-  .rail .spoken-text{font-size:clamp(27px,2.3vw,33px);}
-}
-
-/* 一般筆電的可視高度多半落在 625–730px（1366×768、1920×1080@125%）：
-   再收一階，讓「輸入設定→流程→結果→動作」整條在不捲動的情況下站得下。
-   門檻抓 780px —— 730 這一段若只吃上一階，辨識流程那排會剛好被擠出去 */
-@media (max-height:780px) and (min-width:901px){
-  .rail-head{padding-top:12px;padding-bottom:8px;}
-  .rail-eyebrow{font-size:12px;margin-bottom:3px;}
-  .rail-title{font-size:clamp(21px,1.9vw,26px);}
-  .rail-body{gap:10px;padding-top:10px;padding-bottom:10px;}
-  .rail-group{gap:8px;}
-  .group-label{font-size:15px;}
-  .segmented{padding:2px;}
-  .segmented .chip-btn{min-height:42px;font-size:19px;padding:8px 8px;}
-  /* 三步在 1366 寬的側欄剛好卡在換行邊緣：矮視窗省掉中間的短線 */
-  .rail .steps-list{gap:4px 8px;}
-  .rail .step-item{font-size:15px;gap:8px;}
-  .rail .step-item:not(:last-child)::after{display:none;}
-  .rail .step-dot{width:21px;height:21px;font-size:12px;}
-  .rail .token-row{min-height:46px;}
-  .rail .token{min-height:46px;font-size:22px;padding:7px 15px;}
-  .rail .spoken-text{font-size:clamp(26px,2.2vw,31px);}
-  .rec-candidate{font-size:15px;padding:4px 9px;}
-  .rail-result{padding-top:8px;padding-bottom:8px;}
-  .spoken-note{font-size:17px;margin-top:4px;}
-  .rail-foot{padding-top:8px;padding-bottom:12px;gap:8px;}
-  .rail .console-note{font-size:15px;line-height:1.5;}
-  .rail .btn-primary{min-height:46px;font-size:19px;}
-  .rail-playback{padding-top:10px;}
-  .rail-playback .player-btn{min-height:44px;font-size:17px;}
-  .rail textarea{min-height:72px;}
-  .rail-result{gap:6px;}
-  .rail-result .result-label-spoken{margin-top:var(--sp-2);}
-}
-
-/* 只有真的矮到不夠站（1366×768 這種）才捨掉這兩個輔助元素；
-   730 那一段還有餘裕，沒必要一起藏 */
-@media (max-height:660px) and (min-width:901px){
-  /* 編號已經表達了序列，這個標籤省掉換高度 */
-  .rail-group-steps .group-label{display:none;}
-  /* 其他候選是輔助資訊，先讓位給主結果 */
-  .rail-result .rec-candidates{display:none;}
-}
-
 /* ---------- RECOGNITION CONSOLE（0813 × cipher） ---------- */
 .console-note{
   margin:0;
@@ -1342,7 +1307,7 @@ h2{
    （黑底 rgba）會整排隱形。 */
 .rec-candidates{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-2);}
 .rec-candidate{
-  font-family:var(--sans-tc);font-size:17px;letter-spacing:var(--tr-zh);
+  font-family:var(--sans-tc);font-size:clamp(15px,min(1.15vw,2.7vh),17px);letter-spacing:var(--tr-zh);
   color:rgba(233,234,228,.66);border:1px solid rgba(233,234,228,.3);padding:5px 11px;
 }
 
@@ -1365,13 +1330,11 @@ h2{
 
 /* ---------- RESPONSIVE ---------- */
 /* 矮視窗：首頁鎖捲動後，壓縮構圖避免內容被切 */
+/* 首頁的字級已經改用 clamp(min(vw,vh)) 連續縮放，
+   這裡只留間距，不再用高度斷點整批換字級（換字級會在視窗高度變動時整組跳一階） */
 @media (max-height:760px){
   .hero-frame{gap:clamp(8px,1.6vh,14px);padding-top:92px;padding-bottom:28px;}
-  /* 只壓小陪襯的英文行；主標仍然要是畫面上最大的字。
-     舊版這裡用 .type-stack span 一次蓋掉全部，主標會縮到比副標還小 */
-  .stack-en span{font-size:clamp(12px,1.15vw,15px);line-height:1.7;}
-  .stack-close span{font-size:clamp(26px,3vw,38px);line-height:1.2;}
-  .type-stack .stack-sub{margin-top:8px;font-size:clamp(14px,1.3vw,17px);}
+  .type-stack .stack-sub{margin-top:8px;}
   .ctas{margin-top:clamp(16px,3vh,30px);}
   .ctas a{padding:12px 26px;}
 }
@@ -1509,7 +1472,7 @@ h2{
 .ctas{justify-content:flex-start;margin-top:clamp(30px,6vh,58px);}
 /* 英文降級成小字兩行：保留原本的編輯感，但不跟中文主標搶 */
 .stack-en span{
-  font-size:clamp(13px,1.3vw,17px);
+  font-size:clamp(11px,min(1.3vw,2vh),17px);
   letter-spacing:.22em;
   line-height:1.85;
   color:var(--muted);
