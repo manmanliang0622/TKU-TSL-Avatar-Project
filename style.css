@@ -1500,8 +1500,39 @@ h2{
    手機版是上下堆疊的，把速率列改成一般流排在舞台正下方、
    自成一條深色控制列，四顆按鈕平分寬度 —— 不會擋到虛擬人。 */
 @media (max-width:600px){
+  /* 手機版整個舞台區改成單純的直向堆疊，沒有任何東西浮在別人身上：
+       人偶 → 時間軸 → 播放速率 → 控制台。
+       （時間軸是 signavatar-bridge.js 動態 append 的，排在最後，
+        用 order 把它插到速率列前面） */
+  .stage-page .avatar-wrap{display:flex;flex-direction:column;}
+  .stage-page .avatar-panel .avatar-stage{order:1;}
+  .stage-page .stage-dock{order:2;}
+  .stage-speed{order:3;}
+
+  .stage-page .stage-dock{
+    position:static;
+    left:auto;right:auto;bottom:auto;top:auto;
+    width:100%;
+    gap:0;
+    background:var(--rail);
+  }
+  /* 內距放在 .stage-timeline 上：沒有播放時它是 hidden，
+     整條 dock 就會收成 0 高度，不會留下一塊空白 */
+  .stage-timeline{
+    padding:12px clamp(20px,2vw,28px) 2px;
+    gap:6px;
+  }
+  .timeline-meta{font-size:13px;}
+  .timeline-token{font-size:18px;}
+  .timeline-track{height:24px;}
+  .timeline-seg span{font-size:12px;}
+
   .stage-speed{
+    /* 桌機版是 position:absolute + top/right 浮在舞台右上角。
+       這裡改成 relative 卻沒清掉 top/right 的話，那兩個位移會原封不動生效：
+       往下 14px（上面多一條縫）、往左 14px（右邊少一塊）—— 一定要歸零 */
     position:relative;z-index:2;
+    top:auto;right:auto;
     width:100%;
     display:flex;flex-wrap:nowrap;align-items:center;
     justify-content:flex-start;
