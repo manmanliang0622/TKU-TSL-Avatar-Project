@@ -19,12 +19,12 @@
   --sp-6:24px; --sp-7:28px; --sp-8:36px; --sp-9:44px;
 
   /* ── 改版：字級階層。原本全站落在 10.5–15px，最需要被讀懂的說明文反而最小 ── */
-  --fs-label:15px;                       /* 群組標籤 */
+  --fs-label:16px;                       /* 群組標籤 */
   --fs-note:17px;                        /* 說明文 */
   --fs-body:19px;                        /* 內文／輸入 */
   --fs-title:clamp(24px,2.1vw,30px);     /* 側欄標題 */
-  --fs-token:22px;                       /* 詞卡 */
-  --fs-result:clamp(30px,2.9vw,42px);    /* 主結果：口語句子 */
+  --fs-token:24px;                       /* 詞卡 */
+  --fs-result:clamp(33px,3.2vw,46px);    /* 主結果：口語句子 */
   /* ── 中文不吃拉丁字母的寬字距；寬字距只留給拉丁大寫標籤 ── */
   --tr-zh:.02em;
   --tr-en:.18em;
@@ -309,11 +309,11 @@ kbd{
 }
 .ctas a strong{
   font-family:var(--sans-tc);
-  font-size:18px;font-weight:600;letter-spacing:.1em;
+  font-size:22px;font-weight:600;letter-spacing:.1em;
 }
 .ctas a small{
   font-family:var(--sans);
-  font-size:12px;font-weight:500;letter-spacing:.26em;
+  font-size:14px;font-weight:500;letter-spacing:.24em;
   color:var(--muted);
   transition:color .25s ease;
 }
@@ -1164,7 +1164,7 @@ h2{
   display:block;
   margin-top:6px;
   font-family:var(--sans-tc);
-  font-size:clamp(15px,1.35vw,19px);
+  font-size:clamp(17px,1.55vw,22px);
   font-weight:400;
   letter-spacing:var(--tr-zh);
   line-height:1.6;
@@ -1284,19 +1284,19 @@ h2{
   .rail-playback .player-btn{min-height:46px;}
   .rail-result{padding-top:12px;padding-bottom:12px;}
   .rail-result .result-label-spoken{margin-top:var(--sp-3);}
-  .rail .spoken-text{font-size:clamp(24px,2.1vw,30px);}
+  .rail .spoken-text{font-size:clamp(27px,2.3vw,33px);}
 }
 
 /* 一般筆電的可視高度多半落在 625–730px（1366×768、1920×1080@125%）：
    再收一階，讓「輸入設定→流程→結果→動作」整條在不捲動的情況下站得下。
    門檻抓 780px —— 730 這一段若只吃上一階，辨識流程那排會剛好被擠出去 */
 @media (max-height:780px) and (min-width:901px){
-  .rail-head{padding-top:14px;padding-bottom:10px;}
+  .rail-head{padding-top:12px;padding-bottom:8px;}
   .rail-eyebrow{font-size:12px;margin-bottom:3px;}
   .rail-title{font-size:clamp(21px,1.9vw,26px);}
-  .rail-body{gap:12px;padding-top:12px;padding-bottom:12px;}
+  .rail-body{gap:10px;padding-top:10px;padding-bottom:10px;}
   .rail-group{gap:8px;}
-  .group-label{font-size:14px;}
+  .group-label{font-size:15px;}
   .segmented{padding:2px;}
   .segmented .chip-btn{min-height:42px;font-size:19px;padding:8px 8px;}
   /* 三步在 1366 寬的側欄剛好卡在換行邊緣：矮視窗省掉中間的短線 */
@@ -1305,12 +1305,12 @@ h2{
   .rail .step-item:not(:last-child)::after{display:none;}
   .rail .step-dot{width:21px;height:21px;font-size:12px;}
   .rail .token-row{min-height:46px;}
-  .rail .token{min-height:46px;font-size:20px;padding:7px 15px;}
-  .rail .spoken-text{font-size:clamp(24px,2vw,28px);}
-  .rec-candidate{font-size:14px;padding:4px 9px;}
-  .rail-result{padding-top:10px;padding-bottom:10px;}
-  .spoken-note{font-size:15px;margin-top:4px;}
-  .rail-foot{padding-top:10px;padding-bottom:12px;gap:10px;}
+  .rail .token{min-height:46px;font-size:22px;padding:7px 15px;}
+  .rail .spoken-text{font-size:clamp(26px,2.2vw,31px);}
+  .rec-candidate{font-size:15px;padding:4px 9px;}
+  .rail-result{padding-top:8px;padding-bottom:8px;}
+  .spoken-note{font-size:17px;margin-top:4px;}
+  .rail-foot{padding-top:8px;padding-bottom:12px;gap:8px;}
   .rail .console-note{font-size:15px;line-height:1.5;}
   .rail .btn-primary{min-height:46px;font-size:19px;}
   .rail-playback{padding-top:10px;}
@@ -1342,7 +1342,7 @@ h2{
    （黑底 rgba）會整排隱形。 */
 .rec-candidates{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-2);}
 .rec-candidate{
-  font-family:var(--sans-tc);font-size:16px;letter-spacing:var(--tr-zh);
+  font-family:var(--sans-tc);font-size:17px;letter-spacing:var(--tr-zh);
   color:rgba(233,234,228,.66);border:1px solid rgba(233,234,228,.3);padding:5px 11px;
 }
 
