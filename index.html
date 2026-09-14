@@ -33,7 +33,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Archivo:wght@400;500;600&family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20260915-handdetail">
+<link rel="stylesheet" href="style.css?v=20260915-nobadge">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -137,7 +137,6 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
       <div class="capture-stage" id="previewBox">
         <video id="previewVideo" hidden playsinline controls></video>
         <canvas id="landmarkCanvas" class="landmark-canvas" hidden aria-hidden="true"></canvas>
-        <span class="hands-badge" id="handsBadge" hidden role="status" aria-live="polite"></span>
         <button type="button" id="emptyPreview" class="empty-preview">
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -348,7 +347,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <script src="signavatar-config.js?v=20260823-apiproxy"></script>
 <script src="script.js?v=20260914-nowarn"></script>
 <!-- 辨識頁改接 Knee42 後端（Pose+Hands 合約）；原 recognition.js（手+臉 178 維，供自訓模型）暫時下線 -->
-<script type="module" src="knee42-client.js?v=20260914-nowarn"></script>
+<script type="module" src="knee42-client.js?v=20260915-nobadge"></script>
 <script type="importmap">
 {
   "imports": {

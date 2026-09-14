@@ -54,7 +54,6 @@ const AUTO_STATE_TEXT = {
 // ── DOM ──
 const video    = document.querySelector("#previewVideo");
 const canvas   = document.querySelector("#landmarkCanvas");
-const badge    = document.querySelector("#handsBadge");
 const tokens   = document.querySelector("#recognitionTokens");
 const spoken   = document.querySelector("#spokenResult");
 const statusEl = document.querySelector("#recognitionStatus");
@@ -73,7 +72,6 @@ const ctx = canvas.getContext("2d");
 // ── 狀態 ──
 let handLm = null, poseLm = null, loadPromise = null;
 let looping = false, lastVideoTime = -1, lastDetectTs = 0;
-let lastBadgeKey = "";
 let mode = null;                 // null | "auto"（攝影機自動切段）| "manual"（攝影機手動切段）| "clip"（上傳影片）
 let latestFrame = null;          // 偵測迴圈的最新一幀 {pose, hands}
 let autoBuf = [], autoSession = "", autoT0 = 0, autoSending = false, autoTimer = null;
@@ -91,18 +89,12 @@ function setStatus(text, state = "idle") {
   statusEl.textContent = text;
   statusEl.dataset.state = state;
 }
-function setBadge(text, state = "idle") {
-  badge.hidden = false;
-  badge.textContent = text;
-  badge.dataset.state = state;
-}
 function resetSteps() { steps.forEach(s => s.classList.remove("is-active", "is-complete")); }
 function completeSteps() { steps.forEach(s => { s.classList.remove("is-active"); s.classList.add("is-complete"); }); }
 
 // ── 模型載入（GPU 失敗退 CPU；同頁只載一次）──
 function loadLandmarkers() {
   loadPromise ??= (async () => {
-    setBadge("骨架偵測模型載入中…", "loading");
     const { FilesetResolver, HandLandmarker, PoseLandmarker } =
       await import(`${MP_BASE}/vision_bundle.mjs`);
     const vision = await FilesetResolver.forVisionTasks(`${MP_BASE}/wasm`);
@@ -116,10 +108,9 @@ function loadLandmarkers() {
     ];
     try { [handLm, poseLm] = await make("GPU"); }
     catch { [handLm, poseLm] = await make("CPU"); }
-    setBadge("偵測就緒，等待影像");
   })().catch(err => {
     loadPromise = null;
-    setBadge("模型載入失敗，請檢查網路後重試", "error");
+    console.warn("[knee42] 骨架偵測模型載入失敗", err);
     throw err;
   });
   return loadPromise;
@@ -154,7 +145,6 @@ function loop(now) {
 
   latestFrame = { pose, hands };
   draw(hands, pose);
-  updateBadge(hands, pose);
 
   if (mode === "auto") {
     autoBuf.push({ pose, hands, timestamp: +((performance.now() - autoT0) / 1000).toFixed(4) });
@@ -163,18 +153,6 @@ function loop(now) {
   } else if (mode === "clip") {
     clipBuf.push({ pose, hands });
   }
-}
-
-function updateBadge(hands, pose) {
-  const shoulders = Boolean(pose?.landmarks?.[11] && pose?.landmarks?.[12]);
-  const key = `${hands.length}-${shoulders}`;
-  if (key === lastBadgeKey) return;
-  lastBadgeKey = key;
-  const handText = hands.length
-    ? `偵測到 ${hands.map(h => (h.handedness === "Left" ? "左" : "右")).join("+")} 手`
-    : "未偵測到手";
-  setBadge(`${handText}・${shoulders ? "雙肩 ✓" : "雙肩 —"}`,
-    hands.length || shoulders ? "active" : "idle");
 }
 
 // 骨架圖層鋪滿整個舞台，影片卻是 object-fit:contain（比例不合就留黑邊）。
@@ -223,7 +201,6 @@ function draw(hands, pose) {
 async function startLoop() {
   try { await loadLandmarkers(); } catch { return; }
   canvas.hidden = false;
-  lastBadgeKey = "";
   lastVideoTime = -1;
   if (!looping) {
     looping = true;
@@ -236,8 +213,6 @@ function stopLoop({ clear = false } = {}) {
   if (clear) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     canvas.hidden = true;
-    badge.hidden = true;
-    lastBadgeKey = "";
   }
 }
 
