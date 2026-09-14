@@ -1282,21 +1282,6 @@ h2{
 .rail .token.is-highlighted{background:var(--accent);border-color:var(--accent);color:#fff;}
 .rail .token-hint{color:rgba(233,234,228,.5);margin-top:0;}
 .rail .spoken-text{color:var(--ivory);}
-/* 信心不足時附在句子後面的說明：獨立成一行、收小字級，
-   不要跟主結果同一個份量（由 knee42-client.js 包成 .spoken-note）*/
-.spoken-note{
-  display:block;
-  margin-top:6px;
-  font-family:var(--sans-tc);
-  font-size:clamp(15px,min(1.4vw,2.6vh),20px);
-  font-weight:400;
-  /* 全形左括號自帶半個字的空白，往左推回來才會跟上一行的字頭切齊 */
-  text-indent:-.5em;
-  letter-spacing:var(--tr-zh);
-  line-height:1.6;
-  color:rgba(233,234,228,.62);
-}
-
 /* 輸入框 */
 .rail textarea{
   width:100%;

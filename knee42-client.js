@@ -233,18 +233,10 @@ function renderTop(top) {
     setStatus("辨識完成", "idle");
     return;
   }
-  if (best.prob < CONF_THRESHOLD) {
-    // 主句歸主句、附註歸附註：附註另起一行並收小字級（樣式見 .spoken-note）
-    spoken.textContent = best.text;
-    const note = document.createElement("span");
-    note.className = "spoken-note";
-    note.textContent = `（信心不足 ${(best.prob * 100).toFixed(0)}%，可能不在支援的 42 句內）`;
-    spoken.appendChild(note);
-    setStatus("信心不足", "active");
-  } else {
-    spoken.textContent = best.text;
-    setStatus("辨識完成", "done");
-  }
+  spoken.textContent = best.text;
+  // 句子下面不加附註；低信心只在狀態列標「信心不足」，不裝作辨識完成
+  if (best.prob < CONF_THRESHOLD) setStatus("信心不足", "active");
+  else setStatus("辨識完成", "done");
 }
 
 function showAnalyzing(text) {
