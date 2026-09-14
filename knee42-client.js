@@ -25,7 +25,16 @@ const API_BASE = (localStorage.getItem("recognitionApi")
       ? `${window.SignAvatarConfig.apiBase}/knee42`
       : `${location.origin}/knee42`)).replace(/\/$/, "");
 
-const STREAM_FLUSH_MS = 400;   // 與 Knee42 官方測試站相同的送批節奏
+// 自動模式的送批節奏。手放回原位後，伺服器要湊滿 end_hold_sec（0.5 秒）的靜止幀
+// 才切段；最後那一幀在前端還得等下一次送批、再走一趟往返，結果才會出現。
+// 線上實測（2026-09-14）連線熱著時一趟 /stream 0.16–0.23 秒，一批 3 幀或 12 幀
+// 都一樣 —— 慢的是固定 400ms 才送一次，不是資料量。所以只在比劃中改成「上一批
+// 回來就送下一批」；待命、校準、冷卻時結果不會出來，維持 400ms，別白燒 Pages
+// Functions 的請求額度。
+const STREAM_FLUSH_MS        = 400;   // 待命／校準／冷卻，與 Knee42 官方測試站相同
+const STREAM_ACTIVE_FLUSH_MS = 100;   // 比劃中、確認結束中
+const STREAM_TICK_MS         = 50;
+const AUTO_FAST_STATES = new Set(["SIGNING_ACTIVE", "END_CONFIRM"]);
 const MIN_FRAMES      = 4;     // 低於此數不送 /predict
 const CONF_THRESHOLD  = 0.5;   // 低於此信心視為「可能不在 42 類裡」
 const RETRY_DELAYS_MS = [400, 1000, 2000];   // 暫時性失敗最多重送 3 次，前後約 3.4 秒
@@ -70,6 +79,7 @@ let mode = null;                 // null | "auto"（攝影機自動切段）| "m
 let latestFrame = null;          // 偵測迴圈的最新一幀 {pose, hands}
 let autoBuf = [], autoSession = "", autoT0 = 0, autoSending = false, autoTimer = null;
 let autoReset = false, autoFailures = 0, autoRetryAt = 0;
+let autoState = "", autoLastSent = 0, autoCalibrated = false, autoTimeouts = 0;
 let clipBuf = [], clipStart = 0, clipBusy = false;
 let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
 // 攝影機的切段方式；上傳影片一律整段送 /predict，與此無關。
@@ -328,21 +338,31 @@ function startAuto() {
   autoReset = true;
   autoFailures = 0;
   autoRetryAt = 0;
+  autoState = "";
+  autoLastSent = 0;
+  autoCalibrated = false;
+  autoTimeouts = 0;
   showAnalyzing("自動偵測中");
   setStatus("校準中", "active");
   startBtn.textContent = "停止辨識";
-  note("自動模式：比完一句把手放回身側，系統會自動切段並辨識，不必按鍵。");
+  note("自動模式：先讓雙手入鏡、放在休息位置（例如大腿上）別動，校準完就可以開始比。比完一句把手放回同一個位置，系統會自動切段並辨識。");
   flushAuto();
-  autoTimer = setInterval(() => flushAuto(), STREAM_FLUSH_MS);
+  autoTimer = setInterval(flushAuto, STREAM_TICK_MS);
 }
 
 async function flushAuto() {
-  if (autoSending || mode !== "auto" || performance.now() < autoRetryAt) return;
-  if (!autoReset && !autoBuf.length) return;
+  const now = performance.now();
+  if (autoSending || mode !== "auto" || now < autoRetryAt) return;
+  if (!autoReset) {
+    if (!autoBuf.length) return;
+    const gap = AUTO_FAST_STATES.has(autoState) ? STREAM_ACTIVE_FLUSH_MS : STREAM_FLUSH_MS;
+    if (now - autoLastSent < gap) return;
+  }
   const chunk = autoBuf;
   const reset = autoReset;
   autoBuf = [];
   autoSending = true;
+  autoLastSent = now;
   try {
     const data = await postJson("stream", { session: autoSession, reset, frames: chunk });
     autoReset = false;
@@ -351,13 +371,31 @@ async function flushAuto() {
       autoFailures = 0;
       note("連線恢復，繼續自動偵測。");
     }
-    if (!data.calibrated) setStatus("校準中，請站好不要動", "active");
-    else setStatus(AUTO_STATE_TEXT[data.state] || data.state, "active");
-    (data.results || []).forEach(seg => {
-      if (seg.top?.length) {
-        renderTop(seg.top);
-        note(`第 ${seg.index} 句（${seg.frames} 幀）辨識完成，可以繼續比下一句。`);
+    autoState = data.state;
+    if (!data.calibrated) {
+      setStatus("校準中：雙手入鏡、放在休息位置別動", "active");
+    } else {
+      setStatus(AUTO_STATE_TEXT[data.state] || data.state, "active");
+      if (!autoCalibrated) {
+        autoCalibrated = true;
+        note("校準完成，可以開始比。比完一句把手放回剛才的休息位置，結果會馬上出來。");
       }
+    }
+    (data.results || []).forEach(seg => {
+      if (!seg.top?.length) return;
+      renderTop(seg.top);
+      if (seg.reason !== "timeout_finalize") {
+        autoTimeouts = 0;
+        note(`第 ${seg.index} 句（${seg.frames} 幀）辨識完成，可以繼續比下一句。`);
+        return;
+      }
+      // 伺服器的靜止基準只在開始那一秒記一次、之後不再更新。手沒回到那個位置，
+      // 這句就只能等到時間上限（線上設定 12 秒）才被強制切斷 —— 這是自動模式
+      // 慢的主因，而且段落裡塞滿靜止幀，辨識也不準。告訴使用者怎麼避開。
+      autoTimeouts++;
+      const secs = seg.start != null && seg.end != null ? `${(seg.end - seg.start).toFixed(1)} 秒` : "時間";
+      note(`第 ${seg.index} 句沒偵測到手回到休息位置，等到 ${secs}上限才切斷，所以比較慢。比完請把手放回開始時的位置、停半秒。`
+        + (autoTimeouts >= 2 ? "連續幾句都這樣的話，按「停止辨識」再重新開始，讓系統重新記一次休息姿勢。" : ""), "warn");
     });
   } catch (err) {
     if (mode !== "auto") return;
@@ -375,6 +413,8 @@ async function flushAuto() {
     note(`${failureNote(err)}。請確認後端狀態後重試。`, "warn");
   } finally {
     autoSending = false;
+    // 比劃中不等下一個 tick，回應一到就把這段時間累積的幀送出去
+    if (AUTO_FAST_STATES.has(autoState)) flushAuto();
   }
 }
 
@@ -621,7 +661,7 @@ function setSegMode(next) {
     else if (!mode) {
       note(next === "manual"
         ? "手動切段：開始辨識後，用空白鍵或「開始這句」按鈕控制每一句的開始與結束。"
-        : "自動切段：開始辨識後，比完一句把手放回身側，系統會自動切段。");
+        : "自動切段：開始辨識後先讓雙手入鏡、在休息位置別動讓系統校準；比完一句把手放回同一個位置，系統會自動切段。");
     }
   }
   applySegChips();
