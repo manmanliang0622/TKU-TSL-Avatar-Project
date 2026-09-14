@@ -4,6 +4,7 @@ import shutil
 import signal
 import socket
 import subprocess
+import sys
 import tempfile
 import textwrap
 import time
@@ -19,6 +20,17 @@ def free_port():
         return sock.getsockname()[1]
 
 
+# start/stop_0813.sh 是給學校的 Linux 主機用的：靠 flock 排隊、ss 查 port、
+# /proc/<pid>/cmdline 確認行程是自己的，測試也照 Linux 的 errno 111 判斷連線被拒。
+# macOS 沒有 flock、沒有 /proc，在那裡跑只會得到 command not found。
+LINUX_HOST = (
+    sys.platform.startswith("linux")
+    and Path("/proc/self/cmdline").exists()
+    and all(shutil.which(tool) for tool in ("flock", "ss", "curl"))
+)
+
+
+@unittest.skipUnless(LINUX_HOST, "需要 Linux 的 flock、ss 與 /proc（學校主機上跑）")
 class LifecycleBehaviorTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="0813-lifecycle-")

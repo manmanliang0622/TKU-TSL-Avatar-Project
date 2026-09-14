@@ -6,7 +6,21 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# 這組測的是「部署在學校主機上的 bundle 自成一格」：推論套件從 bundle 自己的
+# .venv 載入、不吃使用者目錄的 site-packages、模型服務在旁邊。開發機的 repo
+# 沒有 model_service/（模型與 checkpoint 只在學校主機），也不該為了跑測試裝
+# torch —— 在那裡跑只會把「環境不同」誤報成壞掉。
+IN_DEPLOYED_BUNDLE = (
+    (ROOT / "model_service/scripts/serve_model.py").is_file()
+    and Path(sys.prefix).resolve() == (ROOT / ".venv").resolve()
+)
 
+
+@unittest.skipUnless(
+    IN_DEPLOYED_BUNDLE,
+    "只在學校主機的 bundle 目錄、用它自己的 .venv 執行才有意義"
+    "（例：cd ~/0821_bundle && .venv/bin/python3 -m unittest tests.test_runtime_independence）",
+)
 class RuntimeIndependenceTests(unittest.TestCase):
     def test_user_site_is_disabled(self):
         self.assertFalse(site.ENABLE_USER_SITE)

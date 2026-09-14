@@ -90,7 +90,11 @@ class PlaybackGateTests(unittest.TestCase):
         # script.js rewrites the label on every state change, so the markup
         # and the script have to agree or the rename lasts one render
         self.assertIn("<span>整句播放</span>", read("index.html"))
-        self.assertIn("\\u6574\\u53e5\\u64ad\\u653e", read("script.js"))
+        self.assertRegex(
+            read("script.js"),
+            r'startPlaybackButton\.querySelector\("span"\)\.textContent = [^;]*'
+            r'"(?:整句播放|\\u6574\\u53e5\\u64ad\\u653e)"',
+        )
 
     def test_a_superseded_build_is_dropped_rather_than_played_late(self):
         bridge = read("signavatar-bridge.js")
@@ -152,8 +156,15 @@ class ArmSteadinessTests(unittest.TestCase):
 
     def test_the_stroke_amplifier_is_off_at_rest(self):
         """There is no stroke to enlarge in a placed pose, and amplifying the
-        long travel down to the hip threw the settled arm past it."""
-        self.assertIn("rel.add(swing.multiplyScalar(1 - restW));", read("avatar3d.js"))
+        long travel down to the hip threw the settled arm past it.
+
+        The swing was later also gated by speed (boostW, off while the hand
+        holds a spot), so the factor is now (1 - restW) * boostW. Extra gates
+        are fine; losing the rest term is not."""
+        self.assertRegex(
+            read("avatar3d.js"),
+            r"rel\.add\(swing\.multiplyScalar\((?:1 - restW|\(1 - restW\)(?: \* \w+)+)\)\);",
+        )
 
     def test_the_humeral_roll_solve_has_hysteresis(self):
         avatar = read("avatar3d.js")
@@ -173,7 +184,23 @@ class LoadingIconTests(unittest.TestCase):
         bridge = read("signavatar-bridge.js")
         hand = bridge[bridge.index("const HAND_SVG"): bridge.index("let loadingEl")]
         self.assertLess(hand.index('class="fg f1"'), hand.index('class="palm"'))
-        self.assertNotIn("scaleY", read("style.css"))
+        # 只看載入圖示自己的樣式。style.css 其他地方用 scaleY 沒關係
+        # （2D 佔位虛擬人的眨眼就是），以前整份禁用會誤抓到眼睛。
+        css = read("style.css")
+        hand_rules = [
+            body for selector, body in re.findall(r"([^{}]+)\{([^{}]*)\}", css)
+            if re.search(r"sa-hand|\.fg\b|\.f[1-5]\b|\.palm\b", selector)
+        ]
+        animations = {
+            name for body in hand_rules
+            for name in re.findall(r"animation(?:-name)?\s*:\s*([\w-]+)", body)
+        }
+        keyframes = [
+            body for name, body in re.findall(r"@keyframes\s+([\w-]+)\s*\{((?:[^{}]|\{[^{}]*\})*)\}", css)
+            if name in animations
+        ]
+        for body in hand_rules + keyframes:
+            self.assertNotIn("scaleY", body)
 
     def test_both_waits_are_covered_by_the_overlay(self):
         bridge = read("signavatar-bridge.js")
@@ -336,17 +363,18 @@ class ConsoleOverlapTests(unittest.TestCase):
     測試，所以自動化按得動、人按不動。
     """
 
-    def test_the_console_bottom_follows_the_dock_height(self):
+    def test_the_console_does_not_float_over_the_stage(self):
+        """2026-09-02 先用 --dock-h 讓控制台下緣跟著控制列長高。9-13 改版之後
+        控制台變成版面左側獨立一欄（grid 第一欄），「整句播放」也搬進側欄，
+        兩者不再重疊——2026-09-14 在 1440／1024／820／390 寬、播完第一次之後
+        實測，按鈕與時間軸的命中測試都落在元素本身，--dock-h 已經沒有 CSS 在用。
+        要守的是結構本身：控制台任何尺寸下都不能變回疊在舞台上的絕對定位。"""
         css = read("style.css")
-        console = css[css.index(".stage-page .generation-console{"):]
-        console = console[: console.index("}")]
-        self.assertIn("var(--dock-h", console)
-        self.assertIn("var(--stage-bottom)", console)   # 沒量到高度時退回原值
-        bridge = read("signavatar-bridge.js")
-        build = bridge[bridge.index("function buildTimeline()"):]
-        build = build[: build.index("\n}\n")]
-        self.assertIn("ResizeObserver", build)
-        self.assertIn('"--dock-h"', build)
+        rules = re.findall(r"\.stage-page \.generation-console\{([^}]*)\}", css)
+        self.assertTrue(rules)
+        for body in rules:
+            self.assertNotRegex(body, r"position\s*:\s*(absolute|fixed)", body)
+        self.assertIn("grid-column:1", rules[0])
 
     def test_the_dock_sits_above_the_console(self):
         css = read("style.css")
