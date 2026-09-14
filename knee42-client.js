@@ -28,6 +28,7 @@ const API_BASE = (localStorage.getItem("recognitionApi")
 const STREAM_FLUSH_MS = 400;   // 與 Knee42 官方測試站相同的送批節奏
 const MIN_FRAMES      = 4;     // 低於此數不送 /predict
 const CONF_THRESHOLD  = 0.5;   // 低於此信心視為「可能不在 42 類裡」
+const RETRY_DELAYS_MS = [400, 1000, 2000];   // 暫時性失敗最多重送 3 次，前後約 3.4 秒
 
 const HAND_EDGES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],
   [10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[0,17],[17,18],[18,19],[19,20]];
@@ -68,6 +69,7 @@ let lastBadgeKey = "";
 let mode = null;                 // null | "auto"（攝影機自動切段）| "manual"（攝影機手動切段）| "clip"（上傳影片）
 let latestFrame = null;          // 偵測迴圈的最新一幀 {pose, hands}
 let autoBuf = [], autoSession = "", autoT0 = 0, autoSending = false, autoTimer = null;
+let autoReset = false, autoFailures = 0, autoRetryAt = 0;
 let clipBuf = [], clipStart = 0, clipBusy = false;
 let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
 // 攝影機的切段方式；上傳影片一律整段送 /predict，與此無關。
@@ -277,35 +279,78 @@ function showAnalyzing(text) {
   setStatus("分析中", "active");
 }
 
+// ── 送出與重試（/stream 與 /predict 共用）──
+// 瀏覽器到學校主機要經過 Pages Function → Cloudflare → quick tunnel，任何一段
+// 抖一下都會失敗：fetch 直接丟錯、502/524，或 Cloudflare 自己吐的純文字
+// 「Error: Network connection lost.」（2026-09-14 20:20 抖了十幾秒，後端日誌
+// 裡一個失敗的請求都沒有）。這些重送一次通常就好，連續失敗才算真的連不上。
+// 帶著 JSON 的 4xx 是資料本身有問題，重送也沒用，直接回報。
+class BackendError extends Error {
+  constructor(message, transient) {
+    super(message);
+    this.transient = transient;
+  }
+}
+
+async function postJson(path, payload) {
+  let res, text;
+  try {
+    res = await fetch(`${API_BASE}/${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    text = await res.text();
+  } catch (err) {
+    throw new BackendError(`網路中斷（${err.message}）`, true);
+  }
+  let data = null;
+  try { data = JSON.parse(text); } catch { /* 不是 JSON：代理或 Cloudflare 的錯誤頁 */ }
+  if (data?.ok) return data;
+  const detail = (data?.message || data?.error || text.trim().slice(0, 60)).replace(/[\s.。]+$/, "") || "沒有內容";
+  throw new BackendError(`HTTP ${res.status}：${detail}`, !data || res.status >= 500 || res.status === 429);
+}
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+function failureNote(err) {
+  return err.transient
+    ? `辨識後端連線失敗（已重試 ${RETRY_DELAYS_MS.length} 次）：${err.message}`
+    : `辨識後端回報錯誤：${err.message}`;
+}
+
 // ── 自動模式（攝影機 → /stream）──
 function startAuto() {
   mode = "auto";
   autoBuf = [];
   autoSession = Math.random().toString(36).slice(2) + Date.now().toString(36);
   autoT0 = performance.now();
+  autoReset = true;
+  autoFailures = 0;
+  autoRetryAt = 0;
   showAnalyzing("自動偵測中");
   setStatus("校準中", "active");
   startBtn.textContent = "停止辨識";
   note("自動模式：比完一句把手放回身側，系統會自動切段並辨識，不必按鍵。");
-  flushAuto(true);
+  flushAuto();
   autoTimer = setInterval(() => flushAuto(), STREAM_FLUSH_MS);
 }
 
-async function flushAuto(reset = false) {
-  if (autoSending || mode !== "auto") return;
-  if (!reset && !autoBuf.length) return;
+async function flushAuto() {
+  if (autoSending || mode !== "auto" || performance.now() < autoRetryAt) return;
+  if (!autoReset && !autoBuf.length) return;
   const chunk = autoBuf;
+  const reset = autoReset;
   autoBuf = [];
   autoSending = true;
   try {
-    const res = await fetch(`${API_BASE}/stream`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session: autoSession, reset, frames: chunk }),
-    });
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.message || `HTTP ${res.status}`);
+    const data = await postJson("stream", { session: autoSession, reset, frames: chunk });
+    autoReset = false;
     if (mode !== "auto") return;
+    if (autoFailures) {
+      autoFailures = 0;
+      note("連線恢復，繼續自動偵測。");
+    }
     if (!data.calibrated) setStatus("校準中，請站好不要動", "active");
     else setStatus(AUTO_STATE_TEXT[data.state] || data.state, "active");
     (data.results || []).forEach(seg => {
@@ -315,9 +360,19 @@ async function flushAuto(reset = false) {
       }
     });
   } catch (err) {
+    if (mode !== "auto") return;
+    if (err.transient && autoFailures < RETRY_DELAYS_MS.length) {
+      // 這批放回佇列最前面，跟之後的幀一起重送，伺服器端的狀態機才不會缺一段。
+      // 萬一其實送到了、只是回應在路上掉了，重送會讓幾幀重複 —— 伺服器把
+      // 不遞增的時間戳往後推 1ms，影響遠小於整段辨識被迫停下來。
+      autoBuf = chunk.concat(autoBuf);
+      autoRetryAt = performance.now() + RETRY_DELAYS_MS[autoFailures++];
+      setStatus(`連線不穩，重試中（${autoFailures}/${RETRY_DELAYS_MS.length}）`, "active");
+      return;
+    }
     stopAuto();
     setStatus("連線失敗", "idle");
-    note(`辨識後端連線失敗：${err.message}。請確認後端狀態後重試。`, "warn");
+    note(`${failureNote(err)}。請確認後端狀態後重試。`, "warn");
   } finally {
     autoSending = false;
   }
@@ -331,19 +386,22 @@ function stopAuto() {
 }
 
 // ── /predict 共用送出（手動模式與影片模式）──
+// /predict 不帶狀態，整句重送不會有副作用；錄好的這一句不必因為網路抖一下就重比。
 async function postPredict(frames, duration) {
-  const res = await fetch(`${API_BASE}/predict`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      frames,
-      fps: +(frames.length / Math.max(duration, 1e-3)).toFixed(2),
-      duration: +duration.toFixed(3),
-    }),
-  });
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.message || `HTTP ${res.status}`);
-  return data;
+  const payload = {
+    frames,
+    fps: +(frames.length / Math.max(duration, 1e-3)).toFixed(2),
+    duration: +duration.toFixed(3),
+  };
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await postJson("predict", payload);
+    } catch (err) {
+      if (!err.transient || attempt >= RETRY_DELAYS_MS.length) throw err;
+      setStatus(`連線不穩，重試中（${attempt + 1}/${RETRY_DELAYS_MS.length}）`, "active");
+      await sleep(RETRY_DELAYS_MS[attempt]);
+    }
+  }
 }
 
 // ── 手動模式（攝影機 → 空白鍵/按鈕切一句 → /predict）──
@@ -425,7 +483,7 @@ async function finishManual() {
   } catch (err) {
     spoken.textContent = "辨識失敗。";
     setStatus("連線失敗", mode === "manual" ? "active" : "idle");
-    note(`辨識後端連線失敗：${err.message}。請確認後端狀態後重錄這一句。`, "warn");
+    note(`${failureNote(err)}。請確認後端狀態後重錄這一句。`, "warn");
   } finally {
     manualBusy = false;
     if (segActionBtn) segActionBtn.disabled = false;
@@ -489,7 +547,7 @@ async function finishClip() {
   } catch (err) {
     spoken.textContent = "辨識失敗。";
     setStatus("連線失敗", "idle");
-    note(`辨識後端連線失敗：${err.message}。`, "warn");
+    note(`${failureNote(err)}。`, "warn");
   } finally {
     clipBusy = false;
     stopClip();

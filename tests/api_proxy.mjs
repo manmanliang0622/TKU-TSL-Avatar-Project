@@ -72,6 +72,17 @@ async function call(method, route, { env = KV("https://kv.example"), search = ""
   return { status: res.status, upstream, headers: Object.fromEntries(res.headers) };
 }
 
+async function callBody(method, route) {
+  const req = new Request(`https://site.pages.dev/api/${route}`, {
+    method, headers: { "Content-Type": "application/json" }, body: "{}",
+  });
+  const res = await onRequest({ request: req, env: KV("https://kv.example"), params: { path: route.split("/") } });
+  const text = await res.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch { /* 留 null，讓 eq 報出來 */ }
+  return { status: res.status, json };
+}
+
 console.log("# 白名單內的路徑照轉，query 保留");
 eq("POST translate", (await call("POST", "translate")).upstream, "https://kv.example/translate");
 eq("POST clips", (await call("POST", "clips")).upstream, "https://kv.example/clips");
@@ -82,16 +93,16 @@ eq("POST recordings", (await call("POST", "recordings")).status, 404);
 eq("GET clip/deep/path", (await call("GET", "clip/deep/path")).status, 404);
 eq("GET translate（錯的動詞）", (await call("GET", "translate")).status, 405);
 
-console.log("# 手語辨識掛在 recognize/ 底下，恰好兩段才轉");
-eq("POST recognize/stream", (await call("POST", "recognize/stream")).upstream, "https://kv.example/recognize/stream");
-eq("POST recognize/predict", (await call("POST", "recognize/predict")).upstream, "https://kv.example/recognize/predict");
-eq("GET recognize/health", (await call("GET", "recognize/health")).upstream, "https://kv.example/recognize/health");
-eq("GET recognize/labels", (await call("GET", "recognize/labels")).upstream, "https://kv.example/recognize/labels");
+console.log("# 手語辨識掛在 knee42/ 底下，恰好兩段才轉");
+eq("POST knee42/stream", (await call("POST", "knee42/stream")).upstream, "https://kv.example/knee42/stream");
+eq("POST knee42/predict", (await call("POST", "knee42/predict")).upstream, "https://kv.example/knee42/predict");
+eq("GET knee42/health", (await call("GET", "knee42/health")).upstream, "https://kv.example/knee42/health");
+eq("GET knee42/labels", (await call("GET", "knee42/labels")).upstream, "https://kv.example/knee42/labels");
 // 辨識服務還有 /analyze_url（會對外抓影片）等端點，不在白名單上的不轉
-eq("POST recognize/analyze_url", (await call("POST", "recognize/analyze_url")).status, 404);
-eq("GET recognize（少一段）", (await call("GET", "recognize")).status, 404);
-eq("POST recognize/stream/x（多一段）", (await call("POST", "recognize/stream/x")).status, 404);
-eq("GET recognize/stream（錯的動詞）", (await call("GET", "recognize/stream")).status, 405);
+eq("POST knee42/analyze_url", (await call("POST", "knee42/analyze_url")).status, 404);
+eq("GET knee42（少一段）", (await call("GET", "knee42")).status, 404);
+eq("POST knee42/stream/x（多一段）", (await call("POST", "knee42/stream/x")).status, 404);
+eq("GET knee42/stream（錯的動詞）", (await call("GET", "knee42/stream")).status, 405);
 
 console.log("# KV 讀不到就用保底網址，不是整個壞掉");
 eq("KV 未綁定", (await call("POST", "translate", { env: {} })).upstream.endsWith("/translate"), true);
@@ -117,6 +128,31 @@ eq("KV 空值 → fallback",
 console.log("# tunnel 掛掉時回 502，前端才好退回內建對照表");
 globalThis.fetch = async () => { throw new Error("tunnel down"); };
 eq("上游不通", (await call("POST", "clips")).status, 502);
+eq("上游不通 → 辨識前端讀得到 JSON", (await callBody("POST", "knee42/stream")).json?.ok, false);
+
+console.log("# 辨識：Cloudflare 那一段吐純文字時，前端拿到的仍是 JSON");
+// 2026-09-14 20:20：瀏覽器收到「Error: Network connection lost.」純文字，
+// 前端 res.json() 只丟出一句 Unexpected token 'E'，後端日誌裡沒有這個請求
+globalThis.fetch = async () => new Response("Error: Network connection lost.", {
+  status: 500, headers: { "Content-Type": "text/plain" },
+});
+const lost = await callBody("POST", "knee42/stream");
+eq("純文字 → 502", lost.status, 502);
+eq("純文字 → ok:false 的 JSON", lost.json?.ok, false);
+eq("原文留在 message 裡", /Network connection lost/.test(lost.json?.message || ""), true);
+
+globalThis.fetch = async () => new Response(new ReadableStream({
+  pull(controller) { controller.error(new Error("Network connection lost.")); },
+}), { status: 200, headers: { "Content-Type": "application/json" } });
+const cut = await callBody("POST", "knee42/predict");
+eq("讀回應讀到一半斷線 → 502", cut.status, 502);
+eq("讀回應讀到一半斷線 → JSON", cut.json?.ok, false);
+
+globalThis.fetch = async () => new Response('{"ok": false, "message": "payload is empty or too large"}', {
+  status: 400, headers: { "Content-Type": "application/json" },
+});
+const bad = await callBody("POST", "knee42/predict");
+eq("後端自己的 JSON 錯誤原樣帶過", [bad.status, bad.json?.message], [400, "payload is empty or too large"]);
 
 console.log(failed ? `\n${failed} 項失敗` : "\n全部通過");
 process.exit(failed ? 1 : 0);

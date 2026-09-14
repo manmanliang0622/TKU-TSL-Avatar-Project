@@ -120,7 +120,8 @@ export async function onRequest({ request, env, params }) {
   } catch (error) {
     // tunnel 掛了或還在重拉。前端的 fetch 已經有 catch，會退回內建對照表
     // （/translate）或直接顯示詞庫缺動畫（/clips），不會整頁壞掉。
-    return json(502, { error: `upstream unreachable: ${error?.message || error}`, source });
+    const message = `upstream unreachable: ${error?.message || error}`;
+    return json(502, { ok: false, error: message, message, source });
   }
 
   const out = new Headers();
@@ -129,5 +130,25 @@ export async function onRequest({ request, env, params }) {
   }
   // 只講來源，不講網址：位址本身沒必要對外公開
   out.set("X-Tsl-Api-Base-Source", source);
+
+  // 辨識的回應都是幾 KB 的 JSON，整份讀完再送出。直接串流的話，讀到一半
+  // 斷線這裡接不住；Cloudflare 那一段自己吐的純文字錯誤（2026-09-14 實測
+  // 「Error: Network connection lost.」）也會原樣流到前端，被當成 JSON 解析
+  // —— 使用者只看到一句 Unexpected token 'E'，後端日誌裡卻連這個請求都沒有。
+  // /clip 是影片片段，照舊串流。
+  if (route === "knee42") {
+    let text;
+    try {
+      text = await upstream.text();
+    } catch (error) {
+      const message = `upstream body lost: ${error?.message || error}`;
+      return json(502, { ok: false, error: message, message, source });
+    }
+    if (!/json/i.test(upstream.headers.get("content-type") || "")) {
+      const message = `upstream returned non-JSON (HTTP ${upstream.status}): ${text.trim().slice(0, 120)}`;
+      return json(502, { ok: false, error: message, message, source });
+    }
+    return new Response(text, { status: upstream.status, statusText: upstream.statusText, headers: out });
+  }
   return new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers: out });
 }
