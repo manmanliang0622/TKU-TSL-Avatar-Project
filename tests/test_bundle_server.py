@@ -29,7 +29,7 @@ def load_bundle_server():
 
 
 class FakeModelHandler(BaseHTTPRequestHandler):
-    model_name = "qlora_e4b_v11_holdout"
+    model_name = ""  # 每個測試的 setUp 換成 bundle_server 的 EXPECTED_MODEL
     delay_seconds = 0
     active_requests = 0
     max_active_requests = 0
@@ -156,7 +156,9 @@ class BundleServerBehaviorTests(unittest.TestCase):
     def setUp(self):
         self.bundle = load_bundle_server()
         self.bundle.MODEL_PROC = self.AliveProcess()
-        FakeModelHandler.model_name = "qlora_e4b_v11_holdout"
+        # 線上模型會被無預告換版（同一天 v19 → v21），版本號跟著 bundle_server
+        # 的 EXPECTED_MODEL 走；寫死在這裡只會讓每次換版都誤報成壞掉
+        FakeModelHandler.model_name = self.bundle.EXPECTED_MODEL
         FakeModelHandler.delay_seconds = 0
         FakeModelHandler.active_requests = 0
         FakeModelHandler.max_active_requests = 0
@@ -214,21 +216,22 @@ class BundleServerBehaviorTests(unittest.TestCase):
         self.assertIn(str(ROOT / "model_service/base_model"), command)
         self.assertIn(str(ROOT / "model_service/checkpoint"), command)
         self.assertIn(str(ROOT / "model_service/scripts/serve_model.py"), command)
-        self.assertIn("--target", command)
-        self.assertIn("json", command)
-        self.assertIn("--model-name", command)
-        self.assertIn("qlora_e4b_v11_holdout", command)
+        # 0821 服務的是腳本格式（tsl-script-v1）：輸出 sign_ids 陣列＋oov_items，
+        # 比舊 JSON 長，--max-new 沿用預設 64 會把輸出截斷
+        self.assertEqual(command[command.index("--target") + 1], "script")
+        self.assertEqual(command[command.index("--max-new") + 1], "256")
+        self.assertEqual(command[command.index("--model-name") + 1], self.bundle.EXPECTED_MODEL)
         self.assertIn("8877", command)
         self.assertNotIn("/home/b310ai/0812", joined)
         self.assertNotIn("tku-tsl-text-to-gloss", joined)
         self.assertNotIn(".cache/huggingface", joined)
 
-    def test_health_reports_v11_model(self):
+    def test_health_reports_expected_model(self):
         status, data = self.request("GET", "/health")
         self.assertEqual(status, 200)
         self.assertEqual(data["status"], "ok")
         self.assertEqual(data["frontend"], "ok")
-        self.assertEqual(data["model"], "qlora_e4b_v11_holdout")
+        self.assertEqual(data["model"], self.bundle.EXPECTED_MODEL)
 
     def test_health_rejects_wrong_model_identity(self):
         FakeModelHandler.model_name = "qlora_e4b_v12_context"
@@ -247,7 +250,7 @@ class BundleServerBehaviorTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(data["chinese"], "我要喝水")
         self.assertEqual(data["gloss"], ["我", "水", "喝", "要"])
-        self.assertEqual(data["model"], "qlora_e4b_v11_holdout")
+        self.assertEqual(data["model"], self.bundle.EXPECTED_MODEL)
 
     def test_translate_rejects_non_string_and_long_text(self):
         status, data = self.request("POST", "/translate", {"text": {"bad": "type"}})
@@ -305,7 +308,6 @@ class BundleServerBehaviorTests(unittest.TestCase):
         self.assertEqual(FakeModelHandler.total_requests, 2)
 
     def test_a_failed_translation_is_not_remembered(self):
-        FakeModelHandler.model_name = "qlora_e4b_v11_holdout"
         status, _data = self.request("POST", "/translate", {"text": ""})
         self.assertEqual(status, 400)
         self.assertEqual(FakeModelHandler.total_requests, 0)
@@ -333,7 +335,7 @@ class BundleServerBehaviorTests(unittest.TestCase):
 
 
 class RecognizerProxyTests(unittest.TestCase):
-    """/recognize/* 只是轉發：白名單、身長上限、服務沒開時的明確 503。
+    """/knee42/* 只是轉發：白名單、身長上限、服務沒開時的明確 503。
 
     Knee42 webservice 永遠把 socket 包進自簽 TLS，所以假伺服器也得是 HTTPS，
     bundle_server 那端關驗證（憑證本來就驗不過）才連得上——這裡順便驗證
@@ -358,11 +360,11 @@ class RecognizerProxyTests(unittest.TestCase):
                 recognizer_server.socket, server_side=True
             )
             threading.Thread(target=recognizer_server.serve_forever, daemon=True).start()
-            self.bundle.RECOGNIZER_PORT = recognizer_server.server_address[1]
+            self.bundle.KNEE42_PORT = recognizer_server.server_address[1]
         else:
             # 保證沒人在聽的 port：綁一個再立刻關掉
             probe = ThreadingHTTPServer(("127.0.0.1", 0), FakeRecognizerHandler)
-            self.bundle.RECOGNIZER_PORT = probe.server_address[1]
+            self.bundle.KNEE42_PORT = probe.server_address[1]
             probe.server_close()
 
         frontend_server = ThreadingHTTPServer(("127.0.0.1", 0), self.bundle.Handler)
@@ -395,32 +397,34 @@ class RecognizerProxyTests(unittest.TestCase):
 
     def test_predict_and_stream_are_forwarded(self):
         status, data = self.request(
-            "POST", "/recognize/predict", {"frames": [{"timestamp": 0.0, "hands": []}]}
+            "POST", "/knee42/predict", {"frames": [{"timestamp": 0.0, "hands": []}]}
         )
         self.assertEqual(status, 200)
         self.assertEqual(data["whole"]["top"][0]["text"], "我要喝水")
         status, data = self.request(
-            "POST", "/recognize/stream", {"session": "abc", "reset": True, "frames": []}
+            "POST", "/knee42/stream", {"session": "abc", "reset": True, "frames": []}
         )
         self.assertEqual(status, 200)
         self.assertEqual(data["session"], "abc")
         self.assertTrue(data["calibrated"])
 
     def test_health_and_labels_are_forwarded(self):
-        status, data = self.request("GET", "/recognize/health")
+        status, data = self.request("GET", "/knee42/health")
         self.assertEqual(status, 200)
         self.assertEqual(data["classes"], 42)
-        status, data = self.request("GET", "/recognize/labels")
+        status, data = self.request("GET", "/knee42/labels")
         self.assertEqual(status, 200)
         self.assertEqual(data["labels"][0]["text"], "你好")
 
     def test_only_whitelisted_recognizer_routes_exist(self):
         # 辨識服務還有 /analyze_url（會對外抓影片）等端點，不在白名單上的不轉
         for method, path in [
-            ("POST", "/recognize/analyze_url"),
-            ("POST", "/recognize/analyze_upload"),
-            ("GET", "/recognize"),
-            ("GET", "/recognize/job/abc"),
+            ("POST", "/knee42/analyze_url"),
+            ("POST", "/knee42/analyze_upload"),
+            ("GET", "/knee42/job/abc"),
+            # 動詞也要對：POST 路徑用 GET 打、GET 路徑用 POST 打都不轉
+            ("GET", "/knee42/predict"),
+            ("POST", "/knee42/labels"),
         ]:
             with self.subTest(path=path):
                 payload = {"url": "https://example.com"} if method == "POST" else None
@@ -429,18 +433,19 @@ class RecognizerProxyTests(unittest.TestCase):
 
     def test_recognizer_down_is_a_clear_503(self):
         status, data = self.request(
-            "POST", "/recognize/stream", {"session": "x", "frames": []}, recognizer_up=False
+            "POST", "/knee42/stream", {"session": "x", "frames": []}, recognizer_up=False
         )
         self.assertEqual(status, 503)
-        self.assertIn("recognizer unavailable", data["error"])
+        self.assertEqual(data["ok"], False)
+        self.assertIn("辨識服務未啟動", data["error"])
 
     def test_recognize_body_limit_is_wider_but_bounded(self):
         # landmark 幀比 /translate 的一句話大得多，上限放寬到 32 MiB，但仍有上限
-        self.assertEqual(self.bundle.RECOGNIZE_MAX_BODY, 32 * 1024 * 1024)
+        self.assertEqual(self.bundle.KNEE42_MAX_BODY, 32 * 1024 * 1024)
         status, data = self.request(
             "POST",
-            "/recognize/predict",
-            declared_length=self.bundle.RECOGNIZE_MAX_BODY + 1,
+            "/knee42/predict",
+            declared_length=self.bundle.KNEE42_MAX_BODY + 1,
             recognizer_up=False,
         )
         self.assertEqual(status, 400)

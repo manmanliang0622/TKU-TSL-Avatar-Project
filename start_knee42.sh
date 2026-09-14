@@ -3,7 +3,7 @@
 #
 # 它是獨立 repo、獨立 venv（torch CPU 版），不併進 0813 的 .venv——
 # 0813 那份只裝模型服務要用的套件，混裝 torch 2.13 會動到 Gemma 的相依。
-# 只綁 loopback：對外一律經 bundle_server 的 /recognize/* 白名單轉發，
+# 只綁 loopback：對外一律經 bundle_server 的 /knee42/* 白名單轉發，
 # 辨識服務自己的 /analyze_url（會對外抓影片）等端點不暴露。
 set -euo pipefail
 
@@ -58,7 +58,7 @@ wait_for_health() {
       cat "$ROOT/logs/last-knee42-health.json"
       echo
       echo "Knee42 is ready on https://127.0.0.1:$KNEE42_PORT/ (loopback only)."
-      echo "前端入口：bundle_server 的 /recognize/*（線上站走 /api/recognize/*）"
+      echo "前端入口：bundle_server 的 /knee42/*（線上站走 /api/knee42/*）"
       return 0
     fi
     if ! pid_is_ours "$pid"; then

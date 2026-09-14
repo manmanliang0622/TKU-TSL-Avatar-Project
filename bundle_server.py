@@ -26,31 +26,19 @@ from urllib.parse import parse_qs, unquote, urlsplit
 ROOT = Path(__file__).resolve().parent
 LOG_DIR = ROOT / "logs"
 MODEL_PORT = 8877
+# 手語辨識端（~/knee42 的 Knee42 webservice），自簽 TLS、只綁 127.0.0.1。
+# 前端走同源 /knee42/* 由本服務轉發，避免瀏覽器面對自簽憑證與 CORS。
+KNEE42_PORT = int(os.environ.get("KNEE42_PORT", "8642"))
+KNEE42_MAX_BODY = 32 * 1024 * 1024
 MODEL_PROC: subprocess.Popen[bytes] | None = None
 MODEL_LOCK = threading.Lock()
 MODEL_LOG = None
 MODEL_ERR = None
-EXPECTED_MODEL = "qlora_e4b_v11_holdout"
+# 0821 服務的是新格式（tsl-script-v1）的 v14，與 0813 的 v11 是不同任務：
+# 模型輸出 sign_id 而非 gloss 字串。這個字串會被 /health 的 model_identity_ok
+# 檢查比對，改錯會讓服務一直判定「載到錯的模型」。
+EXPECTED_MODEL = "qlora_e4b_v21script"
 INFERENCE_LOCK = threading.Lock()
-# 手語辨識（Knee42 Transformer，獨立 repo、獨立 venv）跑在同一台的另一個
-# port 上，這裡只轉發白名單內的路徑。它永遠走 TLS（webservice.server 起手
-# 就把 socket 包進自簽憑證），所以連 loopback 也得用 HTTPS，並關閉驗證——
-# 憑證是它自己簽給 localhost 的，鏈本來就驗不過。
-RECOGNIZER_PORT = int(os.environ.get("RECOGNIZER_PORT", "8642"))
-# 上傳影片走「瀏覽器抽 landmark、整段一次送」：三分鐘 30fps 約 10 MB，
-# 32 MiB 留足餘裕；/translate 與 /clips 維持原本 1 MiB，互不放寬。
-RECOGNIZE_MAX_BODY = 32 * 1024 * 1024
-# 路徑 → (方法, 上游路徑, 逾時)。/predict 整段影片切段＋逐段推論最慢，
-# 給到 120 秒；/stream 一次只吃 400ms 的 landmark，30 秒已經是壞掉等級。
-RECOGNIZE_ROUTES = {
-    "/recognize/predict": ("POST", "/predict", 120.0),
-    "/recognize/stream": ("POST", "/stream", 30.0),
-    "/recognize/health": ("GET", "/health", 5.0),
-    "/recognize/labels": ("GET", "/labels", 5.0),
-}
-_RECOGNIZER_TLS = ssl.create_default_context()
-_RECOGNIZER_TLS.check_hostname = False
-_RECOGNIZER_TLS.verify_mode = ssl.CERT_NONE
 STOP_EVENT = threading.Event()
 MODEL_RESTART_COUNT = 0
 MODEL_RESTART_EXHAUSTED = False
@@ -116,11 +104,15 @@ def model_cmd(model_port: int) -> list[str]:
         "--adapter",
         str(ROOT / "model_service/checkpoint"),
         "--target",
-        "json",
+        "script",
         "--model-name",
         EXPECTED_MODEL,
         "--port",
         str(model_port),
+        # 腳本格式的輸出比舊 JSON 長（sign_ids 陣列＋oov_items），實測約 92 token。
+        # 沿用預設 64 會把 JSON 截斷，變成 ValidJSON 掉到 0 而看起來像模型壞掉。
+        "--max-new",
+        "256",
         "--ple",
         os.environ.get("MODEL_PLE", "gpu"),
     ]
@@ -142,15 +134,17 @@ def model_request(
         connection.close()
 
 
-def recognizer_request(
+def knee42_request(
     method: str,
     path: str,
     body: bytes | None = None,
     headers: dict[str, str] | None = None,
-    timeout: float = 10.0,
+    timeout: float = 60.0,
 ) -> tuple[int, list[tuple[str, str]], bytes]:
+    # 辨識端強制 TLS 且憑證是自簽的；只連本機 loopback，跳過驗證是安全的。
+    context = ssl._create_unverified_context()
     connection = http.client.HTTPSConnection(
-        "127.0.0.1", RECOGNIZER_PORT, timeout=timeout, context=_RECOGNIZER_TLS
+        "127.0.0.1", KNEE42_PORT, timeout=timeout, context=context
     )
     try:
         connection.request(method, path, body=body, headers=headers or {})
@@ -376,6 +370,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        # Chrome PNA：https 頁面（pages.dev）打 SSH tunnel 進來的 loopback 需要這行
+        self.send_header("Access-Control-Allow-Private-Network", "true")
         super().end_headers()
 
     def send_json(self, status: int, payload: dict[str, Any]) -> None:
@@ -405,38 +401,6 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(body)
-
-    def proxy_recognizer(self, route: str, body: bytes | None = None) -> None:
-        """Forward one whitelisted path to the Knee42 recognizer, or say it is down.
-
-        沒有 INFERENCE_LOCK：那把鎖是為了 v11 語言模型（一次只能吃一句），
-        辨識器自己會排隊（影片工作單執行緒、串流各自有 session），
-        在這裡再串行化只會讓兩位使用者互相卡住。
-        """
-        method, upstream_path, timeout = RECOGNIZE_ROUTES[route]
-        headers = {}
-        content_type = self.headers.get("Content-Type")
-        if content_type:
-            headers["Content-Type"] = content_type
-        try:
-            status, response_headers, payload = recognizer_request(
-                method, upstream_path, body=body, headers=headers, timeout=timeout
-            )
-        except (OSError, TimeoutError) as error:
-            # 前端把 503 當成「辨識服務沒開」，會顯示明確訊息而不是轉圈圈
-            self.send_json(503, {"error": "recognizer unavailable", "detail": str(error)})
-            return
-        self.send_response(status)
-        response_type = next(
-            (value for key, value in response_headers if key.lower() == "content-type"),
-            "application/json; charset=utf-8",
-        )
-        self.send_header("Content-Type", response_type)
-        self.send_header("Content-Length", str(len(payload)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        if self.command != "HEAD":
-            self.wfile.write(payload)
 
     def serve_clip_query(self) -> None:
         query = parse_qs(urlsplit(self.path).query)
@@ -527,13 +491,53 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(204)
         self.end_headers()  # CORS 標頭由 end_headers 統一補上
 
+    KNEE42_GET_ROUTES = frozenset({"/health", "/labels"})
+    KNEE42_POST_ROUTES = frozenset({"/predict", "/stream"})
+
+    def serve_knee42(self, route: str) -> None:
+        upstream = route[len("/knee42"):]
+        allowed = self.KNEE42_POST_ROUTES if self.command == "POST" else self.KNEE42_GET_ROUTES
+        if upstream not in allowed:
+            self.send_json(404, {"ok": False, "error": "not found"})
+            return
+        body = None
+        headers: dict[str, str] = {}
+        if self.command == "POST":
+            try:
+                content_length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                self.send_json(400, {"ok": False, "error": "invalid Content-Length"})
+                return
+            if content_length <= 0 or content_length > KNEE42_MAX_BODY:
+                self.send_json(400, {"ok": False, "error": "request body must be between 1 byte and 32 MiB"})
+                return
+            body = self.rfile.read(content_length)
+            headers["Content-Type"] = self.headers.get("Content-Type", "application/json; charset=utf-8")
+        try:
+            status, response_headers, response_body = knee42_request(
+                self.command, upstream, body=body, headers=headers
+            )
+        except (OSError, TimeoutError) as error:
+            self.send_json(503, {"ok": False, "error": "辨識服務未啟動", "detail": str(error)})
+            return
+        self.send_response(status)
+        content_type = next(
+            (value for key, value in response_headers if key.lower() == "content-type"),
+            "application/json; charset=utf-8",
+        )
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(response_body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(response_body)
+
     def do_GET(self) -> None:
         request_path = urlsplit(self.path).path
+        if request_path.startswith("/knee42/"):
+            self.serve_knee42(request_path)
+            return
         if request_path == "/clip":
             self.serve_clip_query()
-            return
-        if request_path in RECOGNIZE_ROUTES and RECOGNIZE_ROUTES[request_path][0] == "GET":
-            self.proxy_recognizer(request_path)
             return
         if request_path != "/health":
             if not is_public_static_path(self.path):
@@ -589,8 +593,10 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         route = self.path.split("?", 1)[0]
-        recognize = route in RECOGNIZE_ROUTES and RECOGNIZE_ROUTES[route][0] == "POST"
-        if route not in {"/translate", "/clips"} and not recognize:
+        if route.startswith("/knee42/"):
+            self.serve_knee42(route)
+            return
+        if route not in {"/translate", "/clips"}:
             self.send_json(404, {"error": "not found"})
             return
         try:
@@ -598,14 +604,10 @@ class Handler(SimpleHTTPRequestHandler):
         except ValueError:
             self.send_json(400, {"error": "invalid Content-Length"})
             return
-        limit = RECOGNIZE_MAX_BODY if recognize else 1_048_576
-        if content_length <= 0 or content_length > limit:
-            self.send_json(400, {"error": f"request body must be between 1 byte and {limit} bytes"})
+        if content_length <= 0 or content_length > 1_048_576:
+            self.send_json(400, {"error": "request body must be between 1 byte and 1 MiB"})
             return
         body = self.rfile.read(content_length)
-        if recognize:
-            self.proxy_recognizer(route, body)
-            return
         if route == "/clips":
             self.serve_clip_batch(body)
             return
@@ -668,22 +670,15 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def main() -> None:
-    global MODEL_PORT, RECOGNIZER_PORT
+    global MODEL_PORT
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8083")))
     parser.add_argument(
         "--model-port", type=int, default=int(os.environ.get("MODEL_PORT", "8877"))
     )
-    parser.add_argument(
-        "--recognizer-port",
-        type=int,
-        default=int(os.environ.get("RECOGNIZER_PORT", "8642")),
-        help="Knee42 手語辨識服務（start_knee42.sh）所在的 loopback port",
-    )
     args = parser.parse_args()
     MODEL_PORT = args.model_port
-    RECOGNIZER_PORT = args.recognizer_port
     if args.host not in {"127.0.0.1", "localhost", "::1"}:
         parser.error("0813 only supports a loopback host; use an SSH tunnel")
     LOG_DIR.mkdir(parents=True, exist_ok=True)

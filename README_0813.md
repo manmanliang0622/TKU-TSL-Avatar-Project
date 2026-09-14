@@ -140,8 +140,8 @@ cd /home/b310ai/0813
 
 瀏覽器永遠不直連 8642。路徑跟 `/translate` 同一套：
 
-- 學校主機／tunnel 直開：`bundle_server` 的 `/recognize/*`（白名單轉發到 8642）
-- 線上站（pages.dev）：同源 `/api/recognize/*` → Pages Function → tunnel → `bundle_server`
+- 學校主機／tunnel 直開：`bundle_server` 的 `/knee42/*`（白名單轉發到 8642）
+- 線上站（pages.dev）：同源 `/api/knee42/*` → Pages Function → tunnel → `bundle_server`
 
 只轉 `predict`／`stream`／`health`／`labels` 四條。辨識服務還有
 `/analyze_url`（會 shell 出 yt-dlp 對外抓影片）、`/analyze_upload` 等端點，
@@ -149,23 +149,25 @@ cd /home/b310ai/0813
 
 兩種輸入的分工：
 
-- **即時攝影機**：每 400ms 把累積的骨架送 `/recognize/stream`，起訖判定
-  （校準過的七百行狀態機）在伺服器上，比完把手放回身側就自動出結果。
-- **上傳影片**：影片播一次、逐格抽骨架，整段送 `/recognize/predict`，
+- **即時攝影機（自動切段）**：把累積的骨架送 `/knee42/stream`（比劃中每 100ms、
+  其他時候每 400ms），起訖判定（校準過的七百行狀態機）在伺服器上，比完把手放回
+  校準時的休息位置就自動出結果。
+- **即時攝影機（手動切段）**：空白鍵控制一句的開始與結束，整句送 `/knee42/predict`。
+- **上傳影片**：影片播一次、逐格抽骨架，整段送 `/knee42/predict`，
   伺服器切段＋逐段推論；單句影片常切不出段，整段結果才是答案。
 
-辨識出的句子會再丟回 Gemma `/translate` 取手語語序（伺服器端有快取），
-Gemma 離線就退回內建對照表——語序列是輔助顯示，不卡辨識結果。
+結果區列出前三名候選與機率，不再經過 Gemma `/translate`。
 
 ### 健康檢查
 
 ```bash
 curl -k https://127.0.0.1:8642/health          # 辨識服務本體
-curl http://127.0.0.1:8083/recognize/health    # 經 bundle_server 轉發
-curl https://signbridge-2co.pages.dev/api/recognize/health   # 線上站全鏈路
+curl http://127.0.0.1:8084/knee42/health       # 經 bundle_server 轉發（0821 在 8084）
+curl https://signbridge-2co.pages.dev/api/knee42/health   # 線上站全鏈路
 ```
 
-前端連不到時會明講「請確認學校電腦已跑 start_knee42.sh」，不會退回假資料。
+網路抖動（Cloudflare 那一段偶爾會斷十幾秒）前端先重試 3 次；真的連不上就明講
+「辨識後端連線失敗」，辨識模組沒載入也會明講，都不會退回假資料。
 
 ### 已知限制（照實講給使用者聽）
 
