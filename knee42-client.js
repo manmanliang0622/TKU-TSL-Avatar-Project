@@ -25,7 +25,7 @@ const API_BASE = (localStorage.getItem("recognitionApi")
       ? `${window.SignAvatarConfig.apiBase}/knee42`
       : `${location.origin}/knee42`)).replace(/\/$/, "");
 
-// 自動模式的送批節奏。手放回原位後，伺服器要湊滿 end_hold_sec（0.5 秒）的靜止幀
+// 自動模式的送批節奏。手放回原位後，伺服器要湊滿 end_hold_sec（線上 0.35 秒）的靜止幀
 // 才切段；最後那一幀在前端還得等下一次送批、再走一趟往返，結果才會出現。
 // 線上實測（2026-09-14）連線熱著時一趟 /stream 0.16–0.23 秒，一批 3 幀或 12 幀
 // 都一樣 —— 慢的是固定 400ms 才送一次，不是資料量。所以只在比劃中改成「上一批
@@ -79,7 +79,7 @@ let mode = null;                 // null | "auto"（攝影機自動切段）| "m
 let latestFrame = null;          // 偵測迴圈的最新一幀 {pose, hands}
 let autoBuf = [], autoSession = "", autoT0 = 0, autoSending = false, autoTimer = null;
 let autoReset = false, autoFailures = 0, autoRetryAt = 0;
-let autoState = "", autoLastSent = 0, autoCalibrated = false, autoTimeouts = 0;
+let autoState = "", autoLastSent = 0, autoCalibrated = false;
 let clipBuf = [], clipStart = 0, clipBusy = false;
 let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
 // 攝影機的切段方式；上傳影片一律整段送 /predict，與此無關。
@@ -341,7 +341,6 @@ function startAuto() {
   autoState = "";
   autoLastSent = 0;
   autoCalibrated = false;
-  autoTimeouts = 0;
   showAnalyzing("自動偵測中");
   setStatus("校準中", "active");
   startBtn.textContent = "停止辨識";
@@ -384,18 +383,7 @@ async function flushAuto() {
     (data.results || []).forEach(seg => {
       if (!seg.top?.length) return;
       renderTop(seg.top);
-      if (seg.reason !== "timeout_finalize") {
-        autoTimeouts = 0;
-        note(`第 ${seg.index} 句（${seg.frames} 幀）辨識完成，可以繼續比下一句。`);
-        return;
-      }
-      // 伺服器的靜止基準只在開始那一秒記一次、之後不再更新。手沒回到那個位置，
-      // 這句就只能等到時間上限（線上設定 12 秒）才被強制切斷 —— 這是自動模式
-      // 慢的主因，而且段落裡塞滿靜止幀，辨識也不準。告訴使用者怎麼避開。
-      autoTimeouts++;
-      const secs = seg.start != null && seg.end != null ? `${(seg.end - seg.start).toFixed(1)} 秒` : "時間";
-      note(`第 ${seg.index} 句沒偵測到手回到休息位置，等到 ${secs}上限才切斷，所以比較慢。比完請把手放回開始時的位置、停半秒。`
-        + (autoTimeouts >= 2 ? "連續幾句都這樣的話，按「停止辨識」再重新開始，讓系統重新記一次休息姿勢。" : ""), "warn");
+      note(`第 ${seg.index} 句（${seg.frames} 幀）辨識完成，可以繼續比下一句。`);
     });
   } catch (err) {
     if (mode !== "auto") return;
