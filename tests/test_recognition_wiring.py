@@ -106,7 +106,8 @@ class RecognitionFlowTests(unittest.TestCase):
         script = read("script.js")
         start = js_function(script, "function startRecognition(")
         self.assertIn("window.Knee42.toggle()", start)
-        self.assertIn("沒有載入成功", start)
+        # 畫面上不放錯誤說明（2026-09-14 起），靠狀態列標出「無法辨識」
+        self.assertIn('setRecStatus("無法辨識"', start)
         self.assertNotIn("辨識完成", start)
         # 按鈕與 Enter 鍵都走這一個入口，不各自留退路
         self.assertIn('querySelector("#startRecognition").addEventListener("click", startRecognition)', script)
@@ -141,11 +142,13 @@ class RecognitionFlowTests(unittest.TestCase):
 
     def test_a_dead_backend_is_reported_not_faked(self):
         client = read("knee42-client.js")
+        # 畫面上不放錯誤說明（2026-09-14 起），但狀態列與結果區仍要標出失敗，
+        # 不能停在「分析中」或看起來像辨識成功
         for signature in ("async function finishManual(", "async function finishClip("):
             body = js_function(client, signature)
             self.assertIn('spoken.textContent = "辨識失敗。"', body, signature)
-            self.assertIn("failureNote(err)", body, signature)
-        self.assertIn("failureNote(err)", js_function(client, "async function flushAuto("))
+            self.assertIn('setStatus("連線失敗"', body, signature)
+        self.assertIn('setStatus("連線失敗"', js_function(client, "async function flushAuto("))
 
 
 class FlakyNetworkTests(unittest.TestCase):

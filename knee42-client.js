@@ -58,7 +58,6 @@ const badge    = document.querySelector("#handsBadge");
 const tokens   = document.querySelector("#recognitionTokens");
 const spoken   = document.querySelector("#spokenResult");
 const statusEl = document.querySelector("#recognitionStatus");
-const message  = document.querySelector("#cameraMessage");
 const startBtn = document.querySelector("#startRecognition");
 const segSwitch    = document.querySelector("#segModeSwitch");
 const autoSegBtn   = document.querySelector("#autoSegButton");
@@ -87,19 +86,6 @@ let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
 // （要改回記住上次選擇的話，換成：
 //   localStorage.getItem("recognitionSegMode") === "auto" ? "auto" : "manual"）
 let segMode = "manual";
-
-// 控制台訊息。#cameraMessage 平常被 .rail .console-note 裁成 1×1，掛上 data-state
-// 才回到畫面。只拿來講出錯（攝影機沒開成、後端沒連上、這句幀數不夠）；
-// 流程中的操作提示一律不寫，換狀態時用 clearNote() 把上一則錯誤收掉。
-// script.js 有一份同樣的 setConsoleNote。
-function note(text, state = "warn") {
-  message.textContent = text;
-  message.dataset.state = state;
-}
-function clearNote() {
-  message.textContent = "";
-  delete message.dataset.state;
-}
 
 function setStatus(text, state = "idle") {
   statusEl.textContent = text;
@@ -328,10 +314,10 @@ async function postJson(path, payload) {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-function failureNote(err) {
-  return err.transient
-    ? `辨識後端連線失敗（已重試 ${RETRY_DELAYS_MS.length} 次）：${err.message}`
-    : `辨識後端回報錯誤：${err.message}`;
+// 畫面上不放提示或錯誤說明（狀態列與結果區已經標出「連線失敗」「辨識失敗」），
+// 細節只寫進主控台，查問題時還有線索。
+function logFailure(where, err) {
+  console.warn(`[knee42] ${where}：${err.transient ? `連線失敗（已重試 ${RETRY_DELAYS_MS.length} 次）` : "後端回報錯誤"}`, err.message);
 }
 
 // ── 自動模式（攝影機 → /stream）──
@@ -348,7 +334,6 @@ function startAuto() {
   showAnalyzing("自動偵測中");
   setStatus("校準中", "active");
   startBtn.textContent = "停止辨識";
-  clearNote();
   flushAuto();
   autoTimer = setInterval(flushAuto, STREAM_TICK_MS);
 }
@@ -390,7 +375,7 @@ async function flushAuto() {
     }
     stopAuto();
     setStatus("連線失敗", "idle");
-    note(`${failureNote(err)}。請確認後端狀態後重試。`, "warn");
+    logFailure("/stream", err);
   } finally {
     autoSending = false;
     // 比劃中不等下一個 tick，回應一到就把這段時間累積的幀送出去
@@ -439,7 +424,6 @@ function startManual() {
     segActionBtn.disabled = false;
     segActionBtn.textContent = "開始這句（空白鍵）";
   }
-  clearNote();
 }
 
 function manualToggleSegment() {
@@ -451,7 +435,6 @@ function manualToggleSegment() {
     showAnalyzing("錄製中");
     setStatus("錄製中", "active");
     if (segActionBtn) segActionBtn.textContent = "結束這句（空白鍵）";
-    clearNote();
   } else {
     manualRecording = false;
     finishManual();
@@ -466,7 +449,6 @@ function cancelManualSegment() {
   if (segActionBtn) segActionBtn.textContent = "開始這句（空白鍵）";
   spoken.textContent = "已取消這句。";
   setStatus("待命", "active");
-  clearNote();
 }
 
 async function finishManual() {
@@ -478,7 +460,6 @@ async function finishManual() {
   if (frames.length < MIN_FRAMES || withPose < MIN_FRAMES) {
     spoken.textContent = "有效幀太少，無法辨識。";
     setStatus("待命", "active");
-    note(`這句只錄到 ${frames.length} 幀（${withPose} 幀有偵測到身體）。請確認上半身完整入鏡後重錄一次。`, "warn");
     return;
   }
   manualBusy = true;
@@ -493,14 +474,13 @@ async function finishManual() {
     if (!top.length) {
       spoken.textContent = "未能辨識。";
       setStatus(mode === "manual" ? "待命" : "等待輸入", mode === "manual" ? "active" : "idle");
-      note(data.message || "這句偵測不到足夠的骨架，請確認上半身完整入鏡後重錄。", "warn");
     } else {
       renderTop(top);
     }
   } catch (err) {
     spoken.textContent = "辨識失敗。";
     setStatus("連線失敗", mode === "manual" ? "active" : "idle");
-    note(`${failureNote(err)}。請確認後端狀態後重錄這一句。`, "warn");
+    logFailure("/predict", err);
   } finally {
     manualBusy = false;
     if (segActionBtn) segActionBtn.disabled = false;
@@ -522,11 +502,12 @@ async function startClip() {
   clipStart = performance.now();
   showAnalyzing("影片分析中");
   startBtn.textContent = "取消辨識";
-  clearNote();
   video.currentTime = 0;
   try { await video.play(); } catch {
     stopClip();
-    note("無法播放影片，請重新載入檔案。", "warn");
+    resetSteps();
+    spoken.textContent = "尚未辨識";
+    setStatus("等待輸入", "idle");
   }
 }
 
@@ -539,7 +520,6 @@ async function finishClip() {
     stopClip();
     spoken.textContent = "有效幀太少，無法辨識。";
     setStatus("等待輸入", "idle");
-    note(`只取到 ${frames.length} 幀（${withPose} 幀有偵測到身體）。請確認影片中上半身完整入鏡。`, "warn");
     return;
   }
   clipBusy = true;
@@ -553,14 +533,13 @@ async function finishClip() {
     if (!top.length) {
       spoken.textContent = "未能辨識。";
       setStatus("等待輸入", "idle");
-      note(data.message || "影片中偵測不到足夠的骨架，請確認上半身完整入鏡。", "warn");
       return;
     }
     renderTop(top);
   } catch (err) {
     spoken.textContent = "辨識失敗。";
     setStatus("連線失敗", "idle");
-    note(`${failureNote(err)}。`, "warn");
+    logFailure("/predict", err);
   } finally {
     clipBusy = false;
     stopClip();
@@ -591,7 +570,6 @@ function toggle() {
   const isClip   = Boolean(video.getAttribute("src"));
   if (!isCamera && !isClip) {
     setStatus("等待輸入", "idle");
-    note("請先點擊上方新增手語影片，或切換到即時攝影機。", "warn");
     return;
   }
   loadLandmarkers()
@@ -599,7 +577,6 @@ function toggle() {
     .then(() => (isCamera ? (segMode === "manual" ? startManual() : startAuto()) : startClip()))
     .catch(() => {
       setStatus("等待輸入", "idle");
-      note("骨架偵測模型載入失敗，請檢查網路後重試。", "warn");
     });
 }
 
@@ -631,7 +608,6 @@ function setSegMode(next) {
     // 辨識進行中切換 → 直接換成另一種切段方式，攝影機不中斷
     if (mode === "auto" && next === "manual") { stopAuto(); startManual(); }
     else if (mode === "manual" && next === "auto") { stopManual(); startAuto(); }
-    else if (!mode) clearNote();
   }
   applySegChips();
 }
@@ -698,7 +674,7 @@ window.addEventListener("pagechange", e => {
   }
 });
 
-// ── 後端健康檢查：只在異常時提示 ──
+// ── 後端健康檢查：結果只寫主控台 ──
 let backendChecked = false;
 async function checkBackend() {
   if (backendChecked) return;
@@ -708,8 +684,8 @@ async function checkBackend() {
     const data = await res.json();
     if (!data.ok) throw new Error("not ok");
     console.info(`[knee42] 辨識後端已連線：${data.model}（${data.classes} 類）`);
-  } catch {
-    note("提醒：手語辨識後端目前未連線，開始辨識前請先確認伺服器狀態。", "warn");
+  } catch (err) {
+    console.warn("[knee42] 辨識後端目前未連線", err.message);
   }
 }
 

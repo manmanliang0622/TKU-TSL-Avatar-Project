@@ -419,17 +419,16 @@ h2{
   letter-spacing:var(--tr-zh);
   color:var(--muted);
 }
-/* ── 控制台警示（生成頁狀態列／辨識頁 ※ 說明共用一套）──────────────
-   兩張控制台平常都把訊息藏起來（生成頁靠 visually-hidden，辨識頁靠下面
-   .rail .console-note 的裁切），只有 JS 掛上 data-state 才回到畫面。
+/* ── 控制台警示（生成頁狀態列）──────────────
+   平常靠 visually-hidden 把訊息藏起來，只有 JS 掛上 data-state 才回到畫面。
    既然是唯一一次現身，就要一眼看出不是常規說明：外框 + 放大。
+   （辨識頁的 ※ 訊息列 2026-09-14 整個拿掉：不放操作提示，也不放錯誤說明。）
 
    顏色一律走 ivory 系：兩個側欄的實底都是 rgb(21,20,18)，黑字黑框在這裡
    的對比是 1:1，整塊會完全隱形（跟 .rec-candidates 那段註解是同一個坑）。
    字級不吃 --fs-note 的 15px 下限 —— 這是「你看到的不是模型翻的」「攝影機
    沒開成」這類唯一一次的交代，長者讀不到就等於沒寫。 */
-.rail .status-note[data-state="warn"],
-.rail .console-note[data-state="warn"]{
+.rail .status-note[data-state="warn"]{
   color:var(--ivory);
   border:1px solid var(--ivory);
   border-radius:2px;
@@ -1220,31 +1219,6 @@ h2{
   color:rgba(233,234,228,.68);border-bottom-color:rgba(233,234,228,.4);
 }
 .rail .btn-ghost:hover{color:var(--ivory);border-color:var(--ivory);}
-/* 辨識頁底部那行 ※ 說明改成只給輔助技術讀，畫面上不佔位置 —— 空間讓給結果。
-   元素要留著：script.js 與 knee42-client.js 會直接寫它的 textContent，
-   而且它是 aria-live 區。要放回畫面的話，把下面這段刪掉即可 */
-.rail .console-note{
-  position:absolute;width:1px;height:1px;overflow:hidden;
-  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;
-}
-/* ……但這個元素同時是辨識頁「所有」訊息的唯一出口：攝影機權限沒給、後端
-   沒連上、這句幀數不夠、手動切段要怎麼按，全部寫進它的 textContent。
-   一律裁掉的話，出事時畫面上不會有任何交代（實測：攝影機被拒只會看到角落
-   一個「等待輸入」）。所以靜態說明維持裁切、帶 data-state 的才放回畫面。 */
-.rail .console-note[data-state]{
-  position:static;width:auto;height:auto;overflow:visible;
-  clip:auto;clip-path:none;white-space:normal;
-}
-/* info 是流程中的例行播報（「這句辨識完成，按空白鍵繼續錄下一句」「錄製中…」
-   「攝影機已開啟…」這類）。畫面上不需要它們——每比完一句就多一行字，把下面
-   結果區的位置吃掉。仍然留在 DOM 裡讓輔助技術朗讀，只是不顯示。
-   warn 不動：攝影機沒開成、後端沒連上、幀數不夠這些是真的要被看到的，
-   全部藏起來的話出事時畫面上不會有任何交代。 */
-.rail .console-note[data-state="info"]{
-  position:absolute;width:1px;height:1px;overflow:hidden;
-  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;
-  margin-top:0;padding:0;border:0;
-}
 /* 生成頁的播放控制：跟「轉成手語」同在釘底的動作區，
    由上而下就是使用順序——先轉換，再播放。中間一條髮絲線分開兩個階段 */
 .rail-playback{
@@ -1441,13 +1415,6 @@ h2{
 .stage-speed .speed-label{width:100%;text-align:right;}
 
 /* ---------- RECOGNITION CONSOLE（0813 × cipher） ---------- */
-.console-note{
-  margin:0;
-  font-size:var(--fs-note);line-height:1.7;
-  letter-spacing:var(--tr-zh);
-  color:var(--muted);
-}
-.console-note::before{content:"※ ";}
 /* 42 句分類器的其他候選：小字排在口語句子下方，不搶主結果的視覺。
    辨識台跟生成台一樣是黑舞台反白，顏色要用 ivory 系，用 --muted/--faint
    （黑底 rgba）會整排隱形。 */

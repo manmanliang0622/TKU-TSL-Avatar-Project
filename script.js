@@ -218,7 +218,6 @@ const videoUpload         = document.querySelector("#videoUpload");
 const recognitionTokens   = document.querySelector("#recognitionTokens");
 const spokenResult        = document.querySelector("#spokenResult");
 const recognitionStatus   = document.querySelector("#recognitionStatus");
-const cameraMessage       = document.querySelector("#cameraMessage");
 
 function setRecStatus(text, state = "idle") {
   recognitionStatus.textContent = text;
@@ -278,7 +277,6 @@ function showPage(id, push = true) {
     stopCameraStream();
     previewVideo.srcObject = null;
     showPreview(Boolean(previewVideo.getAttribute("src")));
-    clearConsoleNote();
   }
   if (id !== "generation" && genPlayer.getState() !== "idle") {
     genPlayer.stop();
@@ -570,19 +568,6 @@ function renderGenerationTokens(tokens) {
   });
 }
 
-/* 辨識控制台的訊息。跟生成頁的 setGenerationStatus 同一套：預設不佔版面
-   （這裡是被 .rail .console-note 裁成 1×1），掛上 data-state 才回到畫面。
-   只拿來講出錯；操作提示一律不寫，換狀態時 clearConsoleNote() 收掉上一則錯誤。
-   會寫這個元素的還有 knee42-client.js，那邊有一份同樣的 note()／clearNote()。 */
-function setConsoleNote(text, state = "warn") {
-  cameraMessage.textContent = text;
-  cameraMessage.dataset.state = state;
-}
-function clearConsoleNote() {
-  cameraMessage.textContent = "";
-  delete cameraMessage.dataset.state;
-}
-
 function resetRecognitionSteps() {
   recognitionSteps.forEach(s => s.classList.remove("is-active", "is-complete"));
 }
@@ -610,8 +595,9 @@ function showPreview(hasPreview) {
 
 // ── Camera ──
 async function openCameraPreview() {
+  // 辨識頁不放提示或錯誤說明；打不開攝影機時「即時攝影機」按鈕不會亮起
   if (!navigator.mediaDevices?.getUserMedia) {
-    setConsoleNote("目前瀏覽器不支援攝影機，請改用影片上傳。", "warn");
+    console.warn("[camera] 這個瀏覽器不支援 getUserMedia");
     return;
   }
   try {
@@ -623,11 +609,10 @@ async function openCameraPreview() {
     previewVideo.play();
     showPreview(true);
     setCameraView(true);
-    clearConsoleNote();
     setPressed(videoModeButton, false);
     setPressed(cameraModeButton, true);
-  } catch {
-    setConsoleNote("無法開啟攝影機，請確認權限或改用影片上傳。", "warn");
+  } catch (err) {
+    console.warn("[camera] 無法開啟攝影機", err);
   }
 }
 
@@ -637,7 +622,6 @@ function useUploadMode() {
   showPreview(Boolean(previewVideo.getAttribute("src")));
   setPressed(videoModeButton, true);
   setPressed(cameraModeButton, false);
-  clearConsoleNote();
 }
 
 // ── Recognition ──
@@ -654,7 +638,6 @@ function startRecognition() {
   renderTokens(recognitionTokens, []);
   spokenResult.textContent = "尚未辨識";
   setRecStatus("無法辨識", "idle");
-  setConsoleNote("手語辨識功能沒有載入成功，請重新整理頁面後再試一次。", "warn");
 }
 
 // ── Generation ──
@@ -824,7 +807,6 @@ function loadVideoFile(file) {
   uploadedVideoUrl = URL.createObjectURL(file);
   previewVideo.src = uploadedVideoUrl;
   showPreview(true);
-  clearConsoleNote();
   setPressed(videoModeButton, true);
   setPressed(cameraModeButton, false);
 }
@@ -845,7 +827,6 @@ previewBox.addEventListener("drop", e => {
   previewBox.classList.remove("is-dragover");
   const file = e.dataTransfer.files?.[0];
   if (file?.type.startsWith("video/")) loadVideoFile(file);
-  else setConsoleNote("只支援影片檔案，請重新拖曳。", "warn");
 });
 
 videoModeButton.addEventListener("click", () => {
@@ -861,18 +842,14 @@ document.querySelector("#resetRecognition").addEventListener("click", () => {
   renderTokens(recognitionTokens, []);
   spokenResult.textContent = "尚未辨識";
   setRecStatus("等待輸入", "idle");
-  // 重置只清結果與辨識狀態，輸入來源留在原本的模式
-  if (cameraModeButton.getAttribute("aria-pressed") === "true") {
-    // 攝影機模式：串流照舊（未開啟就維持未開啟），清掉訊息
-    clearConsoleNote();
-  } else {
-    // 上傳模式：清掉已載入的影片，回到「點擊新增影片」
+  // 重置只清結果與辨識狀態，輸入來源留在原本的模式：
+  // 攝影機模式串流照舊（未開啟就維持未開啟）；上傳模式清掉已載入的影片，回到「點擊新增影片」
+  if (cameraModeButton.getAttribute("aria-pressed") !== "true") {
     stopCameraStream();
     clearUploadedVideo();
     previewVideo.srcObject = null;
     previewVideo.removeAttribute("src");
     showPreview(false);
-    clearConsoleNote();
   }
 });
 
