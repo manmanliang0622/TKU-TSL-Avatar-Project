@@ -183,12 +183,6 @@
 })();
 
 // ── Vocabulary Data ──
-const recognitionSamples = {
-  drink:    { signOrder: ["我", "水", "喝", "要"], spokenText: "我要喝水" },
-  register: { signOrder: ["我", "掛號", "要"],     spokenText: "我要掛號" },
-  help:     { signOrder: ["請", "我", "幫忙"],     spokenText: "請幫我一下" },
-};
-
 const generationSamples = {
   "我要喝水":  ["我", "水", "喝", "要"],
   "請幫我一下": ["請", "我", "幫忙"],
@@ -249,7 +243,6 @@ const recognitionSteps = [
   document.querySelector("#recognitionStep3"),
 ];
 
-let recognitionTimer = null;
 let currentStream    = null;
 // 0813 排版：輸入框空白起始，不預載示範句
 let currentGeneratedTokens = [];
@@ -336,7 +329,7 @@ document.addEventListener("keydown", e => {
     case "2": showPage("recognition"); break;
     case "3": showPage("generation");  break;
     case "Enter":
-      if (recPage) window.Knee42 ? window.Knee42.toggle() : simulateRecognition();
+      if (recPage) startRecognition();
       if (genPage) updateGeneration();
       break;
     case " ":
@@ -645,43 +638,20 @@ function useUploadMode() {
 }
 
 // ── Recognition ──
-const recognitionKeys = Object.keys(recognitionSamples);
-let recognitionRound  = 0;
-
-function simulateRecognition() {
-  const hasSource = Boolean(currentStream) || Boolean(previewVideo.getAttribute("src"));
-  if (!hasSource) {
-    setRecStatus("等待輸入", "idle");
-    setConsoleNote("請先點擊上方新增手語影片，或切換到即時攝影機。", "warn");
+/* 辨識一律交給 knee42-client.js（window.Knee42）。它沒掛上來 —— 模組檔沒載到、
+ * 執行途中出錯 —— 就明講辨識用不了。以前這裡會輪播三句內建樣本，照樣走完
+ * 三個步驟、顯示「辨識完成」：那句話跟使用者比了什麼毫無關係，畫面上卻和
+ * 真的辨識結果一模一樣（與翻譯不再偽造結果是同一條規矩）。 */
+function startRecognition() {
+  if (window.Knee42) {
+    window.Knee42.toggle();
     return;
   }
-  const sample = recognitionSamples[recognitionKeys[recognitionRound++ % recognitionKeys.length]];
-  clearTimeout(recognitionTimer);
   resetRecognitionSteps();
   renderTokens(recognitionTokens, []);
-  spokenResult.textContent = "辨識中，請稍候…";
-  setRecStatus("分析中", "active");
-  recognitionSteps[0].classList.add("is-active");
-
-  recognitionTimer = setTimeout(() => {
-    recognitionSteps[0].classList.replace("is-active", "is-complete");
-    recognitionSteps[1].classList.add("is-active");
-    setRecStatus("語序辨識", "active");
-    renderTokens(recognitionTokens, sample.signOrder);
-
-    recognitionTimer = setTimeout(() => {
-      recognitionSteps[1].classList.replace("is-active", "is-complete");
-      recognitionSteps[2].classList.add("is-active");
-      setRecStatus("口語轉換", "active");
-
-      recognitionTimer = setTimeout(() => {
-        recognitionSteps[2].classList.replace("is-active", "is-complete");
-        spokenResult.textContent = sample.spokenText;
-        setRecStatus("辨識完成", "done");
-        setConsoleNote("已保留原始手語語序，並整理成口語句子。");
-      }, 700);
-    }, 800);
-  }, 700);
+  spokenResult.textContent = "尚未辨識";
+  setRecStatus("無法辨識", "idle");
+  setConsoleNote("手語辨識功能沒有載入成功，請重新整理頁面後再試一次。", "warn");
 }
 
 // ── Generation ──
@@ -881,14 +851,9 @@ videoModeButton.addEventListener("click", () => {
   if (!previewVideo.getAttribute("src")) videoUpload.click();
 });
 cameraModeButton.addEventListener("click", openCameraPreview);
-// Knee42 模組載入成功時由它接手；載入失敗（如 CDN 不通）退回原本的示範動畫
-document.querySelector("#startRecognition").addEventListener("click", () => {
-  if (window.Knee42) window.Knee42.toggle();
-  else simulateRecognition();
-});
+document.querySelector("#startRecognition").addEventListener("click", startRecognition);
 
 document.querySelector("#resetRecognition").addEventListener("click", () => {
-  clearTimeout(recognitionTimer);
   resetRecognitionSteps();
   renderTokens(recognitionTokens, []);
   spokenResult.textContent = "尚未辨識";
