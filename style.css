@@ -419,6 +419,19 @@ h2{
   letter-spacing:var(--tr-zh);
   color:var(--muted);
 }
+/* 狀態列平常掛著 visually-hidden，只講給螢幕閱讀器聽；只有翻譯降級或失敗時
+   JS 才會拿掉那個 class 讓它現身。既然是唯一一次現身就得一眼看出不是常規
+   訊息：實心黑框、不再是 muted 灰。字級不吃 --fs-note 的下限（15px）——
+   這是整頁唯一一句「你看到的不是模型翻的」，長者讀不到就等於沒寫。 */
+.status-note[data-state="warn"]{
+  color:var(--black);
+  border:1px solid var(--black);
+  border-radius:2px;
+  padding:var(--sp-3) var(--sp-4);
+  margin-top:var(--sp-3);
+  font-size:max(var(--fs-note),18px);
+  line-height:1.6;
+}
 .status-dot{
   display:inline-flex;align-items:center;gap:8px;
   font-family:var(--sans-tc);

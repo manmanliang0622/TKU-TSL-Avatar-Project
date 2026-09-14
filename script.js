@@ -540,7 +540,7 @@ document.querySelectorAll(".speed-btn[data-rate]").forEach(btn => {
       b.setAttribute("aria-pressed", String(active));
     });
     genPlayer.setRate(Number(btn.dataset.rate));
-    generationStatus.textContent = `播放速率已調整為 ${btn.textContent}。`;
+    setGenerationStatus(`播放速率已調整為 ${btn.textContent}。`);
   });
 });
 
@@ -675,15 +675,16 @@ function simulateRecognition() {
 }
 
 // ── Generation ──
-function fallbackGeneration(sentence) {
-  const cleaned = sentence.replace(/[，。！？\s]/g, "");
-  if (!cleaned) return [];
-  if (cleaned.includes("我要")) return ["我", cleaned.replace("我要", ""), "要"].filter(Boolean);
-  return cleaned.split("").slice(0, 6);
-}
-
+/* 語言模型連不上時的離線退路：只認上面那張人工核對過的對照表，查不到就回空。
+ *
+ * 舊版查不到會退到 fallbackGeneration —— 把句子逐字拆開取前六個字當答案。
+ * 問題是詞庫有一萬七千條、幾乎每個單字都查得到，所以那串單字真的排得出詞卡、
+ * 虛擬人也真的會動：畫面上跟一次成功的翻譯長得一模一樣，只有語序整個是假的。
+ * 0913 組員測到的「同一句翻兩次不一樣」就是一次走模型、一次走這條；0914 早上
+ * 教授那次則是後端整台不通，連動作片段也抓不到，於是連虛擬人都不動。
+ * 寧可明講這句翻不出來，也不要給一個看起來正常的錯答案。*/
 function convertToSignOrder(sentence) {
-  return generationSamples[sentence.trim()] || fallbackGeneration(sentence.trim());
+  return generationSamples[sentence.trim()] || [];
 }
 
 // ── 語言模型 API（Gemma 4 QLoRA，中文 → TSL Gloss）──
@@ -697,7 +698,17 @@ const GLOSS_API = (localStorage.getItem("glossApi")
   || location.origin).replace(/\/$/, "");
 let glossApiOnline = null;   // null=未測、true/false=已測
 
-async function translateViaModel(sentence, timeoutMs = 60000) {
+// 這幾種狀態碼都是「再等一下就會好」，不是真的離線：
+//   503 bundle_server 連不上模型子程序 —— 模型載入要幾十秒，這段時間每一次都是 503
+//   502 Pages Function 打不到學校那台 —— cloudflared 換通道時 KV 最多有 30 秒還是舊網址
+//   504 上游逾時
+// 它們都是「立刻」回來的，所以重試不會拖長時間（實測暖機後一句 6-9 秒，
+// 這三次加起來的等待上限約 11 秒）。逾時則不重試：那代表模型真的在跑，
+// 再送一次只會排在 INFERENCE_LOCK 後面，等更久。
+const TRANSLATE_RETRY_STATUS = new Set([502, 503, 504]);
+const TRANSLATE_RETRY_DELAYS = [3000, 8000];
+
+async function translateOnce(sentence, timeoutMs) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -707,7 +718,11 @@ async function translateViaModel(sentence, timeoutMs = 60000) {
       body: JSON.stringify({ text: sentence }),
       signal: ctrl.signal,
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const err = new Error(`HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
     const data = await res.json();
     if (!Array.isArray(data.gloss) || !data.gloss.length) throw new Error("空結果");
     glossApiOnline = true;
@@ -717,8 +732,21 @@ async function translateViaModel(sentence, timeoutMs = 60000) {
   }
 }
 
+async function withTranslateRetry(attemptFn, onRetry = null) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await attemptFn();
+    } catch (err) {
+      const delay = TRANSLATE_RETRY_DELAYS[attempt];
+      if (delay === undefined || !TRANSLATE_RETRY_STATUS.has(err.status)) throw err;
+      onRetry?.(attempt + 1, err);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
 // Composer 走同源 /translate（回傳含 sign_ids 的完整結果，3D 虛擬人靠它取動作片段）
-async function translateToSignOrder(sentence) {
+async function translateAttempt(sentence) {
   if (window.Composer?.translate) {
     try {
       const result = await Composer.translate(sentence);
@@ -729,19 +757,34 @@ async function translateToSignOrder(sentence) {
       console.warn("Composer translate failed; trying direct API.", ex);
     }
   }
+  // Composer 那條路丟的錯沒有 status，要靠這次 direct 呼叫決定值不值得重試
+  const r = await translateOnce(sentence, 60000);
+  return { tokens: r.tokens, source: "gemma", seconds: r.seconds, translation: null };
+}
+
+async function translateToSignOrder(sentence, onRetry = null) {
   try {
-    const r = await translateViaModel(sentence);
-    return { tokens: r.tokens, source: "gemma", seconds: r.seconds, translation: null };
+    return await withTranslateRetry(() => translateAttempt(sentence), onRetry);
   } catch (err) {
     glossApiOnline = false;
     return { tokens: convertToSignOrder(sentence), source: "fallback", error: err, translation: null };
   }
 }
 
+/* 狀態列平常掛著 visually-hidden，只講給螢幕閱讀器聽 —— 這是 0913/0914 兩次
+   誤判的關鍵：翻譯降級成內建對照表時，「未連上語言模型」這行字確實有寫，
+   但寫進了一個畫面上根本看不到的元素，現場沒有人知道那串詞卡不是模型翻的。
+   所以只有出問題時才把它顯示出來，正常翻譯完成維持原本的安靜。*/
+function setGenerationStatus(text, state = "ok") {
+  generationStatus.textContent = text;
+  generationStatus.dataset.state = state;
+  generationStatus.classList.toggle("visually-hidden", state === "ok");
+}
+
 async function updateGeneration() {
   const sentence = textInput.value.trim();
   if (!sentence) {
-    generationStatus.textContent = "請先輸入一句口語，例如：你好";
+    setGenerationStatus("請先輸入一句口語，例如：你好");
     originalSentence.textContent = "尚未輸入內容";
     currentGeneratedTokens = [];
     renderGenerationTokens([]);
@@ -755,27 +798,36 @@ async function updateGeneration() {
   renderGenerationTokens([]);
   genPlayer.load([]);
   originalSentence.textContent = sentence;
-  generationStatus.textContent = "語言模型翻譯中…";
+  setGenerationStatus("語言模型翻譯中…");
   window.dispatchEvent(new CustomEvent("signavatar:generation-started", {
     detail: { sentence },
   }));
 
-  const translated = await translateToSignOrder(sentence);
+  const translated = await translateToSignOrder(sentence, attempt => {
+    setGenerationStatus(`語言模型還沒就緒（可能正在載入），第 ${attempt} 次重試…`, "warn");
+  });
   currentGeneratedTokens = translated.tokens;
   renderGenerationTokens(currentGeneratedTokens);
   genPlayer.load(currentGeneratedTokens);
-  generationStatus.textContent = translated.source === "gemma"
-    ? `語言模型（Gemma 4 微調）翻譯完成${translated.seconds ? `，耗時 ${translated.seconds}s` : ""}，正在接上虛擬人播放。`
-    : `未連上語言模型（${translated.error?.message || "離線"}），改用內建對照表。`;
+
+  const offline = translated.error?.message || "離線";
+  if (translated.source === "gemma") {
+    setGenerationStatus(`語言模型（Gemma 4 微調）翻譯完成${translated.seconds ? `，耗時 ${translated.seconds}s` : ""}，正在接上虛擬人播放。`);
+  } else if (currentGeneratedTokens.length) {
+    setGenerationStatus(`⚠ 未連上語言模型（${offline}）。以下是離線對照表的結果，不是模型翻譯。`, "warn");
+  } else {
+    setGenerationStatus(`⚠ 未連上語言模型（${offline}），這一句無法翻譯。請先確認後端狀態，再重試一次。`, "warn");
+  }
   window.dispatchEvent(new CustomEvent("signavatar:generation-updated", {
     detail: { sentence, tokens: currentGeneratedTokens, translation: translated.translation },
   }));
-  playAvatarSequence();
+  // 翻不出來就不要叫虛擬人演：沒有詞卡時 playAvatarSequence 只會再蓋掉上面那句警告
+  if (currentGeneratedTokens.length) playAvatarSequence();
 }
 
 function playAvatarSequence() {
   if (!currentGeneratedTokens.length) {
-    generationStatus.textContent = "請先完成手語語序轉換，再播放虛擬人。";
+    setGenerationStatus("請先完成手語語序轉換，再播放虛擬人。");
     return;
   }
   genPlayer.play();
@@ -860,7 +912,7 @@ generationTokens.addEventListener("click", e => {
   if (!button) return;
   const index = Number(button.dataset.tokenIndex);
   genPlayer.playToken(index);
-  generationStatus.textContent = `正在單獨播放「${currentGeneratedTokens[index]}」的動作。`;
+  setGenerationStatus(`正在單獨播放「${currentGeneratedTokens[index]}」的動作。`);
 });
 
 document.querySelector("#clearText").addEventListener("click", () => {
@@ -870,7 +922,7 @@ document.querySelector("#clearText").addEventListener("click", () => {
   currentGeneratedTokens = [];
   renderGenerationTokens([]);
   genPlayer.load([]);
-  generationStatus.textContent = "內容已清除，請重新輸入一句口語。";
+  setGenerationStatus("內容已清除，請重新輸入一句口語。");
   window.dispatchEvent(new CustomEvent("signavatar:generation-cleared"));
 });
 
