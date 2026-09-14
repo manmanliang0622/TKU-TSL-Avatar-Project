@@ -79,7 +79,7 @@ let mode = null;                 // null | "auto"（攝影機自動切段）| "m
 let latestFrame = null;          // 偵測迴圈的最新一幀 {pose, hands}
 let autoBuf = [], autoSession = "", autoT0 = 0, autoSending = false, autoTimer = null;
 let autoReset = false, autoFailures = 0, autoRetryAt = 0;
-let autoState = "", autoLastSent = 0, autoCalibrated = false;
+let autoState = "", autoLastSent = 0;
 let clipBuf = [], clipStart = 0, clipBusy = false;
 let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
 // 攝影機的切段方式；上傳影片一律整段送 /predict，與此無關。
@@ -88,12 +88,17 @@ let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
 //   localStorage.getItem("recognitionSegMode") === "auto" ? "auto" : "manual"）
 let segMode = "manual";
 
-// 控制台提示。#cameraMessage 平常被 .rail .console-note 裁成 1×1（只留給輔助
-// 技術），掛上 data-state 才回到畫面 —— 不然攝影機沒開成、後端沒連上、這句
-// 幀數不夠這些話，使用者一個字都看不到。script.js 有一份同樣的 setConsoleNote。
-function note(text, state = "info") {
+// 控制台訊息。#cameraMessage 平常被 .rail .console-note 裁成 1×1，掛上 data-state
+// 才回到畫面。只拿來講出錯（攝影機沒開成、後端沒連上、這句幀數不夠）；
+// 流程中的操作提示一律不寫，換狀態時用 clearNote() 把上一則錯誤收掉。
+// script.js 有一份同樣的 setConsoleNote。
+function note(text, state = "warn") {
   message.textContent = text;
   message.dataset.state = state;
+}
+function clearNote() {
+  message.textContent = "";
+  delete message.dataset.state;
 }
 
 function setStatus(text, state = "idle") {
@@ -340,11 +345,10 @@ function startAuto() {
   autoRetryAt = 0;
   autoState = "";
   autoLastSent = 0;
-  autoCalibrated = false;
   showAnalyzing("自動偵測中");
   setStatus("校準中", "active");
   startBtn.textContent = "停止辨識";
-  note("自動模式：先讓雙手入鏡、放在休息位置（例如大腿上）別動，校準完就可以開始比。比完一句把手放回同一個位置，系統會自動切段並辨識。");
+  clearNote();
   flushAuto();
   autoTimer = setInterval(flushAuto, STREAM_TICK_MS);
 }
@@ -366,24 +370,12 @@ async function flushAuto() {
     const data = await postJson("stream", { session: autoSession, reset, frames: chunk });
     autoReset = false;
     if (mode !== "auto") return;
-    if (autoFailures) {
-      autoFailures = 0;
-      note("連線恢復，繼續自動偵測。");
-    }
+    autoFailures = 0;
     autoState = data.state;
-    if (!data.calibrated) {
-      setStatus("校準中：雙手入鏡、放在休息位置別動", "active");
-    } else {
-      setStatus(AUTO_STATE_TEXT[data.state] || data.state, "active");
-      if (!autoCalibrated) {
-        autoCalibrated = true;
-        note("校準完成，可以開始比。比完一句把手放回剛才的休息位置，結果會馬上出來。");
-      }
-    }
+    if (!data.calibrated) setStatus("校準中", "active");
+    else setStatus(AUTO_STATE_TEXT[data.state] || data.state, "active");
     (data.results || []).forEach(seg => {
-      if (!seg.top?.length) return;
-      renderTop(seg.top);
-      note(`第 ${seg.index} 句（${seg.frames} 幀）辨識完成，可以繼續比下一句。`);
+      if (seg.top?.length) renderTop(seg.top);
     });
   } catch (err) {
     if (mode !== "auto") return;
@@ -447,7 +439,7 @@ function startManual() {
     segActionBtn.disabled = false;
     segActionBtn.textContent = "開始這句（空白鍵）";
   }
-  note("手動模式：按空白鍵或「開始這句」開始錄，比完再按一次結束並辨識。");
+  clearNote();
 }
 
 function manualToggleSegment() {
@@ -459,7 +451,7 @@ function manualToggleSegment() {
     showAnalyzing("錄製中");
     setStatus("錄製中", "active");
     if (segActionBtn) segActionBtn.textContent = "結束這句（空白鍵）";
-    note("錄製中：比完後再按一次空白鍵（或「結束這句」）送出辨識。");
+    clearNote();
   } else {
     manualRecording = false;
     finishManual();
@@ -474,7 +466,7 @@ function cancelManualSegment() {
   if (segActionBtn) segActionBtn.textContent = "開始這句（空白鍵）";
   spoken.textContent = "已取消這句。";
   setStatus("待命", "active");
-  note("已取消，按空白鍵或「開始這句」重新錄製。");
+  clearNote();
 }
 
 async function finishManual() {
@@ -504,9 +496,6 @@ async function finishManual() {
       note(data.message || "這句偵測不到足夠的骨架，請確認上半身完整入鏡後重錄。", "warn");
     } else {
       renderTop(top);
-      note(mode === "manual"
-        ? `這句辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀），按空白鍵繼續錄下一句。`
-        : `辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀）。`);
     }
   } catch (err) {
     spoken.textContent = "辨識失敗。";
@@ -533,7 +522,7 @@ async function startClip() {
   clipStart = performance.now();
   showAnalyzing("影片分析中");
   startBtn.textContent = "取消辨識";
-  note("正在播放並分析影片。建議一支影片只含一句手語，多句會混在一起。");
+  clearNote();
   video.currentTime = 0;
   try { await video.play(); } catch {
     stopClip();
@@ -568,10 +557,6 @@ async function finishClip() {
       return;
     }
     renderTop(top);
-    const segNote = (data.segments?.length || 0) > 1
-      ? `偵測到 ${data.segments.length} 段動作，顯示整段綜合結果。`
-      : "";
-    note(`影片辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀）。${segNote}`);
   } catch (err) {
     spoken.textContent = "辨識失敗。";
     setStatus("連線失敗", "idle");
@@ -646,11 +631,7 @@ function setSegMode(next) {
     // 辨識進行中切換 → 直接換成另一種切段方式，攝影機不中斷
     if (mode === "auto" && next === "manual") { stopAuto(); startManual(); }
     else if (mode === "manual" && next === "auto") { stopManual(); startAuto(); }
-    else if (!mode) {
-      note(next === "manual"
-        ? "手動切段：開始辨識後，用空白鍵或「開始這句」按鈕控制每一句的開始與結束。"
-        : "自動切段：開始辨識後先讓雙手入鏡、在休息位置別動讓系統校準；比完一句把手放回同一個位置，系統會自動切段。");
-    }
+    else if (!mode) clearNote();
   }
   applySegChips();
 }

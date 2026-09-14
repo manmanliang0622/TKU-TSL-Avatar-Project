@@ -545,11 +545,75 @@ h2{
   background:rgba(0,0,0,.8);
   color:var(--ivory-dim);
   font-family:var(--sans-tc);
-  font-size:clamp(16px,1.25vw,20px);font-weight:500;letter-spacing:.06em;
+  font-size:clamp(18px,1.25vw,20px);font-weight:500;letter-spacing:.06em;
   pointer-events:none;
   opacity:1;transition:opacity .2s ease;
 }
 .avatar-loading[hidden]{display:none;}
+.avatar-loading.is-out{opacity:0;}
+
+/* ── 載入圖示：進度環＋揮手剪影 ──
+   標記由 signavatar-bridge.js 的 ensureLoadingOverlay() 插入。樣式出自 yyyxi18
+   的 0813 版（0742d85，原檔在學校主機 ~/0813/style.css）；8/22 cipher.tv 改版
+   重寫 style.css 時沒帶過來，圖示只剩 SVG 預設的 5px 黑色，在黑舞台上完全
+   看不見，畫面只剩一行字（2026-09-14 線上實測）。
+   幾何、節奏照原版；顏色依 cipher.tv 語言改成象牙白單色 —— --accent 在這套
+   設計裡只代表「現在正在這裡」，不拿來表示進度。 */
+.sa-loading-icon{
+  position:relative;width:106px;height:106px;
+  display:flex;align-items:center;justify-content:center;
+}
+/* 環的弧長跟著片段抵達的比例填（--sa-progress）；還數不出來時改成掃描，
+   老實說「不知道要多久」勝過一條假裝在走的進度條 */
+.sa-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);}
+.sa-ring circle{fill:none;stroke-width:3;stroke-linecap:round;}
+.sa-ring-track{stroke:rgba(233,234,228,.14);}
+.sa-ring-arc{
+  stroke:var(--ivory);
+  stroke-dasharray:283;                        /* 2π × 45 */
+  stroke-dashoffset:calc(283 - 283 * var(--sa-progress,0));
+  /* 原版把旋轉中心寫在 keyframes 的 to 裡，會跟著動畫一起內插、轉起來偏心；
+     SVG 元素預設以 viewBox 左上角為原點，這裡固定在環心 */
+  transform-box:view-box;transform-origin:50% 50%;
+  transition:stroke-dashoffset .28s ease;
+}
+.avatar-loading.is-indeterminate .sa-ring-arc{
+  stroke-dasharray:64 219;transition:none;
+  animation:sa-sweep 1.4s linear infinite;
+}
+@keyframes sa-sweep{to{transform:rotate(360deg);}}
+
+/* 手是一整塊剪影：手指先畫、根部埋進手掌，由手掌蓋住，所以手指怎麼動都
+   不會跟手分家。舊圖示用 scaleY 把手指壓成短樁，每一拍都散成五塊。 */
+.sa-hand{width:58px;height:72px;overflow:visible;}
+.sa-hand .palm,.sa-hand .fg{fill:var(--ivory);}
+.sa-hand .fg{
+  transform-box:fill-box;transform-origin:50% 92%;
+  animation:sa-wave 2.4s cubic-bezier(.42,0,.35,1) infinite;
+}
+.sa-hand .f1{animation-delay:0s;}
+.sa-hand .f2{animation-delay:.11s;}
+.sa-hand .f3{animation-delay:.22s;}
+.sa-hand .f4{animation-delay:.33s;}
+.sa-thumb .fg{animation-name:sa-wave-thumb;animation-delay:.5s;}
+/* 以手掌內的一點為軸小幅旋轉：指尖在走，指根完全不動 */
+@keyframes sa-wave{
+  0%,55%,100%{transform:rotate(0deg);}
+  22%{transform:rotate(-9deg);}
+}
+@keyframes sa-wave-thumb{
+  0%,55%,100%{transform:rotate(0deg);}
+  22%{transform:rotate(6deg);}
+}
+.avatar-loading .sa-dots::after{content:"";animation:sa-dots 1.5s steps(1,end) infinite;}
+@keyframes sa-dots{0%{content:""}33%{content:"."}66%{content:".."}99%{content:"..."}}
+@media (prefers-reduced-motion:reduce){
+  .sa-hand .fg{animation:none;}
+  .avatar-loading .sa-dots::after{animation:none;content:"...";}
+  .avatar-loading.is-indeterminate .sa-ring-arc{
+    animation:none;stroke-dasharray:283;stroke-dashoffset:212;
+  }
+}
 /* 佔位火柴人（單色）：聚光掛在人偶身上，跟著人偶位置走 */
 .avatar-stage .avatar-figure{
   position:absolute;left:50%;bottom:8px;
