@@ -76,6 +76,14 @@ let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
 //   localStorage.getItem("recognitionSegMode") === "auto" ? "auto" : "manual"）
 let segMode = "manual";
 
+// 控制台提示。#cameraMessage 平常被 .rail .console-note 裁成 1×1（只留給輔助
+// 技術），掛上 data-state 才回到畫面 —— 不然攝影機沒開成、後端沒連上、這句
+// 幀數不夠這些話，使用者一個字都看不到。script.js 有一份同樣的 setConsoleNote。
+function note(text, state = "info") {
+  message.textContent = text;
+  message.dataset.state = state;
+}
+
 function setStatus(text, state = "idle") {
   statusEl.textContent = text;
   statusEl.dataset.state = state;
@@ -264,10 +272,10 @@ function startAuto() {
   autoBuf = [];
   autoSession = Math.random().toString(36).slice(2) + Date.now().toString(36);
   autoT0 = performance.now();
-  showAnalyzing("自動偵測中：雙手垂放身側站好，校準完成後直接比劃。");
+  showAnalyzing("自動偵測中");
   setStatus("校準中", "active");
   startBtn.textContent = "停止辨識";
-  message.textContent = "自動模式：比完一句把手放回身側，系統會自動切段並辨識，不必按鍵。";
+  note("自動模式：比完一句把手放回身側，系統會自動切段並辨識，不必按鍵。");
   flushAuto(true);
   autoTimer = setInterval(() => flushAuto(), STREAM_FLUSH_MS);
 }
@@ -292,13 +300,13 @@ async function flushAuto(reset = false) {
     (data.results || []).forEach(seg => {
       if (seg.top?.length) {
         renderTop(seg.top);
-        message.textContent = `第 ${seg.index} 句（${seg.frames} 幀）辨識完成，可以繼續比下一句。`;
+        note(`第 ${seg.index} 句（${seg.frames} 幀）辨識完成，可以繼續比下一句。`);
       }
     });
   } catch (err) {
     stopAuto();
     setStatus("連線失敗", "idle");
-    message.textContent = `辨識後端連線失敗：${err.message}。請確認後端狀態後重試。`;
+    note(`辨識後端連線失敗：${err.message}。請確認後端狀態後重試。`, "warn");
   } finally {
     autoSending = false;
   }
@@ -342,7 +350,7 @@ function startManual() {
     segActionBtn.disabled = false;
     segActionBtn.textContent = "開始這句（空白鍵）";
   }
-  message.textContent = "手動模式：按空白鍵或「開始這句」開始錄，比完再按一次結束並辨識。";
+  note("手動模式：按空白鍵或「開始這句」開始錄，比完再按一次結束並辨識。");
 }
 
 function manualToggleSegment() {
@@ -351,10 +359,10 @@ function manualToggleSegment() {
     manualRecording = true;
     manualBuf = [];
     manualT0 = performance.now();
-    showAnalyzing("錄製中：請比出這一句…");
+    showAnalyzing("錄製中");
     setStatus("錄製中", "active");
     if (segActionBtn) segActionBtn.textContent = "結束這句（空白鍵）";
-    message.textContent = "錄製中：比完後再按一次空白鍵（或「結束這句」）送出辨識。";
+    note("錄製中：比完後再按一次空白鍵（或「結束這句」）送出辨識。");
   } else {
     manualRecording = false;
     finishManual();
@@ -369,7 +377,7 @@ function cancelManualSegment() {
   if (segActionBtn) segActionBtn.textContent = "開始這句（空白鍵）";
   spoken.textContent = "已取消這句。";
   setStatus("待命", "active");
-  message.textContent = "已取消，按空白鍵或「開始這句」重新錄製。";
+  note("已取消，按空白鍵或「開始這句」重新錄製。");
 }
 
 async function finishManual() {
@@ -381,7 +389,7 @@ async function finishManual() {
   if (frames.length < MIN_FRAMES || withPose < MIN_FRAMES) {
     spoken.textContent = "有效幀太少，無法辨識。";
     setStatus("待命", "active");
-    message.textContent = `這句只錄到 ${frames.length} 幀（${withPose} 幀有偵測到身體）。請確認上半身完整入鏡後重錄一次。`;
+    note(`這句只錄到 ${frames.length} 幀（${withPose} 幀有偵測到身體）。請確認上半身完整入鏡後重錄一次。`, "warn");
     return;
   }
   manualBusy = true;
@@ -396,17 +404,17 @@ async function finishManual() {
     if (!top.length) {
       spoken.textContent = "未能辨識。";
       setStatus(mode === "manual" ? "待命" : "等待輸入", mode === "manual" ? "active" : "idle");
-      message.textContent = data.message || "這句偵測不到足夠的骨架，請確認上半身完整入鏡後重錄。";
+      note(data.message || "這句偵測不到足夠的骨架，請確認上半身完整入鏡後重錄。", "warn");
     } else {
       renderTop(top);
-      message.textContent = mode === "manual"
+      note(mode === "manual"
         ? `這句辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀），按空白鍵繼續錄下一句。`
-        : `辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀）。`;
+        : `辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀）。`);
     }
   } catch (err) {
     spoken.textContent = "辨識失敗。";
     setStatus("連線失敗", mode === "manual" ? "active" : "idle");
-    message.textContent = `辨識後端連線失敗：${err.message}。請確認後端狀態後重錄這一句。`;
+    note(`辨識後端連線失敗：${err.message}。請確認後端狀態後重錄這一句。`, "warn");
   } finally {
     manualBusy = false;
     if (segActionBtn) segActionBtn.disabled = false;
@@ -426,13 +434,13 @@ async function startClip() {
   mode = "clip";
   clipBuf = [];
   clipStart = performance.now();
-  showAnalyzing("影片分析中：正在逐幀抽取骨架…");
+  showAnalyzing("影片分析中");
   startBtn.textContent = "取消辨識";
-  message.textContent = "正在播放並分析影片。建議一支影片只含一句手語，多句會混在一起。";
+  note("正在播放並分析影片。建議一支影片只含一句手語，多句會混在一起。");
   video.currentTime = 0;
   try { await video.play(); } catch {
     stopClip();
-    message.textContent = "無法播放影片，請重新載入檔案。";
+    note("無法播放影片，請重新載入檔案。", "warn");
   }
 }
 
@@ -445,7 +453,7 @@ async function finishClip() {
     stopClip();
     spoken.textContent = "有效幀太少，無法辨識。";
     setStatus("等待輸入", "idle");
-    message.textContent = `只取到 ${frames.length} 幀（${withPose} 幀有偵測到身體）。請確認影片中上半身完整入鏡。`;
+    note(`只取到 ${frames.length} 幀（${withPose} 幀有偵測到身體）。請確認影片中上半身完整入鏡。`, "warn");
     return;
   }
   clipBusy = true;
@@ -459,18 +467,18 @@ async function finishClip() {
     if (!top.length) {
       spoken.textContent = "未能辨識。";
       setStatus("等待輸入", "idle");
-      message.textContent = data.message || "影片中偵測不到足夠的骨架，請確認上半身完整入鏡。";
+      note(data.message || "影片中偵測不到足夠的骨架，請確認上半身完整入鏡。", "warn");
       return;
     }
     renderTop(top);
     const segNote = (data.segments?.length || 0) > 1
       ? `偵測到 ${data.segments.length} 段動作，顯示整段綜合結果。`
       : "";
-    message.textContent = `影片辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀）。${segNote}`;
+    note(`影片辨識完成（送出 ${data.n_frames} 幀，有效 ${data.n_valid} 幀）。${segNote}`);
   } catch (err) {
     spoken.textContent = "辨識失敗。";
     setStatus("連線失敗", "idle");
-    message.textContent = `辨識後端連線失敗：${err.message}。`;
+    note(`辨識後端連線失敗：${err.message}。`, "warn");
   } finally {
     clipBusy = false;
     stopClip();
@@ -501,7 +509,7 @@ function toggle() {
   const isClip   = Boolean(video.getAttribute("src"));
   if (!isCamera && !isClip) {
     setStatus("等待輸入", "idle");
-    message.textContent = "請先點擊上方新增手語影片，或切換到即時攝影機。";
+    note("請先點擊上方新增手語影片，或切換到即時攝影機。", "warn");
     return;
   }
   loadLandmarkers()
@@ -509,7 +517,7 @@ function toggle() {
     .then(() => (isCamera ? (segMode === "manual" ? startManual() : startAuto()) : startClip()))
     .catch(() => {
       setStatus("等待輸入", "idle");
-      message.textContent = "骨架偵測模型載入失敗，請檢查網路後重試。";
+      note("骨架偵測模型載入失敗，請檢查網路後重試。", "warn");
     });
 }
 
@@ -542,9 +550,9 @@ function setSegMode(next) {
     if (mode === "auto" && next === "manual") { stopAuto(); startManual(); }
     else if (mode === "manual" && next === "auto") { stopManual(); startAuto(); }
     else if (!mode) {
-      message.textContent = next === "manual"
+      note(next === "manual"
         ? "手動切段：開始辨識後，用空白鍵或「開始這句」按鈕控制每一句的開始與結束。"
-        : "自動切段：開始辨識後，比完一句把手放回身側，系統會自動切段。";
+        : "自動切段：開始辨識後，比完一句把手放回身側，系統會自動切段。");
     }
   }
   applySegChips();
@@ -623,7 +631,7 @@ async function checkBackend() {
     if (!data.ok) throw new Error("not ok");
     console.info(`[knee42] 辨識後端已連線：${data.model}（${data.classes} 類）`);
   } catch {
-    message.textContent = "提醒：手語辨識後端目前未連線，開始辨識前請先確認伺服器狀態。";
+    note("提醒：手語辨識後端目前未連線，開始辨識前請先確認伺服器狀態。", "warn");
   }
 }
 

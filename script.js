@@ -285,7 +285,7 @@ function showPage(id, push = true) {
     stopCameraStream();
     previewVideo.srcObject = null;
     showPreview(Boolean(previewVideo.getAttribute("src")));
-    cameraMessage.textContent = "已離開辨識頁，攝影機已自動關閉。";
+    setConsoleNote("已離開辨識頁，攝影機已自動關閉。");
   }
   if (id !== "generation" && genPlayer.getState() !== "idle") {
     genPlayer.stop();
@@ -577,6 +577,16 @@ function renderGenerationTokens(tokens) {
   });
 }
 
+/* 辨識控制台的提示。跟生成頁的 setGenerationStatus 同一套：預設不佔版面
+   （這裡是被 .rail .console-note 裁成 1×1，只留給輔助技術），掛上 data-state
+   才回到畫面。"ok" 用在回到那句靜態說明時，重新藏起來。
+   會寫這個元素的還有 knee42-client.js，那邊有一份同樣的 note()。 */
+function setConsoleNote(text, state = "info") {
+  cameraMessage.textContent = text;
+  if (state === "ok") delete cameraMessage.dataset.state;
+  else cameraMessage.dataset.state = state;
+}
+
 function resetRecognitionSteps() {
   recognitionSteps.forEach(s => s.classList.remove("is-active", "is-complete"));
 }
@@ -605,7 +615,7 @@ function showPreview(hasPreview) {
 // ── Camera ──
 async function openCameraPreview() {
   if (!navigator.mediaDevices?.getUserMedia) {
-    cameraMessage.textContent = "目前瀏覽器不支援攝影機，請改用影片上傳。";
+    setConsoleNote("目前瀏覽器不支援攝影機，請改用影片上傳。", "warn");
     return;
   }
   try {
@@ -617,11 +627,11 @@ async function openCameraPreview() {
     previewVideo.play();
     showPreview(true);
     setCameraView(true);
-    cameraMessage.textContent = "攝影機已開啟，請讓雙手完整出現在畫面中。";
+    setConsoleNote("攝影機已開啟，請讓雙手完整出現在畫面中。");
     setPressed(videoModeButton, false);
     setPressed(cameraModeButton, true);
   } catch {
-    cameraMessage.textContent = "無法開啟攝影機，請確認權限或改用影片上傳。";
+    setConsoleNote("無法開啟攝影機，請確認權限或改用影片上傳。", "warn");
   }
 }
 
@@ -631,7 +641,7 @@ function useUploadMode() {
   showPreview(Boolean(previewVideo.getAttribute("src")));
   setPressed(videoModeButton, true);
   setPressed(cameraModeButton, false);
-  cameraMessage.textContent = "請上傳手語影片，系統會先保留手語語序。";
+  setConsoleNote("請上傳手語影片，系統會先保留手語語序。");
 }
 
 // ── Recognition ──
@@ -642,7 +652,7 @@ function simulateRecognition() {
   const hasSource = Boolean(currentStream) || Boolean(previewVideo.getAttribute("src"));
   if (!hasSource) {
     setRecStatus("等待輸入", "idle");
-    cameraMessage.textContent = "請先點擊上方新增手語影片，或切換到即時攝影機。";
+    setConsoleNote("請先點擊上方新增手語影片，或切換到即時攝影機。", "warn");
     return;
   }
   const sample = recognitionSamples[recognitionKeys[recognitionRound++ % recognitionKeys.length]];
@@ -668,7 +678,7 @@ function simulateRecognition() {
         recognitionSteps[2].classList.replace("is-active", "is-complete");
         spokenResult.textContent = sample.spokenText;
         setRecStatus("辨識完成", "done");
-        cameraMessage.textContent = "已保留原始手語語序，並整理成口語句子。";
+        setConsoleNote("已保留原始手語語序，並整理成口語句子。");
       }, 700);
     }, 800);
   }, 700);
@@ -841,7 +851,7 @@ function loadVideoFile(file) {
   uploadedVideoUrl = URL.createObjectURL(file);
   previewVideo.src = uploadedVideoUrl;
   showPreview(true);
-  cameraMessage.textContent = `已載入影片：${file.name}，可以開始辨識。`;
+  setConsoleNote(`已載入影片：${file.name}，可以開始辨識。`);
   setPressed(videoModeButton, true);
   setPressed(cameraModeButton, false);
 }
@@ -862,7 +872,7 @@ previewBox.addEventListener("drop", e => {
   previewBox.classList.remove("is-dragover");
   const file = e.dataTransfer.files?.[0];
   if (file?.type.startsWith("video/")) loadVideoFile(file);
-  else cameraMessage.textContent = "只支援影片檔案，請重新拖曳。";
+  else setConsoleNote("只支援影片檔案，請重新拖曳。", "warn");
 });
 
 videoModeButton.addEventListener("click", () => {
@@ -886,9 +896,9 @@ document.querySelector("#resetRecognition").addEventListener("click", () => {
   // 重置只清結果與辨識狀態，輸入來源留在原本的模式
   if (cameraModeButton.getAttribute("aria-pressed") === "true") {
     // 攝影機模式：串流照舊（未開啟就維持未開啟），訊息歸位
-    cameraMessage.textContent = currentStream
-      ? "攝影機已開啟，請讓雙手完整出現在畫面中。"
-      : "系統先顯示手語語序，再整理成口語。";
+    if (currentStream) setConsoleNote("攝影機已開啟，請讓雙手完整出現在畫面中。");
+    // 沒有串流就回到那句靜態說明，連帶把它重新藏起來（版面讓給結果）
+    else setConsoleNote("系統先顯示手語語序，再整理成口語。", "ok");
   } else {
     // 上傳模式：清掉已載入的影片，回到「點擊新增影片」
     stopCameraStream();
@@ -896,7 +906,7 @@ document.querySelector("#resetRecognition").addEventListener("click", () => {
     previewVideo.srcObject = null;
     previewVideo.removeAttribute("src");
     showPreview(false);
-    cameraMessage.textContent = "請上傳手語影片，系統會先保留手語語序。";
+    setConsoleNote("請上傳手語影片，系統會先保留手語語序。");
   }
 });
 

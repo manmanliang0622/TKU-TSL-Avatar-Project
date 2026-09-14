@@ -419,13 +419,19 @@ h2{
   letter-spacing:var(--tr-zh);
   color:var(--muted);
 }
-/* 狀態列平常掛著 visually-hidden，只講給螢幕閱讀器聽；只有翻譯降級或失敗時
-   JS 才會拿掉那個 class 讓它現身。既然是唯一一次現身就得一眼看出不是常規
-   訊息：實心黑框、不再是 muted 灰。字級不吃 --fs-note 的下限（15px）——
-   這是整頁唯一一句「你看到的不是模型翻的」，長者讀不到就等於沒寫。 */
-.status-note[data-state="warn"]{
-  color:var(--black);
-  border:1px solid var(--black);
+/* ── 控制台警示（生成頁狀態列／辨識頁 ※ 說明共用一套）──────────────
+   兩張控制台平常都把訊息藏起來（生成頁靠 visually-hidden，辨識頁靠下面
+   .rail .console-note 的裁切），只有 JS 掛上 data-state 才回到畫面。
+   既然是唯一一次現身，就要一眼看出不是常規說明：外框 + 放大。
+
+   顏色一律走 ivory 系：兩個側欄的實底都是 rgb(21,20,18)，黑字黑框在這裡
+   的對比是 1:1，整塊會完全隱形（跟 .rec-candidates 那段註解是同一個坑）。
+   字級不吃 --fs-note 的 15px 下限 —— 這是「你看到的不是模型翻的」「攝影機
+   沒開成」這類唯一一次的交代，長者讀不到就等於沒寫。 */
+.rail .status-note[data-state="warn"],
+.rail .console-note[data-state="warn"]{
+  color:var(--ivory);
+  border:1px solid var(--ivory);
   border-radius:2px;
   padding:var(--sp-3) var(--sp-4);
   margin-top:var(--sp-3);
@@ -1156,6 +1162,19 @@ h2{
 .rail .console-note{
   position:absolute;width:1px;height:1px;overflow:hidden;
   clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;
+}
+/* ……但這個元素同時是辨識頁「所有」訊息的唯一出口：攝影機權限沒給、後端
+   沒連上、這句幀數不夠、手動切段要怎麼按，全部寫進它的 textContent。
+   一律裁掉的話，出事時畫面上不會有任何交代（實測：攝影機被拒只會看到角落
+   一個「等待輸入」）。所以靜態說明維持裁切、帶 data-state 的才放回畫面。 */
+.rail .console-note[data-state]{
+  position:static;width:auto;height:auto;overflow:visible;
+  clip:auto;clip-path:none;white-space:normal;
+}
+.rail .console-note[data-state="info"]{
+  color:var(--ivory-dim);
+  margin-top:var(--sp-3);
+  font-size:max(var(--fs-note),18px);
 }
 /* 生成頁的播放控制：跟「轉成手語」同在釘底的動作區，
    由上而下就是使用順序——先轉換，再播放。中間一條髮絲線分開兩個階段 */
