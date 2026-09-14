@@ -586,6 +586,9 @@ h2{
    不會跟手分家。舊圖示用 scaleY 把手指壓成短樁，每一拍都散成五塊。 */
 .sa-hand{width:58px;height:72px;overflow:visible;}
 .sa-hand .palm,.sa-hand .fg{fill:var(--ivory);}
+/* 指縫與掌紋：同色系壓暗一階的單一色調（象牙白 #E9EAE4 → #7D7E79），
+   做法取自 Microsoft Fluent Emoji 扁平版「舉手」—— 剪影加一個深色階，不用漸層 */
+.sa-hand .sa-seam,.sa-hand .sa-crease{fill:none;stroke:#7D7E79;stroke-linecap:round;}
 .sa-hand .fg{
   transform-box:fill-box;transform-origin:50% 92%;
   animation:sa-wave 2.4s cubic-bezier(.42,0,.35,1) infinite;

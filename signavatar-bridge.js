@@ -90,29 +90,40 @@ const HAND_SVG = `
        palm is painted over them, so a finger that moves can never come away
        from the hand. They sit on a knuckle arc — middle tallest, little
        shortest and set lower — because a row of equal fingers reads as a
-       comb. -->
-  <path class="fg f1" d="M20.6 47 L21.2 20.8 A3.4 3.4 0 0 1 27.8 20.8 L28.0 47 Z"/>
-  <path class="fg f2" d="M29.2 47 L29.7 15.6 A3.5 3.5 0 0 1 36.3 15.6 L36.5 47 Z"/>
-  <path class="fg f3" d="M37.7 47 L38.2 19.4 A3.4 3.4 0 0 1 44.6 19.4 L44.8 47 Z"/>
-  <path class="fg f4" d="M46.0 47 L46.4 26.6 A3.0 3.0 0 0 1 52.0 26.6 L52.1 47 Z"/>
+       comb. Each one narrows a little toward a rounded pad instead of being a
+       straight bar with a cap.
+       Detail follows Microsoft Fluent Emoji's flat "raised hand" (MIT): one
+       silhouette plus a single darker tone of the same colour, used only for
+       the seams between fingers and the palm creases — no gradients. The
+       fingers meet, and the seam line rides the left edge of the finger on
+       top, so it moves with that finger while the hand waves. -->
+  <g class="fg f1"><path d="M19.8 47 L19.8 38 C19.76 32.2 20.41 24.75 20.52 21.43 A3.78 4.23 0 0 1 28.08 21.43 C28.19 24.75 28.84 32.2 28.8 38 L28.8 47 Z"/></g>
+  <g class="fg f2"><path d="M28.55 47 L28.55 38 C28.51 30.28 29.13 20.36 29.24 15.95 A3.61 4.05 0 0 1 36.46 15.95 C36.57 20.36 37.19 30.28 37.15 38 L37.15 47 Z"/><path class="sa-seam" stroke-width="1.35" d="M29.39 18.45 C28.7 25.06 28.7 31.68 28.7 38.5"/></g>
+  <g class="fg f3"><path d="M36.95 47 L36.95 38 C36.91 31.65 37.53 23.48 37.64 19.85 A3.61 4.05 0 0 1 44.86 19.85 C44.97 23.48 45.59 31.65 45.55 38 L45.55 47 Z"/><path class="sa-seam" stroke-width="1.35" d="M37.79 22.35 C37.1 27.68 37.1 33.01 37.1 38.5"/></g>
+  <g class="fg f4"><path d="M45.2 47 L45.2 38 C45.16 34.14 45.71 29.18 45.81 26.98 A3.19 3.58 0 0 1 52.19 26.98 C52.29 29.18 52.84 34.14 52.8 38 L52.8 47 Z"/><path class="sa-seam" stroke-width="1.35" d="M45.96 29.48 C45.35 32.45 45.35 35.43 45.35 38.5"/></g>
   <!-- Thumb: it leaves the palm at the heel, where a thumb does. The splay
        lives on the wrapper, because a CSS transform on the path itself would
        REPLACE this rotate rather than compose with it. -->
   <g class="sa-thumb" transform="rotate(-42 26 56)">
-    <path class="fg f5" d="M19.6 57 L20.2 38.6 A3.6 3.6 0 0 1 27.0 38.6 L27.2 57 Z"/>
+    <path class="fg f5" d="M19.2 57 C19.2 49 19.64 46.57 19.79 38.57 A3.61 3.97 0 0 1 27.01 38.57 C27.08 46.57 27.6 49 27.6 57 Z"/>
   </g>
   <!-- Palm: the knuckle line is scalloped, so the fingers rise out of webbing
        the way they do on a hand instead of standing on a flat edge, and the
        sides curve in to a wrist rather than running straight down — a
-       straight taper reads as a paddle. -->
+       straight taper reads as a paddle. The outer edge runs straight up into
+       the little finger (no step), and the heel bulges under the thumb. -->
   <path class="palm" d="M18.6 44.8
     Q19.4 38.6 23.6 38.2 Q26.6 37.9 28.4 38.2
     Q30.8 37.6 32.8 37.6 Q35.0 37.6 37.0 38.2
-    Q39.2 37.9 42.0 38.3 Q46.0 38.8 47.4 41.0
-    Q49.8 44.4 50.2 49.4
-    C50.9 57.0 49.4 63.0 46.4 66.6
+    Q39.2 37.9 42.0 38.3 Q46.4 38.4 49.6 38.6
+    Q52.8 39.4 52.8 43.6 Q52.8 48.4 51.6 53.0
+    C50.4 58.8 49.0 63.4 46.4 66.6
     Q43.6 69.9 37.2 70.0 L29.4 70.0
-    Q23.2 69.9 21.0 66.6 C18.2 62.4 17.8 52.2 18.6 44.8 Z"/>
+    Q22.4 69.9 19.8 65.8 C16.9 61.2 17.2 51.6 18.6 44.8 Z"/>
+  <!-- Two creases only: the heart line under the fingers and the life line
+       around the thumb mound. -->
+  <path class="sa-crease" stroke-width="1.15" d="M49.4 46.2 Q41.6 43.9 31.4 43.8"/>
+  <path class="sa-crease" stroke-width="1.15" d="M22.2 47.4 Q21.8 59.2 30.2 67.4"/>
 </svg>`;
 
 let loadingEl = null;
