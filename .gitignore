@@ -1,6 +1,10 @@
 .DS_Store
 .claude/settings.local.json
 
+# --- 金鑰與憑證：一律不入版控（2026-03 曾把 .env 的 API 金鑰 commit 進歷史）---
+.env
+.env.*
+
 # --- 下載素材與環境：不入版控、不散布 ---
 # data-sources.md 明訂影片與大型 JSON 不進版控，且 repo 需維持 private
 recordings/
