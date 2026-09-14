@@ -1171,10 +1171,15 @@ h2{
   position:static;width:auto;height:auto;overflow:visible;
   clip:auto;clip-path:none;white-space:normal;
 }
+/* info 是流程中的例行播報（「這句辨識完成，按空白鍵繼續錄下一句」「錄製中…」
+   「攝影機已開啟…」這類）。畫面上不需要它們——每比完一句就多一行字，把下面
+   結果區的位置吃掉。仍然留在 DOM 裡讓輔助技術朗讀，只是不顯示。
+   warn 不動：攝影機沒開成、後端沒連上、幀數不夠這些是真的要被看到的，
+   全部藏起來的話出事時畫面上不會有任何交代。 */
 .rail .console-note[data-state="info"]{
-  color:var(--ivory-dim);
-  margin-top:var(--sp-3);
-  font-size:max(var(--fs-note),18px);
+  position:absolute;width:1px;height:1px;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;
+  margin-top:0;padding:0;border:0;
 }
 /* 生成頁的播放控制：跟「轉成手語」同在釘底的動作區，
    由上而下就是使用順序——先轉換，再播放。中間一條髮絲線分開兩個階段 */
