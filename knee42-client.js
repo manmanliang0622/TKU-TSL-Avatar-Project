@@ -174,34 +174,45 @@ function updateBadge(hands, pose) {
     hands.length || shoulders ? "active" : "idle");
 }
 
+// 骨架圖層鋪滿整個舞台，影片卻是 object-fit:contain（比例不合就留黑邊）。
+// 以前 canvas 用影片原始尺寸、再被 CSS 拉滿舞台，只要舞台和影片比例不同
+// ——手機直向自拍鏡頭（例如 480×640）塞進 4:3 舞台——骨架就被橫向拉寬、
+// 偏離人。改成 canvas 跟舞台同尺寸，座標換算到影片實際畫出來的那塊矩形。
+// 不靠 canvas 上的 object-fit：WebKit（iOS Safari、LINE 內建瀏覽器）沒把握。
+// 兩層都以舞台中心 scaleX(-1)，黑邊左右對稱，鏡像後依然對齊。
 function draw(hands, pose) {
-  if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+  const dpr = window.devicePixelRatio || 1;
+  const cw = Math.round(canvas.clientWidth * dpr);
+  const ch = Math.round(canvas.clientHeight * dpr);
+  if (canvas.width !== cw || canvas.height !== ch) {
+    canvas.width = cw;
+    canvas.height = ch;
   }
-  const w = canvas.width, h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
+  ctx.clearRect(0, 0, cw, ch);
+  if (!cw || !ch) return;
+  const scale = Math.min(cw / video.videoWidth, ch / video.videoHeight);
+  const w = video.videoWidth * scale, h = video.videoHeight * scale;
+  const ox = (cw - w) / 2, oy = (ch - h) / 2;
+  const line = (p, q) => {
+    ctx.moveTo(ox + p[0] * w, oy + p[1] * h);
+    ctx.lineTo(ox + q[0] * w, oy + q[1] * h);
+  };
   if (pose) {
     ctx.strokeStyle = "rgba(255,180,84,.85)";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3 * dpr;
     ctx.beginPath();
     for (const [a, b] of POSE_EDGES) {
       const p = pose.landmarks[a], q = pose.landmarks[b];
       if (!p || !q) continue;
-      ctx.moveTo(p[0] * w, p[1] * h);
-      ctx.lineTo(q[0] * w, q[1] * h);
+      line(p, q);
     }
     ctx.stroke();
   }
   for (const hand of hands) {
     ctx.strokeStyle = "rgba(79,216,232,.9)";
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2.5 * dpr;
     ctx.beginPath();
-    for (const [a, b] of HAND_EDGES) {
-      const p = hand.landmarks[a], q = hand.landmarks[b];
-      ctx.moveTo(p[0] * w, p[1] * h);
-      ctx.lineTo(q[0] * w, q[1] * h);
-    }
+    for (const [a, b] of HAND_EDGES) line(hand.landmarks[a], hand.landmarks[b]);
     ctx.stroke();
   }
 }
