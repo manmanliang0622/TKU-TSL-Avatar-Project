@@ -647,19 +647,32 @@ function smoothVec(key, v, dt, tau) {
   return prev.clone();
 }
 
-function solveArm(side, poseWorld, visOK, handPresent, body = null, dt = 0.016, restW = 0) {
+function solveArm(side, poseWorld, visOK, handPresent, body = null, dt = 0.016, restW = 0, otherRestW = 0) {
   const arm = ARM[side];
   if (!arm) return;
   const lerp = smoothAlpha(dt, TUNE.tauArm);
   const [iSho, iElb, iWri] = side === "left" ? [11, 13, 15] : [12, 14, 16];
   // a detected hand vouches for the wrist even when pose visibility dips
   if (!visOK(iSho) || (!visOK(iWri) && !handPresent)) {
-    // no reliable target: ease back toward rest. Drop the cached target too,
-    // or the collision pass would keep re-aiming this arm at a stale pose and
-    // fight the easing.
+    /* No reliable target: let the arm down to its placed rest pose.
+     *
+     * This used to slerp the bones toward the IDENTITY quaternion, which on a
+     * VRM's normalised humanoid is the T-pose — arms straight out to the
+     * sides. So every time a wrist's visibility dipped below 0.4 without a
+     * hand in view, the arm floated UP toward horizontal. It happened most at
+     * the start and end of sentences, whose rest frame is the lowest frame of
+     * the clip: a standing signer's hanging hand is below the frame there
+     * (gs0914 我: the left hand drifted to 44cm out from the shoulder and only
+     * 18cm below it during the opening hold, then snapped down on the first
+     * sign). Easing toward the rest pose instead, at the same pace, is what a
+     * hand you cannot see is most likely doing. Drop the cached target too,
+     * or the collision pass would keep re-aiming this arm at a stale pose and
+     * fight the easing. */
+    const S = arm.upper.getWorldPosition(new THREE.Vector3());
+    const reach = (arm.L1 + arm.L2) * REST_REACH;
+    aimArm(side, S, S.clone().add(restReach(side, reach)), restPole(side, reach * 0.5),
+      smoothAlpha(dt, 0.2), dt, 1);
     arm.lastT = null;
-    arm.upper.quaternion.slerp(new THREE.Quaternion(), smoothAlpha(dt, 0.2));
-    arm.lower.quaternion.slerp(new THREE.Quaternion(), smoothAlpha(dt, 0.2));
     // the roll reference goes with it: rigHand must not decompose the wrist
     // against an aim that no longer describes where this forearm is pointing
     arm.lowerAim = null;
@@ -745,8 +758,14 @@ function solveArm(side, poseWorld, visOK, handPresent, body = null, dt = 0.016, 
    * scale. Where the pair sits on the body still comes from the per-side
    * mapping, so body-anchored signs stay anchored; only the vector between
    * the hands is restored, and it is restored without distortion. */
+  /* A pair only exists while both hands sign. When the composer has put the
+   * other arm at rest (a one-handed sign), its wrist is a placed hanging
+   * position, and on the raw data it was worse: the pose model's guess for a
+   * wrist below the frame, noisy enough to shake this arm through the pair
+   * midpoint. So this arm eases over to being solved alone by the other
+   * arm's rest weight. */
   let wristTarget = null;
-  if (TUNE.pairGeom && visOK(15) && visOK(16)) {
+  if (TUNE.pairGeom && visOK(15) && visOK(16) && otherRestW < 1) {
     const wl = mpToAvatar(poseWorld[15]), wr = mpToAvatar(poseWorld[16]);
     const mid = mapFrom(wl, sgL, BODY.shoulder.left)
       .add(mapFrom(wr, sgR, BODY.shoulder.right))
@@ -757,6 +776,7 @@ function solveArm(side, poseWorld, visOK, handPresent, body = null, dt = 0.016, 
       .add(BODY.up.clone().multiplyScalar(d.dot(upS) * iso))
       .add(BODY.fwd.clone().multiplyScalar(d.dot(fwdS) * iso));
     wristTarget = mid.add(dA.multiplyScalar(side === "left" ? 0.5 : -0.5));
+    if (otherRestW > 0) wristTarget.lerp(rebuild(bodyRel(wri)), otherRestW);
   } else {
     wristTarget = rebuild(bodyRel(wri));   // one wrist unreliable: solve it alone
   }
@@ -1139,10 +1159,12 @@ function closestBetweenSegments(p1, q1, p2, q2) {
 /* One pass for every contact constraint. Each side accumulates a desired
  * offset, which is then eased into CORR so the arm never jumps. */
 function updateCollisionCorrections(dt, restW = 0) {
+  // one weight for both arms (sentence bookends) or {left, right} (one arm
+  // resting through a one-handed sign)
+  const restOf = side => Math.min(1, Math.max(0, typeof restW === "number" ? restW : (restW[side] || 0)));
   if (!TUNE.collide) { for (const k of Object.keys(CORR)) CORR[k].set(0, 0, 0);
     for (const k of Object.keys(POLE_CORR)) POLE_CORR[k].set(0, 0, 0); return; }
   const alpha = smoothAlpha(dt, TAU_CORR);
-  const active = 1 - Math.min(1, Math.max(0, restW));
   const want = { left: new THREE.Vector3(), right: new THREE.Vector3() };
   const p = new THREE.Vector3();
 
@@ -1216,7 +1238,7 @@ function updateCollisionCorrections(dt, restW = 0) {
     const wantPole = hits
       ? pc.clone().add(sum.divideScalar(hits).multiplyScalar(CORR_GAIN))
       : new THREE.Vector3();
-    pc.lerp(wantPole.multiplyScalar(active), alpha);
+    pc.lerp(wantPole.multiplyScalar(1 - restOf(side)), alpha);
     if (pc.length() > POLE_MAX) pc.setLength(POLE_MAX);
   }
 
@@ -1257,7 +1279,7 @@ function updateCollisionCorrections(dt, restW = 0) {
   // the correction relaxes back out on its own
   for (const side of ["left", "right"]) {
     const corr = CORR[side] || (CORR[side] = new THREE.Vector3());
-    corr.lerp(want[side].multiplyScalar(active), alpha);
+    corr.lerp(want[side].multiplyScalar(1 - restOf(side)), alpha);
     if (corr.length() > CORR_MAX) corr.setLength(CORR_MAX);  // anti-windup
   }
 }
@@ -2290,6 +2312,7 @@ function update(frame, dt) {
 
   const step = Math.min(Math.max(dt || 0.016, 1e-4), 0.1);  // clamp: tab-switch stalls
   let restW = 0;
+  const armRest = { left: 0, right: 0 };
   if (frame.pose) {
     const vis = frame.pose.visibility;
     const visOK = i => (vis ? vis[i] : 1) >= 0.4;
@@ -2298,8 +2321,12 @@ function update(frame, dt) {
     rigTorso(frame.pose.world_landmarks, step);
     holdShoulders(step);
     restW = Math.min(1, Math.max(0, frame._rest || 0));
-    solveArm("left", frame.pose.world_landmarks, visOK, hasHand("left"), body, step, restW);
-    solveArm("right", frame.pose.world_landmarks, visOK, hasHand("right"), body, step, restW);
+    // the composer also rests ONE arm through a sign that hand does not take
+    // part in (_restL/_restR); the sentence-end weight still covers both
+    armRest.left = Math.max(restW, Math.min(1, Math.max(0, frame._restL || 0)));
+    armRest.right = Math.max(restW, Math.min(1, Math.max(0, frame._restR || 0)));
+    solveArm("left", frame.pose.world_landmarks, visOK, hasHand("left"), body, step, armRest.left, armRest.right);
+    solveArm("right", frame.pose.world_landmarks, visOK, hasHand("right"), body, step, armRest.right, armRest.left);
     rigHead(poseLm(frame.pose.landmarks, frame.pose.visibility, false));
   }
   // which wrists are hanging low (see LOW_HAND_ENTER): update the hysteresis
@@ -2325,19 +2352,20 @@ function update(frame, dt) {
   for (const h of frame.hands || []) {
     const side = h.handedness.toLowerCase();
     if (ARM[side] && ARM[side].wristLow) continue;   // hanging: data untrustworthy
+    if (armRest[side] >= 0.5) continue;              // placed at rest: no handshape to show
     if (rigHand(h.handedness, handLm(h.landmarks), h.world_landmarks, step)) seen.add(side);
   }
   for (const side of ["left", "right"]) if (!seen.has(side)) relaxFingers(side, step);
   // a hanging arm also has a neutral wrist, not the last sign's palm angle
   for (const side of ["left", "right"]) {
     const arm = ARM[side];
-    const w = Math.max(frame._rest || 0,
+    const w = Math.max(frame._rest || 0, armRest[side],
       arm && (arm.wristLow || (arm.palmBad || 0) > PALM_BAD_STREAK) ? 1 : 0);
     if (w > 0) relaxWrist(side, step, w);
   }
   // after the handshape exists, measure contacts and ease the correction
   // that solveArm will apply (one frame of lag, but no popping)
-  updateCollisionCorrections(step, restW);
+  updateCollisionCorrections(step, armRest);
   rigFace(frame.face ? frame.face.blendshapes : null, step);
   vrm.update(dt || 0.016);
 }

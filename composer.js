@@ -538,6 +538,180 @@
     return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
   }
 
+  /* ── the hand that is not signing goes down to the side ───────────────
+     One-handed signs are written for the dominant hand alone (HamNoSys /
+     SiGML specify only that hand), and the other one simply hangs. The
+     recordings do not say "hanging", though. A standing signer's idle hand is
+     below the frame, and MediaPipe still reports a wrist for it, INSIDE the
+     frame, with visibility around 0.6 — above the retarget's 0.4 threshold.
+     Measured on 我 (gs0914): that wrist's frame-to-frame noise is 0.15
+     shoulder widths vertically and 0.22 in depth, eight times the pointing
+     hand's, and the avatar followed it — the left arm floated up and down.
+     Seated and dictionary signers rest the hand at the waist instead, where
+     it is detected but does nothing (一點, 看, 口, 痛 — checked frame by frame).
+
+     So each segment decides, per side, whether that hand signs at all, and a
+     hand that does not is placed at rest for the whole sign: its hand
+     landmarks are dropped and its elbow and wrist are replaced by a hanging
+     arm built in the frame's own body frame (the same construction as the
+     sentence's rest bookends), and the frames carry _restL/_restR so the
+     retarget places that arm the way it places both arms at a sentence end.
+
+     Two regimes, measured over 763 lexicon entries (1,526 hands):
+     - detected (in ≥20% of frames): idle when 90% of the time the wrist never
+       enters signing space (REST_ENTER, the threshold trimRestPosture already
+       uses) and it travels less than 0.35 shoulder widths. A still hand held
+       UP — 名字, 人, the fist of 對不起 — is in signing space and stays.
+     - not detected: idle when its median height is below mid-torso and the
+       other hand is clearly signing. The pose model's guess for an unseen
+       wrist is biased upward and noisy (謝謝's left wrist: median -0.61, 90th
+       percentile -0.51), so the bar is lower; requiring the other hand keeps
+       low-resolution clips where no hand is detected at all out of it.
+     Never both hands: the one entry where both qualified (家電行) is left
+     alone.
+
+     A sign can also use one hand for only PART of its length — 早安 is 早
+     (one fist) and then 安 (both hands), and during 早 the left hand hangs out
+     of view exactly like 我's. So within a sign whose hand does take part, a
+     stretch of at least IDLE_RUN_SEC where that hand is not detected, its
+     wrist sits below signing space and the other hand is signing is rested
+     too, easing in and out over IDLE_RAMP_SEC of the neighbouring frames. */
+  const IDLE_SEEN_DET = 0.2;
+  const IDLE_STILL_RANGE = 0.35;   // shoulder widths
+  const IDLE_UNSEEN_MEDIAN = -0.5;
+  const IDLE_UNSEEN_P90 = -0.35;
+  const IDLE_OTHER_DET = 0.5;
+  const IDLE_RUN_SEC = 0.25;
+  const IDLE_RAMP_SEC = 0.15;
+
+  function quantile(v, q) {
+    if (!v.length) return null;
+    const a = [...v].sort((x, y) => x - y);
+    return a[Math.min(a.length - 1, Math.floor(q * a.length))];
+  }
+
+  function idleSides(seg) {
+    const idle = { Left: false, Right: false, weights: { Left: null, Right: null } };
+    if (seg.length < 5) return idle;
+    const widths = [];
+    for (const f of seg) {
+      const p = f.pose && f.pose.landmarks;
+      if (p && p[L_SHO] && p[R_SHO]) widths.push(Math.hypot(p[L_SHO][0] - p[R_SHO][0], p[L_SHO][1] - p[R_SHO][1]));
+    }
+    const sw = median(widths);
+    const stat = {};
+    for (const [side, wi] of [["Left", L_WRI], ["Right", R_WRI]]) {
+      let det = 0;
+      const hs = [], xs = [], ys = [];
+      for (const f of seg) {
+        if ((f.hands || []).some(h => h.handedness === side)) det++;
+        const p = f.pose && f.pose.landmarks;
+        if (!p || !p[wi] || !p[L_HIP] || !p[R_HIP]) continue;
+        const shoY = (p[L_SHO][1] + p[R_SHO][1]) / 2;
+        const torso = (p[L_HIP][1] + p[R_HIP][1]) / 2 - shoY;
+        if (torso > 1e-4) hs.push((shoY - p[wi][1]) / torso);
+        xs.push(p[wi][0]);
+        ys.push(p[wi][1]);
+      }
+      // range after a 5-frame running median, so single-frame spikes do not count
+      const med5 = a => a.map((_, i) => median(a.slice(Math.max(0, i - 2), i + 3)));
+      const xm = med5(xs), ym = med5(ys);
+      const range = sw > 1e-4 && xm.length
+        ? Math.hypot(quantile(xm, 0.95) - quantile(xm, 0.05), quantile(ym, 0.95) - quantile(ym, 0.05)) / sw
+        : Infinity;
+      stat[side] = { det: det / seg.length, hMed: median(hs), hP90: quantile(hs, 0.9), range };
+    }
+    for (const [side, other] of [["Left", "Right"], ["Right", "Left"]]) {
+      const s = stat[side], o = stat[other];
+      if (s.hMed === null) continue;
+      idle[side] = s.det >= IDLE_SEEN_DET
+        ? s.hP90 < REST_ENTER && s.range < IDLE_STILL_RANGE
+        : s.hMed < IDLE_UNSEEN_MEDIAN && s.hP90 < IDLE_UNSEEN_P90 && o.det >= IDLE_OTHER_DET;
+    }
+    if (idle.Left && idle.Right) idle.Left = idle.Right = false;
+    for (const side of ["Left", "Right"]) {
+      if (!idle.Left && !idle.Right) idle.weights[side] = partialRest(seg, side);
+    }
+    if (idle.weights.Left && idle.weights.Right) idle.weights.Left = idle.weights.Right = null;
+    return idle;
+  }
+
+  /* per-frame rest weights for the stretches of a sign one hand sits out, or
+     null when there are none */
+  function partialRest(seg, side) {
+    const other = side === "Left" ? "Right" : "Left";
+    const wi = side === "Left" ? L_WRI : R_WRI;
+    const n = seg.length;
+    const has = (i, s) => (seg[i].hands || []).some(h => h.handedness === s);
+    const near = (i, s) => { for (let j = Math.max(0, i - 2); j <= Math.min(n - 1, i + 2); j++) if (has(j, s)) return true; return false; };
+    const h = seg.map(f => {
+      const p = f.pose && f.pose.landmarks;
+      if (!p || !p[wi] || !p[L_HIP] || !p[R_HIP]) return null;
+      const shoY = (p[L_SHO][1] + p[R_SHO][1]) / 2;
+      const torso = (p[L_HIP][1] + p[R_HIP][1]) / 2 - shoY;
+      return torso > 1e-4 ? (shoY - p[wi][1]) / torso : null;
+    });
+    const out = seg.map((_, i) => {
+      if (near(i, side) || !near(i, other)) return false;
+      const win = h.slice(Math.max(0, i - 2), i + 3).filter(v => v !== null);
+      return win.length > 0 && median(win) < REST_ENTER;
+    });
+    const w = new Array(n).fill(0);
+    let any = false;
+    for (let i = 0; i < n;) {
+      if (!out[i]) { i++; continue; }
+      let j = i;
+      while (j + 1 < n && out[j + 1]) j++;
+      if (seg[j].timestamp - seg[i].timestamp >= IDLE_RUN_SEC) {
+        any = true;
+        for (let k = 0; k < n; k++) {
+          const d = k < i ? seg[i].timestamp - seg[k].timestamp
+            : k > j ? seg[k].timestamp - seg[j].timestamp : 0;
+          w[k] = Math.max(w[k], Math.max(0, 1 - d / IDLE_RAMP_SEC));
+        }
+      }
+      i = j + 1;
+    }
+    return any ? w : null;
+  }
+
+  /* copies of the segment's frames with the idle arms lowered and their hands
+     dropped; _restL/_restR say how much of each arm the retarget should place */
+  function restWeight(idle, side, i) {
+    if (idle[side]) return 1;
+    const w = idle.weights && idle.weights[side];
+    return w ? w[i] : 0;
+  }
+
+  function lowerIdleArms(seg, idle) {
+    return seg.map((f, i) => {
+      const wL = restWeight(idle, "Left", i), wR = restWeight(idle, "Right", i);
+      const out = { ...f, _restL: wL, _restR: wR };
+      if (!(wL > 0) && !(wR > 0)) return out;
+      out.hands = (f.hands || []).filter(h => restWeight(idle, h.handedness, i) < 0.5);
+      if (f.pose) {
+        const low = lowerArms(f.pose, wL > 0, wR > 0);
+        if (low) {
+          // partial weights blend the recorded arm toward the hanging one
+          for (const [w, idx] of [[wL, [13, L_WRI]], [wR, [14, R_WRI]]]) {
+            if (!(w > 0) || w >= 1) continue;
+            for (const key of ["landmarks", "world_landmarks"]) {
+              for (const j of idx) {
+                const a = f.pose[key][j], b = low[key][j];
+                low[key][j] = [0, 1, 2].map(c => a[c] + (b[c] - a[c]) * w);
+              }
+            }
+            if (low.visibility && f.pose.visibility) for (const j of idx) {
+              low.visibility[j] = w >= 0.5 ? 1 : f.pose.visibility[j];
+            }
+          }
+          out.pose = low;
+        }
+      }
+      return out;
+    });
+  }
+
   function bodyScale(seg) {
     const widths = [], torsos = [];
     for (const f of seg) {
@@ -572,20 +746,107 @@
      "slow" for pausing rather than for stroking slowly, and then compress the
      stroke to fix a pause.
 
-     Each segment is resampled so its stroke speed lands on TEMPO_TARGET (the
-     measured median). The scale is bounded: past these limits we would be
-     inventing motion that was never recorded, and a sign that is genuinely
-     long — 辣 repeats its stroke several times, and repetition can be
-     grammatical in TSL — should get faster, not truncated. Resampling also
-     puts every segment on COMPOSE_FPS; source clips run at their own rate
-     (玩 was recorded at ~60fps), which was a second source of unevenness. */
-  const TEMPO_TARGET = 0.38;   // normalized image units of wrist path per second
-  const TEMPO_MIN = 0.3;       // never compress a segment past 3.3x
-  const TEMPO_MAX = 2.5;       // never stretch one past 2.5x
-  const TEMPO_MIN_SEC = 0.35;  // ...and never leave a sign too brief to read
-  const TEMPO_MAX_SEC = 2.6;
+     Each segment is resampled so its stroke speed lands on TEMPO_TARGET.
+     Resampling also puts every segment on COMPOSE_FPS; source clips run at
+     their own rate (玩 was recorded at ~60fps).
 
-  /* Total wrist path divided by duration.
+     ── 2026-09-15: every sign now plays at the SAME speed ────────────────
+     The first version still let the speed vary by 2x, measured over 763
+     lexicon entries, for three reasons:
+
+     1. It was measured in normalised IMAGE units, but the avatar reproduces
+        motion relative to the signer's BODY (solveArm divides by shoulder
+        width). A signer standing close to the camera (shoulders 0.33 of the
+        frame, tslsigner) and one far away (0.16, slwords) at the same image
+        speed come out at 1.2 and 2.5 shoulder-widths per second on the
+        avatar. Speed is now shoulder widths per second — the scale the sign
+        language literature normalises poses by (biacromial width) — measured
+        on the world landmarks' image plane, which is metric on both axes
+        (normalised x and y are fractions of different lengths).
+     2. Landmark noise was counted as travel. Path length grows with jitter,
+        and grows again with frame rate, so a noisy or 60fps clip read as
+        "fast" and got slowed down. The wrist is now resampled to COMPOSE_FPS
+        and passed through the playback smoothing kernel before its path is
+        summed, and a hand that is not signing (see idleSides) is not counted
+        at all — on 我 the hanging left wrist's noise had more "path" than the
+        pointing hand.
+     3. The scale was clamped to 0.3–2.5x and the duration to 0.35–2.6s, and
+        241 of 763 entries hit a clamp. Only the lower duration bound is kept:
+        a sign with almost no movement has no speed to equalise, and the floor
+        is what keeps 家 readable. Everything else lands on the target. */
+  /* 1.1 is where the new measure puts the typical sign: over 688 entries the
+     sum of all sign durations comes out at 0.98 of what it was, so sentences
+     keep their overall length and only the unevenness goes (spread of output
+     speed, CV, 0.48 → 0.10; all of what is left is the 44 signs held up by the
+     floor below). Measured on the avatar's own hands the CV is about 0.25:
+     the retarget maps sideways and up/forward travel at different scales and
+     its stroke amplifier is off during holds, so very short signs and long
+     holds still read a little faster or slower. No upper bound: the long
+     outliers are genuinely long — 小烏來風景特定區 is five signs, and 2.6s
+     played them at five times the speed of everything around them. */
+  const TEMPO_TARGET = 1.1;    // shoulder widths of wrist path per second
+  const TEMPO_MIN_SEC = 0.35;  // a sign with (almost) no movement still needs to be readable
+
+  /* the wrist's travel in shoulder widths — resampled onto COMPOSE_FPS and
+     smoothed first, so neither jitter nor frame rate adds distance */
+  function wristTravel(seg, wi) {
+    const t0 = seg[0].timestamp;
+    const dur = seg[seg.length - 1].timestamp - t0;
+    const n = Math.max(2, Math.round(dur * COMPOSE_FPS) + 1);
+    const pts = [];
+    let j = 0;
+    for (let i = 0; i < n; i++) {
+      const st = t0 + (dur * i) / (n - 1);
+      while (j < seg.length - 2 && seg[j + 1].timestamp < st) j++;
+      const a = seg[j], b = seg[j + 1] || seg[j];
+      const wa = a.pose && a.pose.world_landmarks && a.pose.world_landmarks[wi];
+      const wb = b.pose && b.pose.world_landmarks && b.pose.world_landmarks[wi];
+      if (!wa || !wb) { pts.push(null); continue; }
+      const k = Math.min(1, Math.max(0, (st - a.timestamp) / Math.max(1e-6, b.timestamp - a.timestamp)));
+      pts.push([wa[0] + (wb[0] - wa[0]) * k, wa[1] + (wb[1] - wa[1]) * k]);
+    }
+    let path = 0, prev = null;
+    for (let i = 0; i < n; i++) {
+      if (!pts[i]) { prev = null; continue; }
+      let x = 0, y = 0, wsum = 0;
+      for (let d = -SMOOTH_R; d <= SMOOTH_R; d++) {
+        const p = pts[i + d];
+        if (!p) continue;
+        const w = SMOOTH_W[d + SMOOTH_R];
+        x += p[0] * w; y += p[1] * w; wsum += w;
+      }
+      const cur = [x / wsum, y / wsum];
+      if (prev) path += Math.hypot(cur[0] - prev[0], cur[1] - prev[1]);
+      prev = cur;
+    }
+    return path;
+  }
+
+  /* shoulder width on the world landmarks' image plane (metres) */
+  function shoulderWidthXY(seg) {
+    const widths = [];
+    for (const f of seg) {
+      const w = f.pose && f.pose.world_landmarks;
+      if (w && w[L_SHO] && w[R_SHO]) widths.push(Math.hypot(w[L_SHO][0] - w[R_SHO][0], w[L_SHO][1] - w[R_SHO][1]));
+    }
+    return median(widths);
+  }
+
+  /* shoulder widths per second of the busier signing hand */
+  function strokeSpeed(seg, idle = {}) {
+    if (seg.length < 3) return null;
+    const dur = seg[seg.length - 1].timestamp - seg[0].timestamp;
+    const width = shoulderWidthXY(seg);
+    if (!(dur > 1e-3) || !(width > 1e-3)) return null;
+    let path = 0;
+    for (const [side, wi] of [["Left", L_WRI], ["Right", R_WRI]]) {
+      if (!idle[side]) path = Math.max(path, wristTravel(seg, wi));
+    }
+    return path / width / dur;
+  }
+
+  /* Total wrist path divided by duration (the first version's measure, in
+     image units; kept for the audit tools that still read it).
      The obvious alternative — median speed over "moving" frames — was tried
      and is wrong here, because a fixed speed threshold is not scale
      invariant: speeding a clip up lifts its HOLD frames above the threshold,
@@ -614,7 +875,12 @@
 
   /* resample a segment onto a new duration, keeping COMPOSE_FPS */
   function retime(seg, scale) {
-    if (seg.length < 3 || Math.abs(scale - 1) < 0.03) return seg;
+    // Skipping a near-1 scale is only safe when the clip is already on
+    // COMPOSE_FPS: a 60fps clip passed through untouched kept twice the frames,
+    // so smoothFrames' 5-frame kernel spanned half the time on that sign alone.
+    const step = seg.length > 1 ? (seg[seg.length - 1].timestamp - seg[0].timestamp) / (seg.length - 1) : 0;
+    const onGrid = Math.abs(step * COMPOSE_FPS - 1) < 0.1;
+    if (seg.length < 3 || (Math.abs(scale - 1) < 0.03 && onGrid)) return seg;
     const t0 = seg[0].timestamp;
     const dur = seg[seg.length - 1].timestamp - t0;
     if (!(dur > 1e-3)) return seg;
@@ -636,15 +902,34 @@
 
   /* Speed alone is not enough to decide a duration. 家 covers very little
      ground in 0.35s, so matching its speed to the target would compress it to
-     0.13s — four frames, unreadable. The duration bound is what stops a sign
-     with little movement from vanishing, and a long one from dragging. */
-  function normalizeTempo(seg) {
-    const speed = meanSpeed(seg);
+     0.13s — four frames, unreadable. The lower duration bound is what stops a
+     sign with little movement from vanishing; it is the only bound left. */
+  function normalizeTempo(seg, idle = {}) {
+    const speed = strokeSpeed(seg, idle);
     if (!speed || seg.length < 3) return seg;
     const dur = seg[seg.length - 1].timestamp - seg[0].timestamp;
-    let scale = Math.min(TEMPO_MAX, Math.max(TEMPO_MIN, speed / TEMPO_TARGET));
-    scale = Math.min(Math.max(scale, TEMPO_MIN_SEC / dur), TEMPO_MAX_SEC / dur);
+    const scale = Math.max(speed / TEMPO_TARGET, TEMPO_MIN_SEC / dur);
     return retime(seg, scale);
+  }
+
+  /* Transitions move at the same speed as the signs: the time between two
+     signs is how far the wrists have to travel, in shoulder widths, divided
+     by TEMPO_TARGET. It used to be 0.12 + 0.9 × the image-space distance
+     capped at 0.55s — about twice the sign speed, so every sign was followed
+     by a snap. Wrists, not hands: a hand dropping to rest (see idleSides) has
+     no hand landmarks but still has to travel. */
+  const TRAVEL_MIN_SEC = 0.12;
+  const TRAVEL_MAX_SEC = 0.9;
+
+  function travelSeconds(a, b, widthA, widthB) {
+    const wa = a.pose && a.pose.world_landmarks, wb = b.pose && b.pose.world_landmarks;
+    const width = ((widthA || 0) + (widthB || 0)) / ((widthA ? 1 : 0) + (widthB ? 1 : 0) || 1);
+    if (!wa || !wb || !(width > 1e-3)) return blendSeconds(a, b);
+    let d = 0;
+    for (const wi of [L_WRI, R_WRI]) {
+      if (wa[wi] && wb[wi]) d = Math.max(d, Math.hypot(wb[wi][0] - wa[wi][0], wb[wi][1] - wa[wi][1]));
+    }
+    return Math.min(TRAVEL_MAX_SEC, Math.max(TRAVEL_MIN_SEC, d / width / TEMPO_TARGET));
   }
 
   /* transition length scales with how far the hands must travel (epenthesis) */
@@ -820,7 +1105,14 @@
      the retarget reads) have to agree, or the two disagree about where the
      arms are. */
   function synthRestFrame(src) {
-    const p = src.pose;
+    const pose = src.pose ? lowerArms(src.pose, true, true) : null;
+    // no hands: the retarget eases the fingers back to a neutral shape rather
+    // than holding the last sign's handshape while the arms come down
+    return pose ? { pose, hands: [], face: null } : null;
+  }
+
+  /* the pose with either or both arms hanging (idleSides lowers just one) */
+  function lowerArms(p, lowerLeft, lowerRight) {
     if (!p || !p.landmarks || !p.world_landmarks) return null;
     const lm = p.landmarks.map(v => [...v]);
     const wl = p.world_landmarks.map(v => [...v]);
@@ -829,7 +1121,9 @@
     const torso = hipY - shoY;
     if (!(Math.abs(torso) > 1e-4)) return null;
     const halfW = Math.abs(lm[L_SHO][0] - lm[R_SHO][0]) / 2 || 0.1;
-    for (const [sho, elb, wri, out] of [[L_SHO, 13, L_WRI, 1], [R_SHO, 14, R_WRI, -1]]) {
+    const sides = [[L_SHO, 13, L_WRI, 1, lowerLeft], [R_SHO, 14, R_WRI, -1, lowerRight]];
+    for (const [sho, elb, wri, out, lower] of sides) {
+      if (!lower) continue;
       lm[elb] = [lm[sho][0] + out * 0.10 * halfW, shoY + 0.60 * torso, lm[sho][2]];
       lm[wri] = [lm[sho][0] + out * 0.22 * halfW, shoY + 1.12 * torso, lm[sho][2]];
     }
@@ -844,17 +1138,21 @@
     const rv = sub(wl[R_SHO], wl[L_SHO]);
     const width = len(rv);
     const right = rv.map(v => v / width);
-    for (const [sho, elb, wri, out] of [[L_SHO, 13, L_WRI, -1], [R_SHO, 14, R_WRI, 1]]) {
+    for (const [sho, elb, wri, out, lower] of sides) {
+      if (!lower) continue;
+      // the world frame's "right" runs the other way from the image's x
       wl[elb] = [0, 1, 2].map(i =>
-        wl[sho][i] + down[i] * 0.60 * torsoW + right[i] * out * 0.05 * width);
+        wl[sho][i] + down[i] * 0.60 * torsoW - right[i] * out * 0.05 * width);
       wl[wri] = [0, 1, 2].map(i =>
-        wl[sho][i] + down[i] * 1.12 * torsoW + right[i] * out * 0.11 * width);
+        wl[sho][i] + down[i] * 1.12 * torsoW - right[i] * out * 0.11 * width);
     }
     const visibility = p.visibility ? [...p.visibility] : null;
-    if (visibility) for (const i of [L_SHO, R_SHO, 13, 14, L_WRI, R_WRI, L_HIP, R_HIP]) visibility[i] = 1;
-    // no hands: the retarget eases the fingers back to a neutral shape rather
-    // than holding the last sign's handshape while the arms come down
-    return { pose: { landmarks: lm, world_landmarks: wl, visibility }, hands: [], face: null };
+    if (visibility) {
+      for (const i of [L_SHO, R_SHO, L_HIP, R_HIP]) visibility[i] = 1;
+      if (lowerLeft) visibility[13] = visibility[L_WRI] = 1;
+      if (lowerRight) visibility[14] = visibility[R_WRI] = 1;
+    }
+    return { landmarks: lm, world_landmarks: wl, visibility };
   }
 
   /* hold at rest, ease into the sentence, ease out, hold at rest again */
@@ -865,7 +1163,13 @@
     // curl, and driving the fingers from it leaves them visibly bent at the
     // ends of every sentence; with no hand data the retarget eases them back
     // to the model's own neutral instead.
-    const bare = f => (f ? { ...f, hands: [] } : null);
+    // The arms are replaced too. The deepest recorded frame is the one where a
+    // standing signer's hands have left the picture, and MediaPipe's wrists
+    // there are guesses below the retarget's visibility threshold — which sent
+    // the arms toward the model's T-pose through the whole opening hold. The
+    // rest pose is placed rather than retargeted anyway, so constructed hanging
+    // arms lose nothing and give the ramp into the first sign a clean start.
+    const bare = f => (f ? { ...f, hands: [], pose: lowerArms(f.pose, true, true) || f.pose } : null);
     const open = bare((openRaw && findRestFrame(openRaw, true)) || synthRestFrame(frames[0]));
     const close = bare((closeRaw && findRestFrame(closeRaw, false))
       || synthRestFrame(frames[frames.length - 1]));
@@ -879,18 +1183,22 @@
     // toward a placed, straight-armed rest pose by this much. Ramping it
     // across the same frames as the cross-fade is what stops the arm snapping
     // between "retargeted" and "placed" at the seam.
-    const pad = (a, b, k, body, rest) =>
-      ({ ...blendFrame(a, b, k), _tok: null, _body: body, _rest: rest });
+    // _restL/_restR come from the sign next to the bookend, so a hand that sat
+    // out the first or last sign stays down through the ramp instead of
+    // rising with the other one
+    const pad = (a, b, k, body, rest, side) =>
+      ({ ...blendFrame(a, b, k), _tok: null, _body: body, _rest: rest,
+         _restL: side._restL || 0, _restR: side._restR || 0 });
     if (open) {
-      for (let i = 0; i < hold; i++) out.push(pad(open, open, 0, first._body, 1));
+      for (let i = 0; i < hold; i++) out.push(pad(open, open, 0, first._body, 1, first));
       for (let i = 1; i <= blend; i++)
-        out.push(pad(open, first, i / (blend + 1), first._body, 1 - i / (blend + 1)));
+        out.push(pad(open, first, i / (blend + 1), first._body, 1 - i / (blend + 1), first));
     }
     out.push(...frames);
     if (close) {
       for (let i = 1; i <= blend; i++)
-        out.push(pad(last, close, i / (blend + 1), last._body, i / (blend + 1)));
-      for (let i = 0; i < hold; i++) out.push(pad(close, close, 0, last._body, 1));
+        out.push(pad(last, close, i / (blend + 1), last._body, i / (blend + 1), last));
+      for (let i = 0; i < hold; i++) out.push(pad(close, close, 0, last._body, 1, last));
     }
     let t = 0;
     return out.map((f, i) => {
@@ -916,6 +1224,7 @@
     let src = null;
     let prevLast = null;
     let prevBody = null;
+    let prevWidth = null;
     // 一個 token 可能展開成多個動作(數字逐位、外語指拼),先攤平再跑
     const signs = tokens.flatMap(name => resolve(name, lexicon));
     // 整句的片段一次要齊：拿不到就不動，不要打到一半才發現缺詞
@@ -936,14 +1245,25 @@
       // clips), then the speed pass for any static hold left at the edges
       const trimmed = trimNeutral(trimRestPosture(raw));
       if (!trimmed.length) continue;
+      // a hand that sits this sign out goes down to the side (see idleSides)
+      const idle = idleSides(trimmed);
+      const lowered = lowerIdleArms(trimmed, idle);
       // body scale is spatial, so measure it before resampling changes the
       // frame count; the signer's build does not depend on playback speed
-      const body = bodyScale(trimmed);
-      const seg = normalizeTempo(trimmed);
+      const body = bodyScale(lowered);
+      const width = shoulderWidthXY(lowered);
+      // retime() builds new frames, so the per-arm rest weights go back on
+      // after, looked up by source time
+      const retimed = normalizeTempo(lowered, idle);
+      const seg = retimed === lowered ? lowered : retimed.map((f, i) => {
+        const u = retimed.length > 1 ? i / (retimed.length - 1) : 0;
+        const k = Math.round(u * (lowered.length - 1));
+        return { ...f, _restL: lowered[k]._restL, _restR: lowered[k]._restR };
+      });
       if (!seg.length) continue;
 
-      if (prevLast) {  // cross-fade into this sign, longer when hands travel farther
-        const n = Math.round(blendSeconds(prevLast, seg[0]) * COMPOSE_FPS);
+      if (prevLast) {  // cross-fade into this sign, as long as the wrists take to travel there
+        const n = Math.round(travelSeconds(prevLast, seg[0], prevWidth, width) * COMPOSE_FPS);
         for (let i = 1; i <= n; i++) {
           const k = i / (n + 1);
           const bf = blendFrame(prevLast, seg[0], k);
@@ -953,7 +1273,12 @@
             ? { width: prevBody.width + (body.width - prevBody.width) * k,
                 torso: prevBody.torso + (body.torso - prevBody.torso) * k }
             : (body || prevBody);
-          frames.push({ index: frames.length, timestamp: t, _tok: name, _body: b, ...bf });
+          // and a hand going down to (or coming up from) rest ramps its weight
+          // over the same frames its landmarks travel
+          const restL = prevLast._restL + (seg[0]._restL - prevLast._restL) * k;
+          const restR = prevLast._restR + (seg[0]._restR - prevLast._restR) * k;
+          frames.push({ index: frames.length, timestamp: t, _tok: name, _body: b,
+            _restL: restL, _restR: restR, _seam: true, ...bf });
           t += 1 / COMPOSE_FPS;
         }
       }
@@ -964,6 +1289,7 @@
       t += seg[seg.length - 1].timestamp - t0 + 1 / COMPOSE_FPS;
       prevLast = seg[seg.length - 1];
       prevBody = body;
+      prevWidth = width;
     }
 
     if (!frames.length) return null;
@@ -1009,6 +1335,10 @@
     meanSpeed,
     retime,
     normalizeTempo,
+    strokeSpeed,
+    travelSeconds,
+    idleSides,
+    lowerIdleArms,
     findRestFrame,
     synthRestFrame,
     addRestBookends,
