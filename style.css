@@ -1148,6 +1148,29 @@ h2{
 .rail-group-inline .group-label{flex:0 0 auto;width:4.7em;line-height:1.3;}
 .rail-group-inline .segmented{flex:1 1 auto;min-width:0;}
 
+/* 自動切段 UI1：主畫面只保留校準真正需要看的三項；其餘資料收進診斷區。
+   數值全部來自 /stream 回應，這裡不定義或覆寫任何切段門檻。 */
+.auto-diagnostics{
+  display:grid;gap:7px;
+  padding:12px 14px;
+  border:1px solid rgba(233,234,228,.2);
+  border-radius:3px;
+  background:rgba(233,234,228,.045);
+  font-family:var(--sans-tc);font-size:clamp(13px,min(1vw,2.2vh),15px);
+  font-variant-numeric:tabular-nums;
+}
+.auto-diagnostics[hidden],.auto-line[hidden],#autoHoldProgress[hidden]{display:none;}
+.auto-hint{color:rgba(233,234,228,.72);line-height:1.55;margin-bottom:2px;}
+.auto-hint.is-warning{color:#ffb454;}
+.auto-line{display:grid;grid-template-columns:8.2em minmax(0,1fr);gap:10px;align-items:baseline;}
+.auto-line>span{color:rgba(233,234,228,.5);}
+.auto-line b{font-weight:500;color:var(--ivory);overflow-wrap:anywhere;}
+.auto-number{white-space:nowrap;}
+#autoHoldProgress{display:block;width:100%;height:6px;margin-top:6px;accent-color:var(--accent);}
+#autoAdvanced{padding-top:6px;border-top:1px solid rgba(233,234,228,.14);color:rgba(233,234,228,.58);}
+#autoAdvanced summary{width:fit-content;cursor:pointer;list-style-position:inside;}
+.auto-advanced-grid{display:grid;gap:6px;margin-top:8px;}
+
 /* 主結果不參與捲動：辨識出來的口語句子是這一頁的答案，
    它不該是第一個被捲走的東西，所以獨立成一列釘在動作列上方 */
 /* 空間怎麼分：

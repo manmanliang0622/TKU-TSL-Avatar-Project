@@ -49,6 +49,29 @@ const AUTO_STATE_TEXT = {
   END_CONFIRM: "確認結束中…",
   COOLDOWN: "冷卻中",
   FORCED_FINALIZE_COOLDOWN: "冷卻中",
+  REARMING: "請回到休息姿勢，重新校準中…",
+};
+const REST_STATUS_TEXT = {
+  uncalibrated: "尚未完成初始校準",
+  missing_pose: "姿態關鍵點不足",
+  missing_wrists: "手腕關鍵點不足",
+  pose_wrist_fallback: "使用 Pose 手腕備援",
+  palm_and_wrist: "雙手與手腕特徵可用",
+  waiting_knee_calibration: "雙手回膝蓋並保持校準",
+  calibrated_wrist_fallback: "暫用手腕備援",
+  waiting_visible_knees: "請調整鏡頭讓雙膝入鏡",
+  visible_knee_rest: "已確認膝蓋回位",
+  waiting_knee_return: "等待雙手回膝蓋",
+  knee_pose_moving: "手已接近膝蓋，請保持不動",
+};
+const AUTO_BLOCKER_TEXT = {
+  motion_paused: "短暫抖動，請繼續保持回位姿勢",
+  missing_pose: "肩膀／髖部追蹤不足，請讓軀幹入鏡",
+  missing_wrists: "手腕追蹤不足，請讓雙手清楚入鏡",
+  knees_not_visible: "膝蓋追蹤不足，請讓雙膝入鏡",
+  not_on_knees: "尚未確認雙手回膝蓋",
+  motion_warming: "正在量測靜止狀態",
+  moving: "追蹤位置仍在變動，請保持回位姿勢",
 };
 
 // ── DOM ──
@@ -62,6 +85,19 @@ const segSwitch    = document.querySelector("#segModeSwitch");
 const autoSegBtn   = document.querySelector("#autoSegButton");
 const manualSegBtn = document.querySelector("#manualSegButton");
 const segActionBtn = document.querySelector("#manualSegmentButton");
+const autoDiagnostics = document.querySelector("#autoDiagnostics");
+const autoHint = document.querySelector("#autoHint");
+const autoTracking = document.querySelector("#autoTracking");
+const autoMotion = document.querySelector("#autoMotion");
+const autoHold = document.querySelector("#autoHold");
+const autoHoldProgress = document.querySelector("#autoHoldProgress");
+const autoDurationRow = document.querySelector("#autoDurationRow");
+const autoDuration = document.querySelector("#autoDuration");
+const autoAdvanced = document.querySelector("#autoAdvanced");
+const autoFps = document.querySelector("#autoFps");
+const autoDistance = document.querySelector("#autoDistance");
+const autoReference = document.querySelector("#autoReference");
+const autoRawState = document.querySelector("#autoRawState");
 const steps = [
   document.querySelector("#recognitionStep1"),
   document.querySelector("#recognitionStep2"),
@@ -77,6 +113,7 @@ let latestFrame = null;          // 偵測迴圈的最新一幀 {pose, hands}
 let autoBuf = [], autoSession = "", autoT0 = 0, autoSending = false, autoTimer = null;
 let autoReset = false, autoFailures = 0, autoRetryAt = 0;
 let autoState = "", autoLastSent = 0;
+let fpsFrames = 0, fpsWindowStart = performance.now(), observedFps = 0;
 let clipBuf = [], clipStart = 0, clipBusy = false;
 let manualBuf = [], manualT0 = 0, manualRecording = false, manualBusy = false;
 // 攝影機的切段方式；上傳影片一律整段送 /predict，與此無關。
@@ -145,6 +182,12 @@ function loop(now) {
 
   latestFrame = { pose, hands };
   draw(hands, pose);
+  fpsFrames += 1;
+  if (now - fpsWindowStart >= 1000) {
+    observedFps = fpsFrames * 1000 / (now - fpsWindowStart);
+    fpsFrames = 0;
+    fpsWindowStart = now;
+  }
 
   if (mode === "auto") {
     autoBuf.push({ pose, hands, timestamp: +((performance.now() - autoT0) / 1000).toFixed(4) });
@@ -217,6 +260,11 @@ function stopLoop({ clear = false } = {}) {
 }
 
 // ── 結果渲染 ──
+// 模型與後端仍回傳原 label / class index；這裡只修正使用者看見的文字。
+function revisedDisplayText(text) {
+  return text === "太貴了" ? "很貴" : text;
+}
+
 function renderTop(top) {
   completeSteps();
   tokens.innerHTML = "";
@@ -224,7 +272,7 @@ function renderTop(top) {
     const span = document.createElement("span");
     span.className = "token" + (i === 0 ? " is-highlighted" : "");
     span.style.animationDelay = `${i * 55}ms`;
-    span.textContent = `${t.text} ${(t.prob * 100).toFixed(0)}%`;
+    span.textContent = `${revisedDisplayText(t.text)} ${(t.prob * 100).toFixed(0)}%`;
     tokens.appendChild(span);
   });
   const best = top[0];
@@ -233,7 +281,7 @@ function renderTop(top) {
     setStatus("辨識完成", "idle");
     return;
   }
-  spoken.textContent = best.text;
+  spoken.textContent = revisedDisplayText(best.text);
   // 句子下面不加附註；低信心只在狀態列標「信心不足」，不裝作辨識完成
   if (best.prob < CONF_THRESHOLD) setStatus("信心不足", "active");
   else setStatus("辨識完成", "done");
@@ -288,6 +336,85 @@ function logFailure(where, err) {
 }
 
 // ── 自動模式（攝影機 → /stream）──
+function setAutoDiagnosticsVisible(visible) {
+  if (autoDiagnostics) autoDiagnostics.hidden = !visible;
+}
+
+function resetAutoDiagnostics() {
+  if (!autoDiagnostics) return;
+  autoHint.textContent = "啟動後請讓肩膀、髖部與膝蓋完整入鏡，雙手回膝蓋完成校準。";
+  autoHint.classList.remove("is-warning");
+  autoTracking.textContent = "等待追蹤資料";
+  autoMotion.textContent = "量測中";
+  autoHold.textContent = "等待回位校準";
+  autoDuration.textContent = "—";
+  autoDurationRow.hidden = true;
+  autoDistance.textContent = "未建立基準";
+  autoReference.textContent = "0";
+  autoRawState.textContent = "—";
+  autoFps.textContent = "—";
+  autoHoldProgress.max = 1;
+  autoHoldProgress.value = 0;
+  autoHoldProgress.hidden = false;
+  autoHoldProgress.setAttribute("aria-valuetext", autoHold.textContent);
+  autoAdvanced.open = false;
+}
+
+function updateAutoDiagnostics(data) {
+  if (!autoDiagnostics) return;
+  setAutoDiagnosticsVisible(true);
+
+  const hasBlockers = Array.isArray(data.calibration_blockers);
+  const blockers = hasBlockers ? data.calibration_blockers : [];
+  const torso = hasBlockers ? blockers.includes("missing_pose") ? "肩／髖不足" : "肩／髖可用" : "肩／髖待確認";
+  autoTracking.textContent = `${torso} · ${data.wrists_trusted ? "雙手腕可用" : "手腕不足"} · ${data.knees_visible ? "雙膝可用" : "膝蓋不足"}`;
+
+  autoMotion.textContent = Number.isFinite(data.rest_motion_score) && Number.isFinite(data.rest_motion_threshold)
+    ? `${data.rest_motion_score.toFixed(2)} / ${data.rest_motion_threshold.toFixed(2)}` : "量測中";
+
+  const limit = Number.isFinite(data.segment_limit_sec) ? data.segment_limit_sec : null;
+  const elapsed = Number.isFinite(data.segment_elapsed_sec) ? data.segment_elapsed_sec : 0;
+  autoDuration.textContent = limit === null ? "—" : `${elapsed.toFixed(1)} / ${limit} 秒`;
+  const signing = data.state === "SIGNING_ACTIVE";
+  const confirming = data.state === "END_CONFIRM";
+  autoDurationRow.hidden = !(signing || confirming);
+
+  const target = Number.isFinite(data.calibration_target_sec) && data.calibration_target_sec > 0
+    ? data.calibration_target_sec : 1;
+  const hold = Number.isFinite(data.calibration_hold_sec)
+    ? Math.max(0, Math.min(target, data.calibration_hold_sec)) : 0;
+  const rearming = data.calibration_phase === "rearm" || data.state === "REARMING";
+  autoHold.textContent = signing ? "完成後請雙手回膝蓋" : confirming ? "回位確認中，請保持"
+    : data.calibrated && !rearming ? "已建立基準"
+    : `${hold.toFixed(2)} / ${target.toFixed(2)} 秒`;
+  const progress = autoHoldProgress;
+  progress.hidden = signing;
+  progress.max = target;
+  // API 沒有提供結束確認的完成比例；使用不定進度，避免虛構百分比。
+  if (data.state === "END_CONFIRM") progress.removeAttribute("value");
+  else progress.value = data.calibrated && !rearming ? target : hold;
+  progress.setAttribute("aria-valuetext", autoHold.textContent);
+
+  const distance = data.rest_distance;
+  const threshold = data.rest_threshold;
+  autoDistance.textContent = Number.isFinite(distance) && Number.isFinite(threshold)
+    ? `${distance.toFixed(3)} / ${threshold.toFixed(3)}${data.rest_candidate === true ? " · 已確認回位" : " · 尚未確認回位"}`
+    : data.calibrated ? "等待可信手腕" : "未建立基準";
+  autoReference.textContent = String(data.reference_revision ?? 0);
+  autoFps.textContent = observedFps > 0 ? observedFps.toFixed(1) : "—";
+  autoRawState.textContent = `${data.state || "—"} · ${data.rest_signature_status || "—"}`;
+
+  const reason = !data.calibrated || rearming
+    ? blockers.length ? AUTO_BLOCKER_TEXT[blockers[0]] || "等待可信回位資料"
+      : "回位已確認，請繼續保持完成校準"
+    : `${AUTO_STATE_TEXT[data.state] || data.state || "待命"} · ${REST_STATUS_TEXT[data.rest_signature_status] || ""}`;
+  const failed = data.last_message === "timeout_finalize" || data.last_message === "tracking_gap";
+  autoHint.classList.toggle("is-warning", failed);
+  autoHint.textContent = failed
+    ? `本段未正常完成（${data.last_message === "tracking_gap" ? "影格中斷" : limit === null ? "超過時間上限" : `${limit} 秒內未確認回位`}），請回膝蓋重新定位。`
+    : reason;
+}
+
 function startAuto() {
   mode = "auto";
   autoBuf = [];
@@ -298,6 +425,8 @@ function startAuto() {
   autoRetryAt = 0;
   autoState = "";
   autoLastSent = 0;
+  resetAutoDiagnostics();
+  setAutoDiagnosticsVisible(true);
   showAnalyzing("自動偵測中");
   setStatus("校準中", "active");
   startBtn.textContent = "停止辨識";
@@ -324,11 +453,12 @@ async function flushAuto() {
     if (mode !== "auto") return;
     autoFailures = 0;
     autoState = data.state;
-    if (!data.calibrated) setStatus("校準中", "active");
-    else setStatus(AUTO_STATE_TEXT[data.state] || data.state, "active");
     (data.results || []).forEach(seg => {
       if (seg.top?.length) renderTop(seg.top);
     });
+    updateAutoDiagnostics(data);
+    if (!data.calibrated) setStatus("校準中", "active");
+    else setStatus(AUTO_STATE_TEXT[data.state] || data.state, "active");
   } catch (err) {
     if (mode !== "auto") return;
     if (err.transient && autoFailures < RETRY_DELAYS_MS.length) {
@@ -355,6 +485,8 @@ function stopAuto() {
   autoTimer = null;
   if (mode === "auto") mode = null;
   startBtn.textContent = "開始辨識";
+  resetAutoDiagnostics();
+  setAutoDiagnosticsVisible(segMode === "auto");
 }
 
 // ── /predict 共用送出（手動模式與影片模式）──
@@ -379,6 +511,7 @@ async function postPredict(frames, duration) {
 // ── 手動模式（攝影機 → 空白鍵/按鈕切一句 → /predict）──
 function startManual() {
   mode = "manual";
+  setAutoDiagnosticsVisible(false);
   manualRecording = false;
   manualBuf = [];
   resetSteps();
@@ -465,6 +598,7 @@ function stopManual() {
 // ── 影片模式（上傳影片 → 播放抽幀 → /predict）──
 async function startClip() {
   mode = "clip";
+  setAutoDiagnosticsVisible(false);
   clipBuf = [];
   clipStart = performance.now();
   showAnalyzing("影片分析中");
@@ -576,6 +710,8 @@ function setSegMode(next) {
     if (mode === "auto" && next === "manual") { stopAuto(); startManual(); }
     else if (mode === "manual" && next === "auto") { stopManual(); startAuto(); }
   }
+  if (next !== "auto") resetAutoDiagnostics();
+  setAutoDiagnosticsVisible(next === "auto");
   applySegChips();
 }
 
@@ -598,14 +734,18 @@ document.querySelector("#videoModeButton")?.addEventListener("click", () => {
     stopAll();
     setStatus("已停止", "idle");
   }
+  setAutoDiagnosticsVisible(false);
 });
-document.querySelector("#cameraModeButton")?.addEventListener("click", () => { if (segSwitch) segSwitch.hidden = false; });
+document.querySelector("#cameraModeButton")?.addEventListener("click", () => {
+  if (segSwitch) segSwitch.hidden = false;
+  setAutoDiagnosticsVisible(segMode === "auto");
+});
 
 // 空白鍵＝手動切段的開始/結束。用 capture 搶在 script.js 與按鈕原生空白鍵行為之前，
 // 避免焦點停在按鈕上時一次空白鍵觸發兩件事。
 document.addEventListener("keydown", e => {
   if (e.key !== " " || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (!isPageVisible() || e.target.matches("input, textarea, select")) return;
+  if (!isPageVisible() || e.target.matches("input, textarea, select, button, summary")) return;
   if (mode === "manual") {
     e.preventDefault();
     e.stopPropagation();

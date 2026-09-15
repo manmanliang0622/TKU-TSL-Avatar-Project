@@ -33,7 +33,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Archivo:wght@400;500;600&family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20260915-noconfnote">
+<link rel="stylesheet" href="style.css?v=20260915-auto-ui1-display-text">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -195,7 +195,25 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
         </div>
       </div>
 
-
+      <section class="auto-diagnostics" id="autoDiagnostics" aria-label="自動切段狀態" hidden>
+        <p class="auto-hint" id="autoHint">啟動後請讓肩膀、髖部與膝蓋完整入鏡，雙手回膝蓋完成校準。</p>
+        <div class="auto-line"><span>骨架追蹤</span><b id="autoTracking">等待追蹤資料</b></div>
+        <div class="auto-line"><span>靜止速度／上限</span><b class="auto-number" id="autoMotion">量測中</b></div>
+        <div class="auto-line"><span>保持進度</span><div>
+          <b class="auto-number" id="autoHold">等待回位校準</b>
+          <progress id="autoHoldProgress" max="1" value="0" aria-label="校準與回位保持進度"></progress>
+        </div></div>
+        <div class="auto-line" id="autoDurationRow" hidden><span>本句時間／上限</span><b class="auto-number" id="autoDuration">—</b></div>
+        <details id="autoAdvanced">
+          <summary>進階診斷</summary>
+          <div class="auto-advanced-grid">
+            <div class="auto-line"><span>FPS</span><b class="auto-number" id="autoFps">—</b></div>
+            <div class="auto-line"><span>回位距離</span><b id="autoDistance">未建立基準</b></div>
+            <div class="auto-line"><span>基準版本</span><b class="auto-number" id="autoReference">0</b></div>
+            <div class="auto-line"><span>原始追蹤狀態</span><b id="autoRawState">—</b></div>
+          </div>
+        </details>
+      </section>
 
     </div>
 
@@ -347,7 +365,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <script src="signavatar-config.js?v=20260823-apiproxy"></script>
 <script src="script.js?v=20260914-nowarn"></script>
 <!-- 辨識頁改接 Knee42 後端（Pose+Hands 合約）；原 recognition.js（手+臉 178 維，供自訓模型）暫時下線 -->
-<script type="module" src="knee42-client.js?v=20260915-noconfnote"></script>
+<script type="module" src="knee42-client.js?v=20260915-auto-ui1-display-text"></script>
 <script type="importmap">
 {
   "imports": {

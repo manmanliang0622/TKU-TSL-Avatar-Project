@@ -140,6 +140,17 @@ class RecognitionFlowTests(unittest.TestCase):
         self.assertIn("best.prob < CONF_THRESHOLD", top)
         self.assertIn("信心不足", top)
 
+    def test_k42_26_wording_is_a_display_only_alias(self):
+        """K42_26 仍由後端依原 class index 回傳；前端只修正呈現字樣。"""
+        client = read("knee42-client.js")
+        alias = js_function(client, "function revisedDisplayText(")
+        self.assertIn('text === "太貴了" ? "很貴" : text', alias)
+        # 不在前端複製或重排任何 label / index 對照表。
+        self.assertNotIn("K42_26", client)
+        top = js_function(client, "function renderTop(")
+        self.assertIn("revisedDisplayText(t.text)", top)
+        self.assertIn("revisedDisplayText(best.text)", top)
+
     def test_a_dead_backend_is_reported_not_faked(self):
         client = read("knee42-client.js")
         # 畫面上不放錯誤說明（2026-09-14 起），但狀態列與結果區仍要標出失敗，
@@ -185,6 +196,69 @@ class FlakyNetworkTests(unittest.TestCase):
         block = function[function.index('if (route === "knee42") {\n    let text;') :]
         self.assertIn("await upstream.text()", block)
         self.assertIn("upstream returned non-JSON", block)
+
+
+class AutoSegmentationUiContractTests(unittest.TestCase):
+    """UI1 只呈現 /stream 已有狀態，不在瀏覽器另造切段判斷或參數。"""
+
+    def test_compact_status_and_collapsed_advanced_diagnostics_exist(self):
+        page = read("index.html")
+        for element_id in (
+            "autoDiagnostics",
+            "autoTracking",
+            "autoMotion",
+            "autoHold",
+            "autoHoldProgress",
+            "autoDurationRow",
+            "autoDuration",
+            "autoAdvanced",
+            "autoDistance",
+            "autoReference",
+            "autoRawState",
+        ):
+            self.assertIn(f'id="{element_id}"', page)
+        self.assertRegex(page, r'<details[^>]+id="autoAdvanced"')
+        self.assertNotRegex(page, r'<details[^>]+id="autoAdvanced"[^>]+open')
+
+    def test_status_is_derived_from_stream_response_fields(self):
+        client = read("knee42-client.js")
+        update = js_function(client, "function updateAutoDiagnostics(")
+        for field in (
+            "rest_distance",
+            "rest_threshold",
+            "rest_motion_score",
+            "rest_motion_threshold",
+            "segment_limit_sec",
+            "segment_elapsed_sec",
+            "calibration_target_sec",
+            "calibration_hold_sec",
+            "reference_revision",
+            "rest_signature_status",
+        ):
+            self.assertIn(field, update)
+        # END_CONFIRM 沒有後端進度百分比，應顯示不定進度而不是自造數字。
+        self.assertIn('state === "END_CONFIRM"', update)
+        self.assertIn('progress.removeAttribute("value")', update)
+        flush = js_function(client, "async function flushAuto(")
+        self.assertIn("updateAutoDiagnostics(data)", flush)
+
+    def test_ui_reset_follows_mode_lifecycle(self):
+        client = read("knee42-client.js")
+        self.assertIn("resetAutoDiagnostics()", js_function(client, "function stopAuto("))
+        switch = js_function(client, "function setSegMode(")
+        self.assertIn("setAutoDiagnosticsVisible(next === \"auto\")", switch)
+        # summary 保留瀏覽器原生 Space 展開行為，不會誤觸手動錄影。
+        self.assertIn(
+            'e.target.matches("input, textarea, select, button, summary")', client
+        )
+
+    def test_ui_does_not_change_segmentation_parameters(self):
+        client = read("knee42-client.js")
+        # 送批節奏維持目標網站目前已驗證的數值；UI 只讀後端門檻。
+        self.assertIn("const STREAM_FLUSH_MS        = 400;", client)
+        self.assertIn("const STREAM_ACTIVE_FLUSH_MS = 100;", client)
+        self.assertIn("const STREAM_TICK_MS         = 50;", client)
+        self.assertNotRegex(client, r"(?:start|end|calibration)_hold_sec\s*=")
 
 
 class LifecycleScriptTests(unittest.TestCase):
