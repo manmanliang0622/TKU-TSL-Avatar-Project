@@ -50,7 +50,8 @@ createServer(async (req, res) => {
     const file = normalize(join(ROOT, path === "/" ? "/index.html" : path));
     if (!file.startsWith(ROOT)) { res.writeHead(403).end(); return; }
     const data = await readFile(file);
-    res.writeHead(200, { "Content-Type": MIME[extname(file)] || "application/octet-stream" });
+    res.writeHead(200, { "Content-Type": MIME[extname(file)] || "application/octet-stream",
+      "Cache-Control": "no-store" });
     res.end(data);
   } catch {
     if (path.startsWith("/recordings/")) {

@@ -296,6 +296,17 @@ function captureJointAxes() {
         .applyQuaternion(arm.restQLower.clone().invert());
       arm.palmN = orthonormal(n, arm.axisLower);
       arm.palmC = new THREE.Vector3().crossVectors(arm.axisLower, arm.palmN).normalize();
+      // which way along C the thumb lies, so the diagnostics can say radial
+      // from ulnar (the limit itself does not distinguish them — see
+      // WRIST_DEV_DEG)
+      const thumb = vrm.humanoid.getNormalizedBoneNode(`${side}ThumbProximal`)
+        || vrm.humanoid.getNormalizedBoneNode(`${side}ThumbMetacarpal`);
+      if (thumb) {
+        const toThumb = thumb.getWorldPosition(new THREE.Vector3())
+          .sub(arm.hand.getWorldPosition(new THREE.Vector3()))
+          .applyQuaternion(arm.restQLower.clone().invert());
+        arm.radialC = Math.sign(toThumb.dot(arm.palmC)) || 1;
+      }
     }
   }
 }
@@ -1080,6 +1091,31 @@ function aimArm(side, S, T, pole, lerp, dt, restW = 0) {
  * FINGER_CHAINS is declared further down the file. */
 const HAND_PROBES = ["Hand"];
 
+/* 手掌法線與手掌中心（手對手分開時用，見 updateCollisionCorrections） */
+function palmNormal(side) {
+  const h = vrm.humanoid.getNormalizedBoneNode(`${side}Hand`);
+  const i = vrm.humanoid.getNormalizedBoneNode(`${side}IndexProximal`);
+  const l = vrm.humanoid.getNormalizedBoneNode(`${side}LittleProximal`);
+  if (!h || !i || !l) return null;
+  const hp = h.getWorldPosition(new THREE.Vector3());
+  const n = new THREE.Vector3().subVectors(i.getWorldPosition(new THREE.Vector3()), hp)
+    .cross(new THREE.Vector3().subVectors(l.getWorldPosition(new THREE.Vector3()), hp));
+  return n.lengthSq() > 1e-12 ? n.normalize() : null;
+}
+
+function handCentre(side) {
+  const names = ["Hand", "IndexProximal", "MiddleProximal", "LittleProximal", "MiddleIntermediate"];
+  const out = new THREE.Vector3();
+  let n = 0;
+  for (const nm of names) {
+    const b = vrm.humanoid.getNormalizedBoneNode(`${side}${nm}`);
+    if (!b) continue;
+    out.add(b.getWorldPosition(new THREE.Vector3()));
+    n++;
+  }
+  return n ? out.multiplyScalar(1 / n) : null;
+}
+
 /* Finger segments used for hand-vs-hand testing, as a capsule chain. */
 const FINGER_TIPS = ["ThumbDistal", "IndexDistal", "MiddleDistal", "RingDistal", "LittleDistal"];
 const FINGER_MIDS = ["ThumbProximal", "IndexIntermediate", "MiddleIntermediate",
@@ -1297,9 +1333,26 @@ function updateCollisionCorrections(dt, restW = 0) {
       }
     }
     if (worst) {
-      const half = worst.multiplyScalar(overlap / 2);
-      want.right.add(half);
-      want.left.sub(half);
+      /* 兩件事跟原本不同：
+       * 1. 方向改用「各自的掌心法線」，不是最近點方向。桃園 這種掌心相對的手語，
+       *    最近點方向幾乎平行於手指，照它推等於讓兩手互相滑過去——實測把修正量
+       *    累加到 3.9cm，指節最短距離還是 0.4cm（門檻 1.8）。沿掌心法線推才是
+       *    真的把兩個手掌面分開。找不到掌心法線時退回最近點方向。
+       * 2. want 帶上這一側目前的修正量（跟上面的身體探針一樣累加）。原本每幀只放
+       *    半個重疊量、又沒帶上已施加的量，平滑一拉就停在半個重疊量。 */
+      const push = side => {
+        const n = palmNormal(side);
+        if (!n) return null;
+        const other = handCentre(side === "left" ? "right" : "left");
+        const self = handCentre(side);
+        if (!other || !self) return null;
+        return n.dot(self.clone().sub(other)) < 0 ? n.negate() : n;
+      };
+      const step = (overlap / 2) * CORR_GAIN;
+      for (const side of ["left", "right"]) {
+        const dir = push(side) || (side === "right" ? worst.clone() : worst.clone().negate());
+        want[side].add(CORR[side] || new THREE.Vector3()).add(dir.multiplyScalar(step));
+      }
     }
   }
 
@@ -1931,15 +1984,36 @@ function solveFingers(side, worldLms, dt) {
  * read correctly rather than merely stopping the mesh breaking: measured over
  * 15 signs, palm-orientation error against the recording fell from 43.9° mean
  * to 8.4° once the split was computed absolutely instead of incrementally. */
-/* Anatomical ranges. A single 80° cone was better than nothing but still let
- * the wrist deviate 80° sideways, which no wrist does — the limits differ by
- * an order of magnitude between axes, so they are applied per axis:
- *   flexion / extension  about the across-palm axis   ~70–80°
- *   radial / ulnar dev.  about the palm normal        ~20–30°
+/* A single 80° cone was better than nothing but still let the wrist deviate
+ * 80° sideways, which no wrist does, so the bend is limited per axis:
+ *   flexion / extension  about the across-palm axis   ~70–80° anatomically
+ *   radial / ulnar dev.  about the palm normal        see WRIST_DEV_DEG
  *   axial rotation       about the forearm            ~10–15° (the forearm
  *                                                      does the rest)      */
 const WRIST_FLEX_DEG = 70;
-const WRIST_DEV_DEG = 25;
+/* 25 was the clinical figure for radial/ulnar deviation, and it is the wrong
+ * figure to use HERE, because this angle is not measured against a real
+ * forearm: what counts as deviation rather than flexion is decided by the
+ * forearm axis, which comes from the pose model's elbow and wrist and carries
+ * its own error. A textbook-tight limit on one half of the ellipse therefore
+ * spends that error by throwing away real hand orientation.
+ *
+ * Measured on the lexicon, 25 was clamping 483 of 1112 in-play hand frames
+ * and removing 18 deg of bend on average. The two signs the clamp hit hardest
+ * are the two that read as broken: 貴 (hand bent over at the cheek) lost 30
+ * deg on 36 of its 48 frames and 桃園 was clamped on 87 frames out of 87,
+ * both left with the hand pointing ALONG the forearm instead of across it —
+ * which is what a viewer calls the wrist being turned the wrong way. The
+ * angle is real: in the source video, where nothing is inferred, the image
+ * shows 50-57 deg between forearm and palm for both.
+ *
+ * So this limit is set from the measured envelope of real signing, not from
+ * anatomy. It still guards what it was added for — 我 asks for 72-80 deg of
+ * bend where the image plainly shows 9, i.e. corrupt hand landmarks. Against
+ * the recordings, raising 25 to 60 took the hand-direction error from 6.6 deg
+ * median / 39.7 p90 to 2.9 / 33.5 over 837 frames (貴 38.6 -> 6.6, 桃園
+ * 21.4 -> 1.3) and no sign got worse. */
+const WRIST_DEV_DEG = 60;
 const WRIST_TWIST_DEG = 15;
 /* How much axial rotation the hand bone may take off the forearm. A wrist
  * itself only rotates about 15 degrees axially, but this rig has no twist
@@ -2103,9 +2177,12 @@ function clampSwing(q, maxDeg) {
  * where it is legible: as that direction's tilt out of the axis, resolved into
  * a flexion component (along the palm normal) and a deviation component
  * (across the palm). */
-function clampSwingElliptic(swing, axis, n, c, flexDeg, devDeg) {
+function clampSwingElliptic(swing, axis, n, c, flexDeg, devDeg, radialC) {
   const tilted = axis.clone().applyQuaternion(swing);
   const f = tilted.dot(n), d = tilted.dot(c);
+  // signed, + toward the thumb, so the histogram separates radial from ulnar
+  noteVal("wrist:flexRaw", Math.asin(Math.max(-1, Math.min(1, f))) * 180 / Math.PI);
+  noteVal("wrist:devRaw", Math.asin(Math.max(-1, Math.min(1, d))) * (radialC || 1) * 180 / Math.PI);
   const sf = Math.sin(flexDeg * Math.PI / 180), sd = Math.sin(devDeg * Math.PI / 180);
   const e = Math.hypot(f / sf, d / sd);
   note("wrist:bend", e > 1 ? (Math.asin(Math.min(1, Math.hypot(f, d)))
@@ -2250,7 +2327,8 @@ function rigHand(side, handLms, worldLms, dt = 0.016) {
     arm.roll = roll;
 
     const bendLimited = arm.palmN
-      ? clampSwingElliptic(swing, axis, arm.palmN, arm.palmC, WRIST_FLEX_DEG, WRIST_DEV_DEG)
+      ? clampSwingElliptic(swing, axis, arm.palmN, arm.palmC, WRIST_FLEX_DEG,
+                           WRIST_DEV_DEG, arm.radialC)
       : clampSwing(swing, WRIST_FLEX_DEG);
 
     // 掌心解算漸進進來，並限制角速度（見 ACQUIRE_SEC 的說明）
