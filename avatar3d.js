@@ -155,6 +155,11 @@ function captureArmRest() {
   BODY.shoulder = { left: sL, right: sR };
   BODY.width = sL.distanceTo(sR);
   BODY.torso = sMid.distanceTo(hips);
+  // 手掌長（腕→中指根）。兩手相碰的手語要照「手的大小」縮放，不是軀幹（見 solveArm 的接觸段）
+  const palmBone = vrm.humanoid.getNormalizedBoneNode("rightMiddleProximal");
+  BODY.palm = palmBone
+    ? ARM.right.hand.getWorldPosition(new THREE.Vector3()).distanceTo(palmBone.getWorldPosition(new THREE.Vector3()))
+    : BODY.width * 0.35;
   BODY.right = sR.clone().sub(sL).normalize();
   BODY.up = sMid.clone().sub(hips).normalize();
   BODY.fwd = new THREE.Vector3().crossVectors(BODY.right, BODY.up).normalize();
@@ -647,7 +652,7 @@ function smoothVec(key, v, dt, tau) {
   return prev.clone();
 }
 
-function solveArm(side, poseWorld, visOK, handPresent, body = null, dt = 0.016, restW = 0, otherRestW = 0) {
+function solveArm(side, poseWorld, visOK, handPresent, body = null, dt = 0.016, restW = 0, otherRestW = 0, palmS = 0) {
   const arm = ARM[side];
   if (!arm) return;
   const lerp = smoothAlpha(dt, TUNE.tauArm);
@@ -771,10 +776,30 @@ function solveArm(side, poseWorld, visOK, handPresent, body = null, dt = 0.016, 
       .add(mapFrom(wr, sgR, BODY.shoulder.right))
       .multiplyScalar(0.5);
     const d = wl.sub(wr);
+    /* ── keep the hands touching ─────────────────────────────────────
+     * The gap between the hands was scaled by TORSO length. That is right
+     * for where the pair sits on the body, but wrong for whether the palms
+     * MEET: this model's hands are small for its torso (palm 5.7cm, torso
+     * 35cm; the signer's are 9.0cm and 47cm), so a sign with the palms
+     * pressed together came out with the hands 1.5x too far apart —
+     * measured on 桃園, 0.27 shoulder-widths in the recording against 0.47
+     * on the avatar, and the palms never met.
+     *
+     * Self-contact is what the retargeting literature calls out as the
+     * thing body-proportion scaling breaks (Villegas et al., Contact-Aware
+     * Retargeting of Skinned Motion, ICCV 2021). Near contact the gap is
+     * therefore scaled by HAND size instead, so "one palm apart" stays one
+     * palm apart, easing back to the torso scale as the hands separate. */
     const iso = BODY.torso / torsoS;
-    const dA = BODY.right.clone().multiplyScalar(d.dot(rightS) * iso)
-      .add(BODY.up.clone().multiplyScalar(d.dot(upS) * iso))
-      .add(BODY.fwd.clone().multiplyScalar(d.dot(fwdS) * iso));
+    let pairScale = iso;
+    if (palmS > 1e-4 && BODY.palm > 1e-4) {
+      const palms = d.length() / palmS;     // 雙手距離，以打者手掌長為單位
+      const w = clampNum((CONTACT_FAR - palms) / (CONTACT_FAR - CONTACT_NEAR), 0, 1);
+      pairScale = iso + (BODY.palm / palmS - iso) * w;
+    }
+    const dA = BODY.right.clone().multiplyScalar(d.dot(rightS) * pairScale)
+      .add(BODY.up.clone().multiplyScalar(d.dot(upS) * pairScale))
+      .add(BODY.fwd.clone().multiplyScalar(d.dot(fwdS) * pairScale));
     wristTarget = mid.add(dA.multiplyScalar(side === "left" ? 0.5 : -0.5));
     if (otherRestW > 0) wristTarget.lerp(rebuild(bodyRel(wri)), otherRestW);
   } else {
@@ -880,6 +905,9 @@ function solveArm(side, poseWorld, visOK, handPresent, body = null, dt = 0.016, 
  * pushed off a body volume that was deliberately fitted wide enough to cover
  * the cardigan. Leaving the push active is what previously forced the arms
  * back out however narrow this was set. */
+/* 接觸區間，以打者手掌長為單位：2 個手掌以內算「碰在一起」，4 個以上算分開 */
+const CONTACT_NEAR = 2.0;
+const CONTACT_FAR = 4.0;
 const REST_OUT = 0.27;    // sideways, as a fraction of the down component
 const REST_FWD = 0.10;    // a little in front of the hip, as a real arm hangs
 /* Reach fraction for the rest pose. The signing clamp of 0.985 is not enough
@@ -1281,6 +1309,22 @@ function updateCollisionCorrections(dt, restW = 0) {
     const corr = CORR[side] || (CORR[side] = new THREE.Vector3());
     corr.lerp(want[side].multiplyScalar(1 - restOf(side)), alpha);
     if (corr.length() > CORR_MAX) corr.setLength(CORR_MAX);  // anti-windup
+  }
+}
+
+/* 前臂與手腕的角速度上限（見 LIMB_RATE_CAP） */
+function limitLimbRate(dt) {
+  const cap = LIMB_RATE_CAP * Math.PI / 180 * Math.max(dt, 1e-4);
+  for (const side of ["left", "right"]) {
+    const arm = ARM[side];
+    if (!arm) continue;
+    for (const [bone, key] of [[arm.lower, "prevLowerQ"], [arm.hand, "prevHandQ"]]) {
+      if (!bone) continue;
+      const prev = arm[key];
+      if (prev) bone.quaternion.copy(prev.clone().rotateTowards(bone.quaternion, cap));
+      arm[key] = bone.quaternion.clone();
+    }
+    arm.lower.updateWorldMatrix(true, true);
   }
 }
 
@@ -1749,6 +1793,24 @@ function separateFingers(side) {
  * drop a hand and half of those last a single frame, and those must not
  * flicker. */
 const TAU_HAND_RELAX = 0.25;
+/* ── easing the palm solve in ────────────────────────────────────────
+ * 貴 starts from rest with the palm turned 170 degrees from where the sign
+ * needs it. rigHand solves that in one frame and aimArm then applies the
+ * forearm's share at TAU_ARM, so the forearm rotated 101 degrees in a single
+ * frame (3044°/s) — the wrist visibly flipping over.
+ * The palm solve therefore ramps in: its strength is the smaller of "how far
+ * the arm is from its rest pose" and "how long since the hand data came
+ * back". A signer pronates while the arm is on its way up, which is exactly
+ * what this produces; measured real pronation peaks around 570°/s, and a
+ * 180-degree turn over ACQUIRE_SEC stays under that. */
+const ACQUIRE_SEC = 0.45;
+const TAU_ACQUIRE = 0.16;    // 接手當下的時間常數（正常是 TAU_ARM 0.04）
+const ACQUIRE_RATE = 420;    // 接手期間前臂／手腕的角速度上限（度/秒）
+/* 最後一道保險：前臂／手腕每幀的轉動上限。手臂瞄準在某些角度會出現單幀的寄生扭轉
+ * （線上版量到 貴 2616、我喝水 2319、桃園 1459 度/秒，都是單幀），看起來是手腕抽一下。
+ * 真實前臂翻掌尖峰約 570 度/秒，這裡放寬到 700 讓正常動作完全不受影響，只削掉那一幀；
+ * 這不是事後推撞骨頭的修正量（那會跟每幀重瞄互鬥），只是限速，下一幀就追上。 */
+const LIMB_RATE_CAP = 700;
 /* ── a hanging hand is a relaxed hand ────────────────────────────────
  * MediaPipe keeps "detecting" a hand that has dropped to the signer's side,
  * but at the frame edge its orientation is garbage: during 你 the lowered
@@ -1810,7 +1872,11 @@ function solveFingers(side, worldLms, dt) {
   // ...and then however the avatar's hand has actually moved since rest
   const R = arm.hand.getWorldQuaternion(new THREE.Quaternion())
     .multiply(arm.restQHand.clone().invert());
-  const alpha = smoothAlpha(dt, TAU_FINGER);
+  // 手形也走 acquire 漸進：手部資料剛接上時，手指若一次到位，看起來像手腕整個翻過去
+  // （量到的 3000°/秒「扭轉」其實是食指／小指位置瞬間就位造成的）
+  const acqF = Math.min(Math.min(1, arm.acquire == null ? 1 : arm.acquire),
+                        1 - Math.min(1, arm.restW || 0));
+  const alpha = smoothAlpha(dt, TAU_FINGER + (TAU_ACQUIRE - TAU_FINGER) * (1 - acqF));
 
   // the recording's own spread per finger, about its own palm normal
   const P = i => mpToAvatar(worldLms[i]);
@@ -2173,7 +2239,9 @@ function rigHand(side, handLms, worldLms, dt = 0.016) {
     if (arm.handTwistDeg == null) arm.handTwistDeg = 0;
     arm.handTwistDeg += (targetShare - arm.handTwistDeg) * smoothAlpha(dt, TAU_TWIST_SHARE);
     noteVal("wrist:handShare", arm.handTwistDeg);
-    const roll = rollQuat(axis, (rollDeg - arm.handTwistDeg) * Math.PI / 180);
+    const palmW = Math.min(Math.min(1, arm.acquire == null ? 1 : arm.acquire),
+                           1 - Math.min(1, arm.restW || 0));
+    const roll = rollQuat(axis, (rollDeg - arm.handTwistDeg) * palmW * Math.PI / 180);
     const spare = rollQuat(axis, rollDeg * Math.PI / 180).invert().multiply(twist);
     const leftover = rollQuat(axis, arm.handTwistDeg * Math.PI / 180)
       .multiply(clampSwing(spare, WRIST_TWIST_DEG));
@@ -2185,10 +2253,18 @@ function rigHand(side, handLms, worldLms, dt = 0.016) {
       ? clampSwingElliptic(swing, axis, arm.palmN, arm.palmC, WRIST_FLEX_DEG, WRIST_DEV_DEG)
       : clampSwing(swing, WRIST_FLEX_DEG);
 
-    const alpha = smoothAlpha(dt, TAU_ARM);
-    arm.lower.quaternion.slerp(arm.lowerAim.clone().multiply(roll), alpha);
+    // 掌心解算漸進進來，並限制角速度（見 ACQUIRE_SEC 的說明）
+    const tau = TAU_ARM + (TAU_ACQUIRE - TAU_ARM) * (1 - palmW);
+    const alpha = smoothAlpha(dt, tau);
+    const cap = palmW >= 1 ? Infinity : ACQUIRE_RATE * Math.PI / 180 * dt;
+    const ease = (bone, target) => {
+      const q = bone.quaternion.clone().slerp(target, alpha);
+      bone.quaternion.copy(Number.isFinite(cap) ? bone.quaternion.clone().rotateTowards(q, cap) : q);
+    };
+    const handTarget = leftover.multiply(bendLimited);
+    ease(arm.lower, arm.lowerAim.clone().multiply(roll));
     arm.lower.updateWorldMatrix(true, true);
-    arm.hand.quaternion.slerp(leftover.multiply(bendLimited), alpha);
+    ease(arm.hand, palmW >= 1 ? handTarget : new THREE.Quaternion().slerp(handTarget, palmW));
   }
 
   // handshape straight from the 21 landmarks
@@ -2317,6 +2393,14 @@ function update(frame, dt) {
     const vis = frame.pose.visibility;
     const visOK = i => (vis ? vis[i] : 1) >= 0.4;
     const hasHand = side => (frame.hands || []).some(h => h.handedness.toLowerCase() === side);
+    // 打者的手掌長（腕→中指根，公尺），給接觸縮放用
+    let palmS = 0;
+    for (const h of frame.hands || []) {
+      const w = h.world_landmarks;
+      if (w && w[0] && w[9]) {
+        palmS = Math.max(palmS, Math.hypot(w[9][0] - w[0][0], w[9][1] - w[0][1], w[9][2] - w[0][2]));
+      }
+    }
     const body = frame._body || null;  // composer's per-segment median body scale
     rigTorso(frame.pose.world_landmarks, step);
     holdShoulders(step);
@@ -2325,8 +2409,8 @@ function update(frame, dt) {
     // part in (_restL/_restR); the sentence-end weight still covers both
     armRest.left = Math.max(restW, Math.min(1, Math.max(0, frame._restL || 0)));
     armRest.right = Math.max(restW, Math.min(1, Math.max(0, frame._restR || 0)));
-    solveArm("left", frame.pose.world_landmarks, visOK, hasHand("left"), body, step, armRest.left, armRest.right);
-    solveArm("right", frame.pose.world_landmarks, visOK, hasHand("right"), body, step, armRest.right, armRest.left);
+    solveArm("left", frame.pose.world_landmarks, visOK, hasHand("left"), body, step, armRest.left, armRest.right, palmS);
+    solveArm("right", frame.pose.world_landmarks, visOK, hasHand("right"), body, step, armRest.right, armRest.left, palmS);
     rigHead(poseLm(frame.pose.landmarks, frame.pose.visibility, false));
   }
   // which wrists are hanging low (see LOW_HAND_ENTER): update the hysteresis
@@ -2348,12 +2432,28 @@ function update(frame, dt) {
       arm.wristLow = arm.wristLow ? h < LOW_HAND_LEAVE : h < LOW_HAND_ENTER;
     }
   }
+  for (const side of ["left", "right"]) if (ARM[side]) ARM[side].restW = armRest[side];
   const seen = new Set();
   for (const h of frame.hands || []) {
     const side = h.handedness.toLowerCase();
     if (ARM[side] && ARM[side].wristLow) continue;   // hanging: data untrustworthy
-    if (armRest[side] >= 0.5) continue;              // placed at rest: no handshape to show
+    if (armRest[side] >= 0.99) continue;             // fully placed at rest: no handshape to show
     if (rigHand(h.handedness, handLm(h.landmarks), h.world_landmarks, step)) seen.add(side);
+  }
+  /* ── easing the hand back in after a gap ─────────────────────────────
+   * Between signs there is no hand data at all (the rest bookends and the
+   * cross-fade carry none), so the wrist relaxes to neutral. The moment the
+   * next sign's first frame arrives, the palm solve asks for the full
+   * orientation and the bones chase it at TAU_ARM — measured on 貴, the
+   * forearm rolled 170 degrees in about a tenth of a second, which reads as
+   * the wrist flipping over. The target is right; only the approach is too
+   * fast. So the first ACQUIRE_SEC after a hand reappears are eased with a
+   * long time constant that decays to the normal one. */
+  for (const side of ["left", "right"]) {
+    const arm = ARM[side];
+    if (!arm) continue;
+    if (seen.has(side)) arm.acquire = Math.min(1, (arm.acquire || 0) + step / ACQUIRE_SEC);
+    else arm.acquire = 0;
   }
   for (const side of ["left", "right"]) if (!seen.has(side)) relaxFingers(side, step);
   // a hanging arm also has a neutral wrist, not the last sign's palm angle
@@ -2365,6 +2465,7 @@ function update(frame, dt) {
   }
   // after the handshape exists, measure contacts and ease the correction
   // that solveArm will apply (one frame of lag, but no popping)
+  limitLimbRate(step);
   updateCollisionCorrections(step, armRest);
   rigFace(frame.face ? frame.face.blendshapes : null, step);
   vrm.update(dt || 0.016);

@@ -895,7 +895,7 @@
       const a = seg[j], b = seg[j + 1] || seg[j];
       const span = Math.max(1e-6, b.timestamp - a.timestamp);
       const k = Math.min(1, Math.max(0, (st - a.timestamp) / span));
-      out.push({ ...blendFrame(a, b, k), timestamp: t0 + u * outDur });
+      out.push(mix(a, b, k, t0 + u * outDur));
     }
     return out;
   }
@@ -929,7 +929,103 @@
     for (const wi of [L_WRI, R_WRI]) {
       if (wa[wi] && wb[wi]) d = Math.max(d, Math.hypot(wb[wi][0] - wa[wi][0], wb[wi][1] - wa[wi][1]));
     }
-    return Math.min(TRAVEL_MAX_SEC, Math.max(TRAVEL_MIN_SEC, d / width / TEMPO_TARGET));
+    /* smootherstep 的最大斜率是平均的 1.875 倍。時間不必整個乘回去——詞與詞之間的移動
+       （epenthesis）本來就可以比手語本身快一些；乘 1.3 讓尖峰約為手語速度的 1.4 倍，
+       整句長度才不會被接縫吃掉（實測 4 個詞的句子，1.875 要多花 0.6 秒）。 */
+    return Math.min(TRAVEL_MAX_SEC, Math.max(TRAVEL_MIN_SEC, 1.3 * d / width / TEMPO_TARGET));
+  }
+
+  /* ── the seam between two signs ──────────────────────────────────────
+     Two things made the join read as a stop-and-go rather than one flowing
+     utterance. Measured on 我 喝 水 (avatar wrist speed, shoulder widths per
+     second): 我 ended with 0.6s under 0.3, 喝 with 0.45s, and the travel
+     between them was 0.2–0.3s at 3–4 — a long stall, then a jerk.
+
+     1. The stall is the clip's own final hold. Continuous signing shortens
+        exactly those: hold reduction is a named phonological process (a sign's
+        hold is cut when another sign follows), so the tail and head holds are
+        trimmed back to HOLD_KEEP, up to HOLD_CUT_MAX.
+     2. The jerk is the cross-fade's linear parameter: velocity jumps from 0 to
+        the travel speed at the seam and back. Cross-fading is known for
+        exactly this (discontinuous joint velocities), and the game-animation
+        answer — inertialization — replaces it with a curve that matches
+        velocity at both ends. Offline we can simply ease the blend parameter
+        with smootherstep, whose derivative is zero at both ends: the hands
+        leave the last pose and arrive at the next one at zero speed, with no
+        velocity step anywhere. */
+  const HOLD_SPEED = 0.25;     // 肩寬/秒：低於此視為靜止
+  const HOLD_KEEP = 0.10;      // 頭尾的靜止段壓到這麼長
+  const HOLD_MAX = 0.25;       // 詞中間的定格上限（定格是手語的一部分，不能全吃掉）
+
+  const smootherstep = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * x * (x * (x * 6 - 15) + 10));
+
+  /* 每幀的手腕速度（肩寬/秒），取兩手中較快的一隻 */
+  function wristSpeeds(seg) {
+    const width = shoulderWidthXY(seg);
+    const out = new Array(seg.length).fill(0);
+    if (!(width > 1e-3)) return out;
+    for (let i = 1; i < seg.length; i++) {
+      const a = seg[i - 1].pose && seg[i - 1].pose.world_landmarks;
+      const b = seg[i].pose && seg[i].pose.world_landmarks;
+      const dt = seg[i].timestamp - seg[i - 1].timestamp;
+      if (!a || !b || !(dt > 1e-6)) continue;
+      let m = 0;
+      for (const wi of [L_WRI, R_WRI]) {
+        if (a[wi] && b[wi]) m = Math.max(m, Math.hypot(b[wi][0] - a[wi][0], b[wi][1] - a[wi][1]));
+      }
+      out[i] = m / width / dt;
+    }
+    out[0] = out[1] || 0;
+    return out;
+  }
+
+  /* hold reduction：把靜止段壓短。頭尾的壓到 HOLD_KEEP，詞中間的壓到 HOLD_MAX。
+     只改時間、不動姿勢：把每一幀的時間間隔乘上係數，再重新取樣回 COMPOSE_FPS。
+     （我 的定格在詞的中間 0.5 秒，光裁頭尾裁不到。） */
+  function reduceHolds(seg) {
+    if (seg.length < 8) return seg;
+    const v = wristSpeeds(seg);
+    const still = v.map(x => x < HOLD_SPEED);
+    const scale = new Array(seg.length).fill(1);
+    let i = 0, changed = false;
+    while (i < seg.length) {
+      if (!still[i]) { i++; continue; }
+      let j = i;
+      while (j + 1 < seg.length && still[j + 1]) j++;
+      const dur = seg[j].timestamp - seg[i].timestamp;
+      const cap = (i === 0 || j === seg.length - 1) ? HOLD_KEEP : HOLD_MAX;
+      if (dur > cap + 1e-6) {
+        const f = cap / dur;
+        for (let k = i + 1; k <= j; k++) scale[k] = f;
+        changed = true;
+      }
+      i = j + 1;
+    }
+    if (!changed) return seg;
+    const tOut = [0];
+    for (let k = 1; k < seg.length; k++) {
+      tOut.push(tOut[k - 1] + (seg[k].timestamp - seg[k - 1].timestamp) * scale[k]);
+    }
+    const total = tOut[tOut.length - 1];
+    if (!(total > 0.2)) return seg;
+    const n = Math.max(2, Math.round(total * COMPOSE_FPS));
+    const t0 = seg[0].timestamp;
+    const out = [];
+    let j = 0;
+    for (let m = 0; m <= n; m++) {
+      const tt = (total * m) / n;
+      while (j < seg.length - 2 && tOut[j + 1] < tt) j++;
+      const span = Math.max(1e-6, tOut[j + 1] - tOut[j]);
+      const k = Math.min(1, Math.max(0, (tt - tOut[j]) / span));
+      out.push(mix(seg[j], seg[j + 1], k, t0 + tt));
+    }
+    return out;
+  }
+
+  /* blendFrame 只回傳 pose/hands/face，自訂欄位要自己帶（每側的休息權重是隨時間變的） */
+  function mix(a, b, k, timestamp) {
+    const lerpW = key => (a[key] || 0) + ((b[key] || 0) - (a[key] || 0)) * k;
+    return { ...blendFrame(a, b, k), timestamp, _restL: lerpW("_restL"), _restR: lerpW("_restR") };
   }
 
   /* transition length scales with how far the hands must travel (epenthesis) */
@@ -1084,7 +1180,10 @@
      constructed fallback for that case. */
   const REST_DEEP = -0.9;      // unambiguously hands-at-sides
   const REST_HOLD_SEC = 0.30;
-  const REST_BLEND_SEC = 0.45;
+  /* 收手/抬手的時間也照距離算（同 travelSeconds）。原本固定 0.45 秒，
+     手離身側越遠收得越快——量到句尾收手尖峰 7.5 肩寬/秒，是手語動作的 4 倍。 */
+  const REST_BLEND_MIN = 0.30;
+  const REST_BLEND_MAX = 0.70;
 
   /* the deepest rest frame in the lead-in (or lead-out) of a raw clip */
   function findRestFrame(raw, fromStart) {
@@ -1174,8 +1273,18 @@
     const close = bare((closeRaw && findRestFrame(closeRaw, false))
       || synthRestFrame(frames[frames.length - 1]));
     const hold = Math.round(REST_HOLD_SEC * COMPOSE_FPS);
-    const blend = Math.round(REST_BLEND_SEC * COMPOSE_FPS);
     const first = frames[0], last = frames[frames.length - 1];
+    const rampFor = (a, b) => {
+      const w = shoulderWidthXY([a, b]);
+      const wa = a.pose && a.pose.world_landmarks, wb = b.pose && b.pose.world_landmarks;
+      if (!wa || !wb || !(w > 1e-3)) return Math.round(0.45 * COMPOSE_FPS);
+      let d = 0;
+      for (const wi of [L_WRI, R_WRI]) {
+        if (wa[wi] && wb[wi]) d = Math.max(d, Math.hypot(wb[wi][0] - wa[wi][0], wb[wi][1] - wa[wi][1]));
+      }
+      const sec = Math.min(REST_BLEND_MAX, Math.max(REST_BLEND_MIN, 1.3 * d / w / TEMPO_TARGET));
+      return Math.round(sec * COMPOSE_FPS);
+    };
     const out = [];
     // _tok is left null so the non-manual markers, which key off it, never
     // land on a bookend
@@ -1186,19 +1295,29 @@
     // _restL/_restR come from the sign next to the bookend, so a hand that sat
     // out the first or last sign stays down through the ramp instead of
     // rising with the other one
+    /* 漸變段（抬手／收手）帶著相鄰手語的手部資料走。rest 幀沒有手，blendFrame
+       因此整段都不給手，虛擬人只好在手語第一幀才拿到掌心方向——量到前臂在那一幀
+       轉了 90 度（2710°/秒），看起來就是手腕翻過去。手的 landmark 只決定手形與掌心
+       朝向（位置來自姿態），提早給等於在抬手途中就把手形做好，真人也是這樣。 */
     const pad = (a, b, k, body, rest, side) =>
-      ({ ...blendFrame(a, b, k), _tok: null, _body: body, _rest: rest,
+      ({ ...blendFrame(a, b, k), hands: side.hands || [], _tok: null, _body: body, _rest: rest,
          _restL: side._restL || 0, _restR: side._restR || 0 });
     if (open) {
-      for (let i = 0; i < hold; i++) out.push(pad(open, open, 0, first._body, 1, first));
-      for (let i = 1; i <= blend; i++)
-        out.push(pad(open, first, i / (blend + 1), first._body, 1 - i / (blend + 1), first));
+      const blend = rampFor(open, first);
+      for (let i = 0; i < hold; i++) out.push(pad(open, open, 0, first._body, 1, open));
+      for (let i = 1; i <= blend; i++) {
+        const u = i / (blend + 1);
+        out.push(pad(open, first, smootherstep(u), first._body, 1 - smootherstep(u), first));
+      }
     }
     out.push(...frames);
     if (close) {
-      for (let i = 1; i <= blend; i++)
-        out.push(pad(last, close, i / (blend + 1), last._body, i / (blend + 1), last));
-      for (let i = 0; i < hold; i++) out.push(pad(close, close, 0, last._body, 1, last));
+      const blend = rampFor(last, close);
+      for (let i = 1; i <= blend; i++) {
+        const u = i / (blend + 1);
+        out.push(pad(last, close, smootherstep(u), last._body, smootherstep(u), last));
+      }
+      for (let i = 0; i < hold; i++) out.push(pad(close, close, 0, last._body, 1, close));
     }
     let t = 0;
     return out.map((f, i) => {
@@ -1252,20 +1371,14 @@
       // frame count; the signer's build does not depend on playback speed
       const body = bodyScale(lowered);
       const width = shoulderWidthXY(lowered);
-      // retime() builds new frames, so the per-arm rest weights go back on
-      // after, looked up by source time
-      const retimed = normalizeTempo(lowered, idle);
-      const seg = retimed === lowered ? lowered : retimed.map((f, i) => {
-        const u = retimed.length > 1 ? i / (retimed.length - 1) : 0;
-        const k = Math.round(u * (lowered.length - 1));
-        return { ...f, _restL: lowered[k]._restL, _restR: lowered[k]._restR };
-      });
+      // retime／reduceHolds 會重建幀，但兩者都用 mix() 把每側的休息權重一起內插
+      const seg = reduceHolds(normalizeTempo(lowered, idle));
       if (!seg.length) continue;
 
       if (prevLast) {  // cross-fade into this sign, as long as the wrists take to travel there
         const n = Math.round(travelSeconds(prevLast, seg[0], prevWidth, width) * COMPOSE_FPS);
         for (let i = 1; i <= n; i++) {
-          const k = i / (n + 1);
+          const k = smootherstep(i / (n + 1));   // 速度在兩端都是 0，接縫沒有速度跳階
           const bf = blendFrame(prevLast, seg[0], k);
           // ease the body scale across the seam too, so a change of signer
           // does not snap the arm mapping mid-transition
@@ -1339,6 +1452,8 @@
     travelSeconds,
     idleSides,
     lowerIdleArms,
+    reduceHolds,
+    smootherstep,
     findRestFrame,
     synthRestFrame,
     addRestBookends,
