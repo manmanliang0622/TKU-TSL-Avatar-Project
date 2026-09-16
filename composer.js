@@ -1299,8 +1299,12 @@
        因此整段都不給手，虛擬人只好在手語第一幀才拿到掌心方向——量到前臂在那一幀
        轉了 90 度（2710°/秒），看起來就是手腕翻過去。手的 landmark 只決定手形與掌心
        朝向（位置來自姿態），提早給等於在抬手途中就把手形做好，真人也是這樣。 */
+    /* _ramp 標記「這一幀的手是從隔壁手語借來的」（抬手／收手漸變段，不是靜止段）。
+       這種幀的手腕本來就低——是這裡自己合成的，不是打者把手放下去，所以重定向端
+       不該用 wristLow 把它當成不可信的資料丟掉（見 avatar3d 的 LOW_HAND_ENTER）。 */
     const pad = (a, b, k, body, rest, side) =>
       ({ ...blendFrame(a, b, k), hands: side.hands || [], _tok: null, _body: body, _rest: rest,
+         _ramp: side.hands && side.hands.length ? 1 : 0,
          _restL: side._restL || 0, _restR: side._restR || 0 });
     if (open) {
       const blend = rampFor(open, first);

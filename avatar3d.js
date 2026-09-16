@@ -2512,9 +2512,14 @@ function update(frame, dt) {
   }
   for (const side of ["left", "right"]) if (ARM[side]) ARM[side].restW = armRest[side];
   const seen = new Set();
+  /* 抬手／收手漸變段的手腕低，是組句端自己合成的，帶的手部資料卻是隔壁手語的
+   * （composer 的 _ramp）。照 wristLow 把它丟掉的話，手腕整段抬手都維持中立，
+   * 等手抬過門檻才一口氣轉到掌心方向——實測 對不起 的左手在 0.4 秒內轉 160 度、
+   * 連續 10 幀吃滿 700°/秒 的上限，看起來就是翻了一圈。 */
+  const carried = !!frame._ramp;
   for (const h of frame.hands || []) {
     const side = h.handedness.toLowerCase();
-    if (ARM[side] && ARM[side].wristLow) continue;   // hanging: data untrustworthy
+    if (ARM[side] && ARM[side].wristLow && !carried) continue;  // hanging: data untrustworthy
     if (armRest[side] >= 0.99) continue;             // fully placed at rest: no handshape to show
     if (rigHand(h.handedness, handLm(h.landmarks), h.world_landmarks, step)) seen.add(side);
   }
@@ -2538,7 +2543,7 @@ function update(frame, dt) {
   for (const side of ["left", "right"]) {
     const arm = ARM[side];
     const w = Math.max(frame._rest || 0, armRest[side],
-      arm && (arm.wristLow || (arm.palmBad || 0) > PALM_BAD_STREAK) ? 1 : 0);
+      arm && ((arm.wristLow && !carried) || (arm.palmBad || 0) > PALM_BAD_STREAK) ? 1 : 0);
     if (w > 0) relaxWrist(side, step, w);
   }
   // after the handshape exists, measure contacts and ease the correction
