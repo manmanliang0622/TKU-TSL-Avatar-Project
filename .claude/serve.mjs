@@ -21,6 +21,9 @@ const MIME = {
 
 createServer(async (req, res) => {
   const path = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+  // 轉發時要用「編碼過」的路徑：node 的 http.request 收到中文會直接丟
+  // ERR_UNESCAPED_CHARACTERS 把整個行程帶掉（詞庫裡的錄影檔名都是中文）
+  const proxyTarget = encodeURI(path);
 
   // 同源代理：嵌入式瀏覽器擋跨埠 loopback 請求，改由這裡轉發到通道
   // /recordings/* 先讀本地（lexicon.json 已抓回），缺檔再走通道拉整段錄製
@@ -29,7 +32,7 @@ createServer(async (req, res) => {
     || path.startsWith("/recognize/");
   if (proxyPath) {
     const upstream = httpRequest(
-      { ...GLOSS_PROXY_TARGET, path, method: req.method, headers: {
+      { ...GLOSS_PROXY_TARGET, path: proxyTarget, method: req.method, headers: {
           "content-type": req.headers["content-type"] || "application/json",
           ...(req.headers["content-length"] ? { "content-length": req.headers["content-length"] } : {}),
         } },
@@ -55,7 +58,7 @@ createServer(async (req, res) => {
     res.end(data);
   } catch {
     if (path.startsWith("/recordings/")) {
-      const upstream = httpRequest({ ...GLOSS_PROXY_TARGET, path, method: "GET" }, (up) => {
+      const upstream = httpRequest({ ...GLOSS_PROXY_TARGET, path: proxyTarget, method: "GET" }, (up) => {
         res.writeHead(up.statusCode || 502, { "Content-Type": up.headers["content-type"] || "application/json" });
         up.pipe(res);
       });
@@ -66,3 +69,6 @@ createServer(async (req, res) => {
     res.writeHead(404).end("Not Found");
   }
 }).listen(PORT, "127.0.0.1", () => console.log(`serving ${ROOT} at http://127.0.0.1:${PORT}`));
+
+// 一個壞請求不該讓整台預覽伺服器死掉（掃描跑到一半斷線就是這樣來的）
+process.on("uncaughtException", (e) => console.error("[serve] uncaught:", e && e.message));

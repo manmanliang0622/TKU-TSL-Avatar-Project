@@ -105,6 +105,22 @@ const poseLm = (pts, vis, world) =>
 const handLm = pts =>
   pts.map(p => ({ x: TUNE.unmirror ? 1 - p[0] : p[0], y: p[1], z: p[2], visibility: 1 }));
 
+/* Does this side's hand run off the edge of the picture this frame? Landmarks
+ * outside the frame are extrapolated, and that is where a lowering hand's
+ * orientation turns to noise. No hand data at all counts as clipped: that is
+ * the case the wristLow gate was written for. */
+const CLIP_MARGIN = 0.015;
+function handClipped(frame, side) {
+  const lab = side === "left" ? "Left" : "Right";
+  const h = (frame.hands || []).find(x => x.handedness === lab);
+  if (!h || !h.landmarks) return true;
+  for (const p of h.landmarks) {
+    if (p[1] > 1 - CLIP_MARGIN || p[1] < CLIP_MARGIN) return true;
+    if (p[0] > 1 - CLIP_MARGIN || p[0] < CLIP_MARGIN) return true;
+  }
+  return false;
+}
+
 /* ── two-bone IK: anchor avatar wrists to the recorded wrist positions ──
  * Kalidokit's forward rotation chains drift positionally; sign language
  * needs the hands WHERE the signer put them. We solve shoulder+elbow
@@ -2505,9 +2521,17 @@ function update(frame, dt) {
        * to catch the hand EARLIER on its way down — and it relaxed live signs
        * instead: ordinary downward strokes (謝謝's bow, 不會's press) fall just
        * as far below their own peak as a retraction does, and finger error
-       * doubled. Below 0.28 of the hip→shoulder span nothing linguistic
-       * happens in this corpus; above it, follow the data. */
-      arm.wristLow = arm.wristLow ? h < LOW_HAND_LEAVE : h < LOW_HAND_ENTER;
+       * doubled.
+       *
+       * Height alone is not enough either, in the other direction: signs DO
+       * happen down there (拖地 mops the floor, 輪椅 turns wheels, 小綠 is at
+       * the hip) and relaxing those wrists put the palm 50-120 deg off the
+       * recording. What makes a lowered hand's orientation garbage is not
+       * being low, it is being CUT OFF by the frame — measured, a retracting
+       * hand's landmarks run past y=1.0 while 拖地's stay at 0.94 with its
+       * 2D and 3D landmarks agreeing to 4 deg. So both must hold. */
+      const lowH = arm.wristLow ? h < LOW_HAND_LEAVE : h < LOW_HAND_ENTER;
+      arm.wristLow = lowH && handClipped(frame, side);
     }
   }
   for (const side of ["left", "right"]) if (ARM[side]) ARM[side].restW = armRest[side];
@@ -2535,8 +2559,11 @@ function update(frame, dt) {
   for (const side of ["left", "right"]) {
     const arm = ARM[side];
     if (!arm) continue;
+    /* 掉幀不等於重新接手：手沒被偵測到時手腕並不會鬆掉（relaxWrist 只在休息／低手時
+     * 跑），所以把 acquire 歸零會讓解算從頭再漸進一次 0.45 秒。改成同速衰減——真的
+     * 斷一段時間才會回到 0，斷一兩幀幾乎沒影響。 */
     if (seen.has(side)) arm.acquire = Math.min(1, (arm.acquire || 0) + step / ACQUIRE_SEC);
-    else arm.acquire = 0;
+    else arm.acquire = Math.max(0, (arm.acquire || 0) - step / ACQUIRE_SEC);
   }
   for (const side of ["left", "right"]) if (!seen.has(side)) relaxFingers(side, step);
   // a hanging arm also has a neutral wrist, not the last sign's palm angle

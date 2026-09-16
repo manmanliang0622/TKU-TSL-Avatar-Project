@@ -1302,16 +1302,23 @@
     /* _ramp 標記「這一幀的手是從隔壁手語借來的」（抬手／收手漸變段，不是靜止段）。
        這種幀的手腕本來就低——是這裡自己合成的，不是打者把手放下去，所以重定向端
        不該用 wristLow 把它當成不可信的資料丟掉（見 avatar3d 的 LOW_HAND_ENTER）。 */
-    const pad = (a, b, k, body, rest, side) =>
-      ({ ...blendFrame(a, b, k), hands: side.hands || [], _tok: null, _body: body, _rest: rest,
-         _ramp: side.hands && side.hands.length ? 1 : 0,
+    const pad = (a, b, k, body, rest, side, hands) =>
+      ({ ...blendFrame(a, b, k), hands: hands || [], _tok: null, _body: body, _rest: rest,
+         _ramp: hands && hands.length ? 1 : 0,
          _restL: side._restL || 0, _restR: side._restR || 0 });
+    /* 借哪一幀的手？不是第一／最後一幀，而是**第一／最後一個真的偵測到手的幀**。
+       很多片的第一幀打者還沒把手舉起來（moe／moc 整段從休息開始），手部偵測是空的，
+       漸變段就什麼都沒帶到，掌心只好等手語開始才開始追——量到 米糕 的右手掌心
+       前 0.5 秒整個反過來。 */
+    const withHands = frames.find(f => f.hands && f.hands.length);
+    const withHandsEnd = [...frames].reverse().find(f => f.hands && f.hands.length);
     if (open) {
       const blend = rampFor(open, first);
-      for (let i = 0; i < hold; i++) out.push(pad(open, open, 0, first._body, 1, open));
+      for (let i = 0; i < hold; i++) out.push(pad(open, open, 0, first._body, 1, open, []));
       for (let i = 1; i <= blend; i++) {
         const u = i / (blend + 1);
-        out.push(pad(open, first, smootherstep(u), first._body, 1 - smootherstep(u), first));
+        out.push(pad(open, first, smootherstep(u), first._body, 1 - smootherstep(u), first,
+                     (withHands || first).hands));
       }
     }
     out.push(...frames);
@@ -1319,9 +1326,10 @@
       const blend = rampFor(last, close);
       for (let i = 1; i <= blend; i++) {
         const u = i / (blend + 1);
-        out.push(pad(last, close, smootherstep(u), last._body, smootherstep(u), last));
+        out.push(pad(last, close, smootherstep(u), last._body, smootherstep(u), last,
+                     (withHandsEnd || last).hands));
       }
-      for (let i = 0; i < hold; i++) out.push(pad(close, close, 0, last._body, 1, close));
+      for (let i = 0; i < hold; i++) out.push(pad(close, close, 0, last._body, 1, close, []));
     }
     let t = 0;
     return out.map((f, i) => {
