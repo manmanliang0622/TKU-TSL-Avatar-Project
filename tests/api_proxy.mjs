@@ -48,8 +48,10 @@ eq("wrangler pages dev", clipsFor("localhost", "http:", "/api"), "/api/clips");
 /* ── functions/api/[[path]].js ──────────────────────────────────────── */
 const KV = origin => ({ TSL_CONFIG: { get: async () => origin } });
 let upstream = null;
+let upstreamHeaders = null;
 globalThis.fetch = async (url, init) => {
   upstream = url;
+  upstreamHeaders = init?.headers;
   return new Response("{}", {
     status: 200,
     headers: {
@@ -87,6 +89,22 @@ console.log("# 白名單內的路徑照轉，query 保留");
 eq("POST translate", (await call("POST", "translate")).upstream, "https://kv.example/translate");
 eq("POST clips", (await call("POST", "clips")).upstream, "https://kv.example/clips");
 eq("GET clip?…", (await call("GET", "clip", { search: "?name=a&start=1" })).upstream, "https://kv.example/clip?name=a&start=1");
+
+console.log("# 語音輸入：音訊照轉，並帶上真正的來源給後端限流");
+eq("POST transcribe", (await call("POST", "transcribe")).upstream, "https://kv.example/transcribe");
+eq("GET transcribe（錯的動詞）", (await call("GET", "transcribe")).status, 405);
+{
+  const req = new Request("https://site.pages.dev/api/transcribe", {
+    method: "POST",
+    headers: { "Content-Type": "audio/webm;codecs=opus", "CF-Connecting-IP": "203.0.113.9" },
+    body: new Uint8Array([1, 2, 3]),
+  });
+  await onRequest({ request: req, env: KV("https://kv.example"), params: { path: ["transcribe"] } });
+  eq("來源 IP → X-Tsl-Client", upstreamHeaders.get("X-Tsl-Client"), "203.0.113.9");
+  eq("音訊的 Content-Type 原樣帶過", upstreamHeaders.get("Content-Type"), "audio/webm;codecs=opus");
+}
+eq("前端設定：pages.dev 走 proxy", configFor("signbridge-2co.pages.dev").transcribeUrl, "/api/transcribe");
+eq("前端設定：學校主機同源", configFor("127.0.0.1", "http:").transcribeUrl, "transcribe");
 
 console.log("# 白名單外一律擋掉（後端也在服務 models/、recordings/）");
 eq("POST recordings", (await call("POST", "recordings")).status, 404);

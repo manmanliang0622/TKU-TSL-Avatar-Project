@@ -4,7 +4,8 @@
 from __future__ import annotations
 
 import argparse
-from collections import OrderedDict
+import base64
+from collections import OrderedDict, deque
 from email.utils import formatdate
 import gzip
 import hashlib
@@ -20,7 +21,9 @@ import subprocess
 import threading
 import time
 from typing import Any
+import urllib.error
 from urllib.parse import parse_qs, unquote, urlsplit
+import urllib.request
 
 
 ROOT = Path(__file__).resolve().parent
@@ -78,6 +81,168 @@ def remember_translation(key: tuple[str, str], body: bytes) -> None:
         TRANSLATE_CACHE.move_to_end(key)
         while len(TRANSLATE_CACHE) > TRANSLATE_CACHE_MAX:
             TRANSLATE_CACHE.popitem(last=False)
+
+
+# 語音輸入（生成頁「按住說話」）：瀏覽器錄一句話送來，這裡轉給 Gemini 轉成
+# 文字，填回輸入框讓使用者看過、改過再按「轉成手語」。金鑰只在這台主機的
+# 環境變數裡，前端與 Pages 都拿不到。沒設金鑰時 /transcribe 回 503，其餘照常。
+GEMINI_API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
+TRANSCRIBE_MODEL = os.environ.get("TRANSCRIBE_MODEL", "gemini-3.5-transcribe")
+# gemini-3.5-transcribe 有「HTTP 200 但內容全空」的回報（Google AI 論壇，
+# 2026-08 起未解）。空的或出錯就改用 flash-lite 加提示詞轉寫；這條路可以
+# 直接要求臺灣繁體，單價也更低。
+TRANSCRIBE_FALLBACK_MODEL = os.environ.get("TRANSCRIBE_FALLBACK_MODEL", "gemini-3.5-flash-lite")
+TRANSCRIBE_FALLBACK_PROMPT = (
+    "逐字轉寫這段語音。只輸出轉寫的文字，使用臺灣繁體中文與全形標點，"
+    "不要加任何說明、引號或換行。聽不到人聲就輸出空字串。"
+)
+# 官方語言表的普通話只有簡體（cmn-Hans-CN），沒有 zh-TW；結果一律再轉臺灣繁體
+TRANSCRIBE_LANGUAGES = [
+    code.strip() for code in os.environ.get("TRANSCRIBE_LANGUAGES", "cmn-Hans-CN").split(",") if code.strip()
+]
+# 前端錄音上限 15 秒、32 kbps Opus 約 60 KB；留給 Safari 的 AAC 一點餘裕
+TRANSCRIBE_MAX_BODY = 512 * 1024
+TRANSCRIBE_MIME_TYPES = {
+    "audio/webm", "audio/ogg", "audio/opus", "audio/wav", "audio/mpeg", "audio/mp3",
+    "audio/aac", "audio/m4a", "audio/flac",
+}
+# Safari 的 MediaRecorder 只出 audio/mp4（AAC），Gemini 的 MIME 清單叫它 m4a
+TRANSCRIBE_MIME_ALIASES = {"audio/mp4": "audio/m4a", "audio/x-m4a": "audio/m4a", "audio/wave": "audio/wav"}
+# 防濫用：這支 API 照用量計費，網址又是公開的。單一來源每分鐘有上限；
+# 全站每天也有上限 —— 1000 次 × 15 秒 ≈ 250 分鐘音訊，最壞一天不到 2 美元。
+# 真正的硬上限還是 Google Cloud 那邊的配額，這裡是第一道。
+TRANSCRIBE_PER_CLIENT_PER_MINUTE = int(os.environ.get("TRANSCRIBE_PER_CLIENT_PER_MINUTE", "10"))
+TRANSCRIBE_PER_DAY = int(os.environ.get("TRANSCRIBE_PER_DAY", "1000"))
+TRANSCRIBE_TIMEOUT = 30
+
+
+class TranscribeLimiter:
+    """Sliding-window limits: per client per minute, and for the whole site per day."""
+
+    def __init__(self, per_client_per_minute: int, per_day: int, clock=time.monotonic) -> None:
+        self.per_client_per_minute = per_client_per_minute
+        self.per_day = per_day
+        self.clock = clock
+        self.lock = threading.Lock()
+        self.day: deque[float] = deque()
+        self.clients: dict[str, deque[float]] = {}
+
+    def allow(self, client: str) -> str | None:
+        """Record one request and return None, or return why it is refused."""
+        now = self.clock()
+        with self.lock:
+            while self.day and now - self.day[0] >= 86_400:
+                self.day.popleft()
+            for key in [key for key, hits in self.clients.items() if not hits or now - hits[-1] >= 60]:
+                del self.clients[key]
+            hits = self.clients.setdefault(client, deque())
+            while hits and now - hits[0] >= 60:
+                hits.popleft()
+            if len(self.day) >= self.per_day:
+                return "今天的語音輸入次數已達上限，請改用打字輸入。"
+            if len(hits) >= self.per_client_per_minute:
+                return "語音輸入太頻繁，請稍等一分鐘再試。"
+            self.day.append(now)
+            hits.append(now)
+            return None
+
+
+TRANSCRIBE_LIMITER = TranscribeLimiter(TRANSCRIBE_PER_CLIENT_PER_MINUTE, TRANSCRIBE_PER_DAY)
+
+
+def _traditional_converter():
+    """OpenCC 簡轉臺灣繁體（含用詞）。沒裝就原樣回傳，/transcribe 的回應會標出來。"""
+    try:
+        import opencc  # type: ignore[import-not-found]
+    except ImportError:
+        return None
+    # 官方套件吃 "s2twp.json"，opencc-python-reimplemented 吃 "s2twp"
+    for config in ("s2twp.json", "s2twp"):
+        try:
+            return opencc.OpenCC(config).convert
+        except Exception:  # noqa: BLE001 - 兩種套件丟的例外型別不同
+            continue
+    return None
+
+
+TO_TRADITIONAL = _traditional_converter()
+
+
+class TranscribeError(Exception):
+    pass
+
+
+def gemini_post(path: str, payload: dict[str, Any]) -> dict[str, Any]:
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    request = urllib.request.Request(
+        f"{GEMINI_API_ROOT}/{path}",
+        data=json.dumps(payload).encode("utf-8"),
+        # 金鑰放標頭不放網址：網址會進日誌與錯誤訊息
+        headers={"Content-Type": "application/json", "x-goog-api-key": key},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=TRANSCRIBE_TIMEOUT) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", "replace")[:300]
+        raise TranscribeError(f"{path.split(':')[0]} HTTP {error.code}: {detail}") from error
+    except (OSError, ValueError) as error:
+        raise TranscribeError(f"{path.split(':')[0]}: {error}") from error
+
+
+def transcribe_primary(audio_b64: str, mime: str) -> str:
+    config: dict[str, Any] = {"mode": "smart"}
+    if TRANSCRIBE_LANGUAGES:
+        config["language_codes"] = TRANSCRIBE_LANGUAGES
+    data = gemini_post("interactions", {
+        "model": f"models/{TRANSCRIBE_MODEL}",
+        "input": [{"type": "audio", "data": audio_b64, "mime_type": mime}],
+        "generation_config": {"transcription_config": config},
+    })
+    texts = [
+        block.get("text", "")
+        for step in data.get("steps") or []
+        if isinstance(step, dict) and step.get("type") == "model_output"
+        for block in step.get("content") or []
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
+    if not texts and isinstance(data.get("output_text"), str):
+        texts = [data["output_text"]]
+    return "".join(texts).strip()
+
+
+def transcribe_fallback(audio_b64: str, mime: str) -> str:
+    data = gemini_post(f"models/{TRANSCRIBE_FALLBACK_MODEL}:generateContent", {
+        "contents": [{
+            "role": "user",
+            "parts": [
+                {"inline_data": {"mime_type": mime, "data": audio_b64}},
+                {"text": TRANSCRIBE_FALLBACK_PROMPT},
+            ],
+        }],
+    })
+    candidates = data.get("candidates") or [{}]
+    parts = (candidates[0].get("content") or {}).get("parts") or []
+    return "".join(part.get("text", "") for part in parts if isinstance(part, dict)).strip()
+
+
+def transcribe(audio: bytes, mime: str) -> dict[str, Any]:
+    audio_b64 = base64.b64encode(audio).decode("ascii")
+    model = TRANSCRIBE_MODEL
+    try:
+        text = transcribe_primary(audio_b64, mime)
+    except TranscribeError as error:
+        print(f"[0813] transcribe: {TRANSCRIBE_MODEL} failed, falling back: {error}", flush=True)
+        text = ""
+    if not text:
+        model = TRANSCRIBE_FALLBACK_MODEL
+        text = transcribe_fallback(audio_b64, mime)
+    text = " ".join(text.split())
+    traditional = TO_TRADITIONAL is not None
+    if traditional and text:
+        text = TO_TRADITIONAL(text)
+    return {"text": text, "model": model, "traditional": traditional}
 PUBLIC_ROOT_SUFFIXES = {
     ".css",
     ".html",
@@ -591,10 +756,53 @@ class Handler(SimpleHTTPRequestHandler):
             return
         self.serve_static()
 
+    def client_key(self) -> str:
+        # 經 Pages proxy 進來時，TCP 對端是 cloudflared，真正的來源由 proxy 帶在
+        # X-Tsl-Client。這個標頭直打 tunnel 的人可以偽造，所以它只用來分攤
+        # 「每人每分鐘」；全站每日上限不看它，偽造也繞不過去。
+        for header in ("X-Tsl-Client", "CF-Connecting-IP"):
+            value = self.headers.get(header, "").strip()
+            if value:
+                return value[:64]
+        return self.client_address[0]
+
+    def serve_transcribe(self) -> None:
+        if not os.environ.get("GEMINI_API_KEY", "").strip():
+            self.send_json(503, {"error": "語音輸入尚未啟用（主機沒有設定 GEMINI_API_KEY），請先改用打字輸入。"})
+            return
+        mime = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+        mime = TRANSCRIBE_MIME_ALIASES.get(mime, mime)
+        if mime not in TRANSCRIBE_MIME_TYPES:
+            self.send_json(415, {"error": f"unsupported audio type: {mime or '(none)'}"})
+            return
+        try:
+            content_length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self.send_json(400, {"error": "invalid Content-Length"})
+            return
+        if content_length <= 0 or content_length > TRANSCRIBE_MAX_BODY:
+            self.send_json(400, {"error": "錄音太長或是空的，請說一句話（15 秒內）。"})
+            return
+        audio = self.rfile.read(content_length)
+        refused = TRANSCRIBE_LIMITER.allow(self.client_key())
+        if refused:
+            self.send_json(429, {"error": refused})
+            return
+        try:
+            result = transcribe(audio, mime)
+        except TranscribeError as error:
+            print(f"[0813] transcribe failed: {error}", flush=True)
+            self.send_json(502, {"error": "語音辨識服務暫時無法使用，請改用打字輸入。"})
+            return
+        self.send_json(200, result)
+
     def do_POST(self) -> None:
         route = self.path.split("?", 1)[0]
         if route.startswith("/knee42/"):
             self.serve_knee42(route)
+            return
+        if route == "/transcribe":
+            self.serve_transcribe()
             return
         if route not in {"/translate", "/clips"}:
             self.send_json(404, {"error": "not found"})

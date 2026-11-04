@@ -1201,6 +1201,26 @@ h2{
   color:rgba(233,234,228,.68);border-bottom-color:rgba(233,234,228,.4);
 }
 .rail .btn-ghost:hover{color:var(--ivory);border-color:var(--ivory);}
+/* 語音輸入：跟「轉成手語」同排的外框鈕。錄音中整顆換成重點色，
+   麥克風開著這件事要遠遠就看得到。touch-action 等幾行是給手機長按用的：
+   不捲動、不選字、不跳出系統選單 */
+.rail .btn-mic{
+  flex:none;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:clamp(46px,7.6vh,58px);
+  padding:0 18px;
+  font-family:var(--sans-tc);
+  font-size:clamp(17px,min(1.25vw,3vh),19px);font-weight:600;letter-spacing:var(--tr-zh);
+  color:var(--ivory);background:none;
+  border:1px solid rgba(233,234,228,.4);border-radius:2px;
+  cursor:pointer;
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  transition:border-color .2s ease,color .2s ease,background .2s ease;
+}
+.rail .btn-mic:hover{border-color:var(--ivory);}
+.rail .btn-mic[data-state="recording"]{background:var(--accent);border-color:var(--accent);color:#fff;}
+.rail .btn-mic:disabled{opacity:.55;cursor:wait;}
+.rail .btn-mic[hidden]{display:none;}
 /* 生成頁的播放控制：跟「轉成手語」同在釘底的動作區，
    由上而下就是使用順序——先轉換，再播放。中間一條髮絲線分開兩個階段 */
 .rail-playback{

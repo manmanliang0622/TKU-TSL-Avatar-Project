@@ -33,7 +33,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Archivo:wght@400;500;600&family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20260915-noconfnote">
+<link rel="stylesheet" href="style.css?v=20261104-voice">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -310,6 +310,10 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
       </p>
       <div class="action-row generation-actions">
         <button type="button" class="btn-primary" id="generateSign">轉成手語</button>
+        <button type="button" class="btn-mic" id="micInput" data-state="idle" hidden aria-label="按住說話，放開後轉成文字">
+          <svg width="14" height="18" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="1" width="6" height="10" rx="3"/><path d="M1 8a6 6 0 0 0 12 0M7 14v3"/></svg>
+          <span>按住說話</span>
+        </button>
         <button type="button" class="btn-ghost" id="clearText">清除</button>
       </div>
       <div class="playback-controls rail-playback" aria-label="播放控制">
@@ -344,8 +348,8 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
   </dl>
 </dialog>
 
-<script src="signavatar-config.js?v=20260823-apiproxy"></script>
-<script src="script.js?v=20260914-nowarn"></script>
+<script src="signavatar-config.js?v=20261104-voice"></script>
+<script src="script.js?v=20261104-voice"></script>
 <!-- 辨識頁改接 Knee42 後端（Pose+Hands 合約）；原 recognition.js（手+臉 178 維，供自訓模型）暫時下線 -->
 <script type="module" src="knee42-client.js?v=20260915-noconfnote"></script>
 <script type="importmap">

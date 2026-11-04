@@ -1,7 +1,9 @@
+import base64
 import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
+import os
 from pathlib import Path
 import shutil
 import ssl
@@ -456,6 +458,139 @@ class RecognizerProxyTests(unittest.TestCase):
             "POST", "/translate", declared_length=1_048_577, recognizer_up=False
         )
         self.assertEqual(status, 400)
+
+
+class TranscribeTests(unittest.TestCase):
+    """生成頁的語音輸入：/transcribe 把音訊轉給 Gemini。真的 API 不打，換成假的。"""
+
+    AUDIO = b"\x1a\x45\xdf\xa3fake-webm-opus"
+
+    def setUp(self):
+        self.bundle = load_bundle_server()
+        self.calls = []
+        self.primary = {"steps": [{"type": "model_output", "content": [{"type": "text", "text": "我要去 新竹"}]}]}
+        self.fallback = {"candidates": [{"content": {"parts": [{"text": "我要去新竹"}]}}]}
+
+        def fake_post(path, payload):
+            self.calls.append((path, payload))
+            result = self.primary if path == "interactions" else self.fallback
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        self.bundle.gemini_post = fake_post
+        self.bundle.TO_TRADITIONAL = None
+        self.bundle.TRANSCRIBE_LIMITER = self.bundle.TranscribeLimiter(100, 1000)
+        self.saved_key = os.environ.get("GEMINI_API_KEY")
+        os.environ["GEMINI_API_KEY"] = "test-key"
+
+    def tearDown(self):
+        if self.saved_key is None:
+            os.environ.pop("GEMINI_API_KEY", None)
+        else:
+            os.environ["GEMINI_API_KEY"] = self.saved_key
+
+    def post(self, body=AUDIO, content_type="audio/webm;codecs=opus", headers=None, declared_length=None):
+        server = ThreadingHTTPServer(("127.0.0.1", 0), self.bundle.Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        try:
+            connection = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=5)
+            connection.putrequest("POST", "/transcribe")
+            connection.putheader("Content-Type", content_type)
+            connection.putheader("Content-Length", str(len(body) if declared_length is None else declared_length))
+            for name, value in (headers or {}).items():
+                connection.putheader(name, value)
+            connection.endheaders()
+            if declared_length is None:
+                connection.send(body)
+            response = connection.getresponse()
+            data = json.loads(response.read())
+            connection.close()
+            return response.status, data
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_audio_is_sent_to_the_transcribe_model(self):
+        status, data = self.post()
+        self.assertEqual(status, 200)
+        self.assertEqual(data["text"], "我要去 新竹")
+        self.assertEqual(data["model"], self.bundle.TRANSCRIBE_MODEL)
+        path, payload = self.calls[0]
+        self.assertEqual(path, "interactions")
+        audio = payload["input"][0]
+        self.assertEqual(audio["mime_type"], "audio/webm")  # codecs 參數不往上送
+        self.assertEqual(base64.b64decode(audio["data"]), self.AUDIO)
+        self.assertEqual(payload["generation_config"]["transcription_config"]["language_codes"], ["cmn-Hans-CN"])
+
+    def test_empty_transcript_falls_back_to_flash_lite(self):
+        # Google 論壇回報：gemini-3.5-transcribe 會回 200 但內容全空
+        self.primary = {"steps": [{"type": "model_output", "content": []}]}
+        status, data = self.post()
+        self.assertEqual(status, 200)
+        self.assertEqual(data["text"], "我要去新竹")
+        self.assertEqual(data["model"], self.bundle.TRANSCRIBE_FALLBACK_MODEL)
+        self.assertEqual(self.calls[1][0], f"models/{self.bundle.TRANSCRIBE_FALLBACK_MODEL}:generateContent")
+
+    def test_primary_error_falls_back_and_double_failure_is_502(self):
+        self.primary = self.bundle.TranscribeError("interactions HTTP 500")
+        status, data = self.post()
+        self.assertEqual((status, data["text"]), (200, "我要去新竹"))
+        self.fallback = self.bundle.TranscribeError("generateContent HTTP 500")
+        status, data = self.post()
+        self.assertEqual(status, 502)
+        self.assertNotIn("test-key", json.dumps(data))
+
+    def test_result_is_converted_to_taiwan_traditional(self):
+        self.primary = {"steps": [{"type": "model_output", "content": [{"type": "text", "text": "我听不到"}]}]}
+        self.bundle.TO_TRADITIONAL = lambda text: text.replace("听", "聽")
+        status, data = self.post()
+        self.assertEqual(status, 200)
+        self.assertEqual(data["text"], "我聽不到")
+        self.assertTrue(data["traditional"])
+
+    def test_safari_mp4_is_sent_as_m4a(self):
+        status, _data = self.post(content_type="audio/mp4")
+        self.assertEqual(status, 200)
+        self.assertEqual(self.calls[0][1]["input"][0]["mime_type"], "audio/m4a")
+
+    def test_without_api_key_it_is_a_clear_503(self):
+        os.environ.pop("GEMINI_API_KEY")
+        status, data = self.post()
+        self.assertEqual(status, 503)
+        self.assertIn("GEMINI_API_KEY", data["error"])
+        self.assertEqual(self.calls, [])
+
+    def test_bad_requests_never_reach_gemini(self):
+        status, _ = self.post(content_type="application/json")
+        self.assertEqual(status, 415)
+        status, _ = self.post(body=b"")
+        self.assertEqual(status, 400)
+        status, _ = self.post(declared_length=self.bundle.TRANSCRIBE_MAX_BODY + 1)
+        self.assertEqual(status, 400)
+        self.assertEqual(self.calls, [])
+
+    def test_rate_limit_is_per_client_and_reaches_gemini_only_when_allowed(self):
+        self.bundle.TRANSCRIBE_LIMITER = self.bundle.TranscribeLimiter(1, 1000)
+        self.assertEqual(self.post(headers={"X-Tsl-Client": "1.1.1.1"})[0], 200)
+        status, data = self.post(headers={"X-Tsl-Client": "1.1.1.1"})
+        self.assertEqual(status, 429)
+        self.assertIn("一分鐘", data["error"])
+        self.assertEqual(self.post(headers={"X-Tsl-Client": "2.2.2.2"})[0], 200)
+        self.assertEqual(len(self.calls), 2)
+
+    def test_limiter_windows(self):
+        now = [0.0]
+        limiter = self.bundle.TranscribeLimiter(2, 3, clock=lambda: now[0])
+        self.assertIsNone(limiter.allow("a"))
+        self.assertIsNone(limiter.allow("a"))
+        self.assertIn("一分鐘", limiter.allow("a"))
+        now[0] = 61
+        self.assertIsNone(limiter.allow("a"))
+        # 全站每日上限不看來源，換人也一樣擋
+        self.assertIn("今天", limiter.allow("b"))
+        now[0] = 86_401
+        self.assertIsNone(limiter.allow("b"))
 
 
 if __name__ == "__main__":

@@ -879,6 +879,124 @@ document.querySelector("#clearText").addEventListener("click", () => {
   window.dispatchEvent(new CustomEvent("signavatar:generation-cleared"));
 });
 
+// ── 語音輸入：按住說話，放開後把 Gemini 轉出的文字填進輸入框 ──
+// 不直接翻譯：聽錯一個字，後面的語序與詞卡全跟著錯，所以先讓人看過、
+// 改過，再自己按「轉成手語」。
+const micButton = document.querySelector("#micInput");
+const MIC_MAX_MS = 15000;  // 後端只收 15 秒左右的量，到點自動送出
+const MIC_MIN_MS = 400;    // 短於這個多半是點一下，不是在說話
+let micSession = null;     // { recorder, startedAt, timer }
+let micHeld = false;
+
+function transcribeUrl() {
+  return (window.SignAvatarConfig || {}).transcribeUrl || "transcribe";
+}
+
+function setMicState(state) {
+  micButton.dataset.state = state;
+  micButton.disabled = state === "busy";
+  micButton.querySelector("span").textContent =
+    // 三種狀態都是四個字：字數一變，同排的「清除」就會被擠到下一行
+    state === "recording" ? "放開送出" : state === "busy" ? "辨識中…" : "按住說話";
+}
+
+async function startMic() {
+  if (micSession || micButton.disabled) return;
+  micHeld = true;
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+    });
+  } catch {
+    setGenerationStatus("⚠ 沒有取得麥克風權限。請在瀏覽器允許使用麥克風，或改用打字輸入。", "warn");
+    return;
+  }
+  // 第一次用會先跳權限詢問，按下「允許」時手早就放開了：這次不錄，請他再按住一次
+  if (!micHeld) {
+    stream.getTracks().forEach(track => track.stop());
+    setGenerationStatus("麥克風已開啟。請按住「按住說話」說一句話，說完再放開。", "warn");
+    return;
+  }
+  const mimeType = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"]
+    .find(type => MediaRecorder.isTypeSupported(type));
+  const recorder = new MediaRecorder(stream, { ...(mimeType ? { mimeType } : {}), audioBitsPerSecond: 32000 });
+  const chunks = [];
+  const session = { recorder, startedAt: performance.now(), timer: setTimeout(stopMic, MIC_MAX_MS) };
+  recorder.addEventListener("dataavailable", e => { if (e.data.size) chunks.push(e.data); });
+  recorder.addEventListener("stop", () => {
+    stream.getTracks().forEach(track => track.stop());
+    const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || "audio/webm" });
+    if (performance.now() - session.startedAt < MIC_MIN_MS || !blob.size) {
+      setMicState("idle");
+      setGenerationStatus("請按住「按住說話」不放，說完一句話再放開。", "warn");
+      return;
+    }
+    sendRecording(blob);
+  });
+  micSession = session;
+  recorder.start();
+  setMicState("recording");
+}
+
+function stopMic() {
+  micHeld = false;
+  if (!micSession) return;
+  clearTimeout(micSession.timer);
+  const { recorder } = micSession;
+  micSession = null;
+  if (recorder.state !== "inactive") recorder.stop();
+}
+
+async function sendRecording(blob) {
+  setMicState("busy");
+  setGenerationStatus("語音辨識中…");
+  try {
+    const res = await fetch(transcribeUrl(), {
+      method: "POST",
+      headers: { "Content-Type": blob.type },
+      body: blob,
+    });
+    const data = await res.json().catch(() => ({}));
+    // 後端的錯誤訊息是寫給使用者看的完整句子（含下一步），原樣顯示
+    if (!res.ok) throw new Error(data.error || `語音辨識服務沒有回應（HTTP ${res.status}），請改用打字輸入。`);
+    if (!data.text) {
+      setGenerationStatus("沒有聽清楚，請靠近麥克風再說一次。", "warn");
+      return;
+    }
+    textInput.value = data.text;
+    textInput.focus();
+    setGenerationStatus("已轉成文字，確認沒錯再按「轉成手語」。");
+  } catch (ex) {
+    // fetch 本身丟的 TypeError 是連線層的（tunnel 斷了、離線），訊息是英文，換掉
+    const reason = ex instanceof TypeError ? "連不上語音辨識服務，請改用打字輸入。" : ex.message;
+    setGenerationStatus(`⚠ ${reason}`, "warn");
+  } finally {
+    setMicState("idle");
+  }
+}
+
+// 沒有麥克風 API 的環境（http 非本機、舊瀏覽器、部分 App 內建瀏覽器）就不顯示按鈕
+if (micButton && navigator.mediaDevices?.getUserMedia && window.MediaRecorder) {
+  micButton.hidden = false;
+  micButton.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    micButton.setPointerCapture?.(e.pointerId);  // 手指滑出按鈕也算還按著
+    startMic();
+  });
+  micButton.addEventListener("pointerup", stopMic);
+  micButton.addEventListener("pointercancel", stopMic);
+  micButton.addEventListener("contextmenu", e => e.preventDefault());
+  // 鍵盤：在按鈕上按住空白鍵或 Enter 說話（全域快捷鍵遇到按鈕會讓給這裡）
+  micButton.addEventListener("keydown", e => {
+    if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); startMic(); }
+  });
+  micButton.addEventListener("keyup", e => {
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); stopMic(); }
+  });
+}
+
 // Enter 直接轉換（Shift+Enter 換行）
 textInput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) {

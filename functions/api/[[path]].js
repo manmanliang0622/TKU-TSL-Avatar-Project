@@ -24,6 +24,8 @@ const ROUTES = {
   clips: ["POST", "OPTIONS"],
   clip: ["GET", "HEAD"],
   health: ["GET"],
+  // 生成頁的語音輸入：音訊進來、文字出去，Gemini 金鑰只在後端
+  transcribe: ["POST", "OPTIONS"],
 };
 
 // 手語辨識端（Knee42）：bundle_server 的 /knee42/* 會再轉給同機 8642 的
@@ -107,6 +109,10 @@ export async function onRequest({ request, env, params }) {
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("Content-Type", contentType);
+  // 後端看到的對端是 cloudflared，要分人限流（/transcribe 照用量計費）
+  // 只能靠這裡把真正的來源帶過去
+  const client = request.headers.get("cf-connecting-ip");
+  if (client) headers.set("X-Tsl-Client", client);
 
   let upstream;
   try {

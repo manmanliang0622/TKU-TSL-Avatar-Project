@@ -29,6 +29,7 @@
         apiBase: base,
         translateUrl: `${base}/translate`,
         clipsUrl: `${base}/clips`,
+        transcribeUrl: `${base}/transcribe`,
       }
-    : { translateUrl: "translate" };
+    : { translateUrl: "translate", transcribeUrl: "transcribe" };
 })();
