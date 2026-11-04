@@ -38,18 +38,6 @@ MIME_BY_SUFFIX = {
 IGNORED = re.compile(r"[\s　-〿＀-／：-＠,.!?;:'\"()\[\]-]")
 
 
-def load_key() -> None:
-    if os.environ.get("GEMINI_API_KEY", "").strip():
-        return
-    env = ROOT / ".env"
-    if env.is_file():
-        for line in env.read_text(encoding="utf-8").splitlines():
-            if line.startswith("GEMINI_API_KEY="):
-                os.environ["GEMINI_API_KEY"] = line.split("=", 1)[1].strip().strip("\"'")
-    if not os.environ.get("GEMINI_API_KEY", "").strip():
-        sys.exit("找不到 GEMINI_API_KEY（環境變數或 .env 都沒有）")
-
-
 def load_bundle():
     spec = importlib.util.spec_from_file_location("bundle_server", ROOT / "bundle_server.py")
     module = importlib.util.module_from_spec(spec)
@@ -85,8 +73,10 @@ def main() -> None:
     if not args.audio and not args.manifest:
         parser.error("給一個錄音檔，或用 --manifest")
 
-    load_key()
     bundle = load_bundle()
+    bundle.load_gemini_key()  # 跟線上同一套：環境變數優先，否則讀 .env
+    if not os.environ.get("GEMINI_API_KEY", "").strip():
+        sys.exit("找不到 GEMINI_API_KEY（環境變數或 .env 都沒有）")
     if bundle.TO_TRADITIONAL is None:
         print("⚠ 沒裝 OpenCC：結果不會轉臺灣繁體（.venv/bin/pip install opencc）\n")
 

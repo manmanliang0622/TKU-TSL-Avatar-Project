@@ -90,19 +90,6 @@ for busy_port in "$PORT" "$MODEL_PORT"; do
   fi
 done
 
-# 語音輸入（/transcribe）的 Gemini 金鑰放在 $ROOT/.env 的 GEMINI_API_KEY=...。
-# .env 不入版控，bundle_server 與 Pages 也都不送點開頭的檔案。只讀這一行、
-# 不 source 整個檔：.env 裡寫了別的東西也不會被當成指令執行。
-# 沒有金鑰照常啟動，只是生成頁的「按住說話」會回 503。
-if [[ -z "${GEMINI_API_KEY:-}" && -r "$ROOT/.env" ]]; then
-  GEMINI_API_KEY="$(sed -n 's/^GEMINI_API_KEY=//p' "$ROOT/.env" | tail -n 1 | tr -d "\r\"' ")"
-fi
-if [[ -n "${GEMINI_API_KEY:-}" ]]; then
-  export GEMINI_API_KEY
-else
-  echo "Note: GEMINI_API_KEY is not set; voice input (/transcribe) stays disabled." >&2
-fi
-
 nohup "$ROOT/.venv/bin/python3" "$ROOT/bundle_server.py" \
   --host "$HOST" --port "$PORT" --model-port "$MODEL_PORT" \
   > "$ROOT/logs/bundle-server.log" \

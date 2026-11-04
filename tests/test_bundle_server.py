@@ -579,6 +579,18 @@ class TranscribeTests(unittest.TestCase):
         self.assertEqual(self.post(headers={"X-Tsl-Client": "2.2.2.2"})[0], 200)
         self.assertEqual(len(self.calls), 2)
 
+    def test_key_is_read_from_dotenv_only_when_env_is_empty(self):
+        # 線上是 autopublish.sh 直接起 bundle_server.py，金鑰只能靠它自己讀 .env
+        with tempfile.TemporaryDirectory() as directory:
+            env_file = Path(directory) / ".env"
+            env_file.write_text('OTHER=1\nGEMINI_API_KEY="from-dotenv"\n', encoding="utf-8")
+            os.environ.pop("GEMINI_API_KEY")
+            self.bundle.load_gemini_key(env_file)
+            self.assertEqual(os.environ["GEMINI_API_KEY"], "from-dotenv")
+            os.environ["GEMINI_API_KEY"] = "from-env"
+            self.bundle.load_gemini_key(env_file)
+            self.assertEqual(os.environ["GEMINI_API_KEY"], "from-env")
+
     def test_limiter_windows(self):
         now = [0.0]
         limiter = self.bundle.TranscribeLimiter(2, 3, clock=lambda: now[0])

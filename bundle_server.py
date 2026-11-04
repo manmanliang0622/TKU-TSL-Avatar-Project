@@ -877,8 +877,23 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(response_body)
 
 
+def load_gemini_key(env_file: Path = ROOT / ".env") -> None:
+    """語音輸入的金鑰：環境變數優先，沒有就讀同目錄 .env 的 GEMINI_API_KEY=。
+
+    放在這裡而不是啟動腳本：線上是 autopublish.sh 直接起 bundle_server.py，
+    不經過 start_0813.sh。.env 不入版控，靜態路由也不送點開頭的檔案。
+    只讀這一行、不執行整個檔。
+    """
+    if os.environ.get("GEMINI_API_KEY", "").strip() or not env_file.is_file():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        if line.startswith("GEMINI_API_KEY="):
+            os.environ["GEMINI_API_KEY"] = line.split("=", 1)[1].strip().strip("\"'")
+
+
 def main() -> None:
     global MODEL_PORT
+    load_gemini_key()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8083")))
