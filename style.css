@@ -537,6 +537,27 @@ h2{
   display:block;
   width:100%;height:100%;
 }
+/* 展示用全螢幕（F）：只有舞台本身，深色滿版，沒有控制列與時間軸 */
+.avatar-stage:fullscreen{
+  width:100%;height:100%;max-height:none;aspect-ratio:auto;
+  background:var(--stage,#0d0c0b);
+}
+.avatar-stage::backdrop{background:#000;}
+/* 快捷鍵切換時的一行提示：浮在舞台上緣正中間（下緣是時間軸），1.6 秒後淡出 */
+.stage-hint{
+  position:absolute;z-index:6;left:50%;
+  top:clamp(14px,2.2vh,26px);
+  transform:translate(-50%,-6px);
+  padding:8px 18px;
+  font-size:14px;letter-spacing:.08em;white-space:nowrap;
+  color:var(--ivory);
+  background:rgba(0,0,0,.62);
+  border:1px solid rgba(233,234,228,.32);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;
+}
+.stage-hint.is-on{opacity:1;transform:translate(-50%,0);}
+@media (prefers-reduced-motion:reduce){.stage-hint{transition:none;}}
 .avatar-loading{
   position:absolute;inset:0;z-index:4;
   display:flex;flex-direction:column;align-items:center;justify-content:center;

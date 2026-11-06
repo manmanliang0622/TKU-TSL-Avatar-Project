@@ -314,6 +314,9 @@ document.querySelectorAll(".ctas a").forEach(a => {
 });
 
 // ── Keyboard Shortcuts ──
+// 循環播放（L）與虛擬人全螢幕（F）在 signavatar-bridge.js，它們要直接改 3D 播放狀態
+let lastFullscreenChange = -Infinity;
+document.addEventListener("fullscreenchange", () => { lastFullscreenChange = performance.now(); });
 document.addEventListener("keydown", e => {
   if (e.target.matches("input, textarea, select")) return;
   // Enter／空白鍵在按鈕或連結上交給原生行為，避免雙重觸發
@@ -337,6 +340,8 @@ document.addEventListener("keydown", e => {
       }
       break;
     case "Escape":
+      // 全螢幕時 Esc 是「離開全螢幕」，不要順便把正在展示的播放停掉
+      if (document.fullscreenElement || performance.now() - lastFullscreenChange < 500) break;
       if (genPlayer.getState() !== "idle") {
         genPlayer.stop();
         avatarStatus.textContent = "已停止";
