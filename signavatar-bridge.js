@@ -23,6 +23,9 @@ let playing = false;
 let paused = false;
 let playhead = 0;
 let playbackRate = 1;
+let looping = false;          // 展示用循環播放（L 鍵）
+let loopHoldUntil = 0;        // 播完停在收手姿勢到這個時間點，再從頭播
+const LOOP_HOLD_MS = 1200;
 let lastTs = performance.now();
 let ready = false;
 let initPromise = null;
@@ -746,8 +749,16 @@ function tick(ts) {
       const lastFrame = composed.frames[composed.frames.length - 1];
       if (lastFrame && playhead >= lastFrame.timestamp) {
         playhead = lastFrame.timestamp;
-        playing = false;
-        setStatus("播放完成");
+        if (looping) {
+          // 循環播放：停在最後的收手姿勢一下，再從頭播（句子本來就從休息姿勢開始）
+          if (!loopHoldUntil) loopHoldUntil = ts + LOOP_HOLD_MS;
+          else if (ts >= loopHoldUntil) { playhead = 0; loopHoldUntil = 0; }
+        } else {
+          playing = false;
+          setStatus("播放完成");
+        }
+      } else {
+        loopHoldUntil = 0;
       }
       paintTimeline();
     }
@@ -846,6 +857,71 @@ clearButton?.addEventListener("click", clearSequence);
 window.addEventListener("resize", resizeStage);
 window.addEventListener("pagechange", event => {
   if (event.detail === "generation") setTimeout(resizeStage, 0);
+});
+
+/* ── 展示用：循環播放（L）、虛擬人全螢幕（F）──────────────────────────
+   不加按鈕，維持版面乾淨：生成頁按快捷鍵切換，舞台上方短暫浮出一行提示，
+   「?」快捷鍵說明裡也列出來。只動播放迴圈的尾端和舞台外框，
+   片段組合、動作與辨識都不碰。
+   雙擊舞台已經是「視角回正」，所以全螢幕不綁雙擊。 */
+let hintTimer = 0;
+function showStageHint(text) {
+  if (!stageWrap) return;
+  let el = stageWrap.querySelector(".stage-hint");
+  if (!el) {
+    el = document.createElement("div");
+    el.className = "stage-hint";
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    stageWrap.appendChild(el);
+  }
+  el.textContent = text;
+  el.classList.add("is-on");
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => el.classList.remove("is-on"), 1600);
+}
+
+function setLooping(on) {
+  looping = on;
+  loopHoldUntil = 0;
+  // 開啟時這一句已經播完停著的話，直接從頭開始，不用再按一次播放
+  if (on && composed && !playing && !paused) {
+    playhead = 0;
+    playing = true;
+    setStatus("3D 播放中");
+    paintTimeline();
+  }
+  showStageHint(on ? "循環播放：開　（L 關閉）" : "循環播放：關");
+}
+
+function toggleFullscreen() {
+  if (!stageWrap) return;
+  if (document.fullscreenElement) {
+    document.exitFullscreen?.().catch(() => {});
+    return;
+  }
+  if (!stageWrap.requestFullscreen) {
+    showStageHint("這個瀏覽器不支援全螢幕");
+    return;
+  }
+  stageWrap.requestFullscreen()
+    .then(() => showStageHint(looping ? "全螢幕・循環播放中　（F 或 Esc 離開）" : "全螢幕　（F 或 Esc 離開）"))
+    .catch(() => showStageHint("無法進入全螢幕"));
+}
+
+// 進出全螢幕舞台尺寸會變，3D 畫布要跟著重算，不然人偶會被拉寬或壓扁
+document.addEventListener("fullscreenchange", () => {
+  requestAnimationFrame(resizeStage);
+  settle();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.target.matches?.("input, textarea, select") || e.isComposing) return;
+  if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+  if (!stageOnScreen()) return;
+  const key = e.key.toLowerCase();
+  if (key === "l") { e.preventDefault(); setLooping(!looping); }
+  else if (key === "f") { e.preventDefault(); toggleFullscreen(); }
 });
 
 ensureAvatarReady().catch(err => {

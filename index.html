@@ -33,7 +33,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Archivo:wght@400;500;600&family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261106-portrait">
+<link rel="stylesheet" href="style.css?v=20261107-demo">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -343,13 +343,15 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
     <div><dt><kbd>1</kbd>–<kbd>3</kbd></dt><dd>切換頁面（首頁／辨識／生成）</dd></div>
     <div><dt><kbd>Enter</kbd></dt><dd>辨識頁：開始辨識；生成頁：轉成手語</dd></div>
     <div><dt><kbd>Space</kbd></dt><dd>生成頁：開始／暫停播放；辨識頁手動切段：開始／結束一句</dd></div>
-    <div><dt><kbd>Esc</kbd></dt><dd>停止播放</dd></div>
+    <div><dt><kbd>L</kbd></dt><dd>生成頁：循環播放開／關</dd></div>
+    <div><dt><kbd>F</kbd></dt><dd>生成頁：虛擬人全螢幕（再按一次或 Esc 離開）</dd></div>
+    <div><dt><kbd>Esc</kbd></dt><dd>停止播放；全螢幕時為離開全螢幕</dd></div>
     <div><dt><kbd>?</kbd></dt><dd>開啟／關閉此說明</dd></div>
   </dl>
 </dialog>
 
 <script src="signavatar-config.js?v=20261104-voice"></script>
-<script src="script.js?v=20261106-portrait"></script>
+<script src="script.js?v=20261107-demo"></script>
 <!-- 辨識頁改接 Knee42 後端（Pose+Hands 合約）；原 recognition.js（手+臉 178 維，供自訓模型）暫時下線 -->
 <script type="module" src="knee42-client.js?v=20260915-noconfnote"></script>
 <script type="importmap">
@@ -361,7 +363,7 @@ if (location.hostname === "tku-tsl-avatar-project.pages.dev") {
 </script>
 <script type="module" src="avatar3d.js?v=20260916-handdata"></script>
 <script src="composer.js?v=20260916-handdata"></script>
-<script type="module" src="signavatar-bridge.js?v=20260916-handdata"></script>
+<script type="module" src="signavatar-bridge.js?v=20261107-demo"></script>
 <script>
 // 清掉任何殘留的 service worker（歷史版本若註冊過，會讓整個網域永遠拿到舊快取）
 if ("serviceWorker" in navigator) {
