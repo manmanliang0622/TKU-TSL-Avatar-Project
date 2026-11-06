@@ -1521,6 +1521,43 @@ h2{
   .generation-console{padding:var(--sp-4);}
 }
 
+/* ---------- 直立的大螢幕（例如 27 吋螢幕轉成直向 1080×1920） ----------
+   寬度還是桌機（>900px），但畫面又高又窄：左右並排會把舞台擠成一條細長直條，
+   人偶縮在中間、上下一大片空白，側欄也大半空著。
+   改成上下疊：舞台在上吃掉剩下的高度，控制台在下（內容多高就多高，最多半個螢幕）。
+   人偶大小由舞台寬度決定（avatar3d 在窄舞台會自動拉遠鏡頭，保住伸出去的手），
+   所以舞台變高不會讓人偶變形，只是上下多一點留白。 */
+@media (min-width:901px) and (max-aspect-ratio:4/5){
+  .stage-page{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:minmax(0,1fr) auto;
+  }
+  .stage-page .avatar-panel,
+  .stage-page .capture-panel{grid-column:1;grid-row:1;}
+  .stage-page .generation-console{
+    grid-column:1;grid-row:2;
+    max-height:50svh;
+    box-shadow:0 -1px 0 rgba(233,234,228,.14);
+  }
+}
+
+/* ---------- 手機直向／橫向：舞台比例跟著螢幕與影片走 ----------
+   只動版面：3D 舞台本來就依舞台尺寸重算（signavatar-bridge resizeStage），
+   影片是 object-fit:contain、骨架圖層依舞台尺寸換算座標，舞台變形不會讓內容變形。 */
+@media (max-width:900px){
+  /* 手機橫向（例如 812×375）：滿版 16:9 舞台比螢幕還高，
+     下半部和影片播放列被切到螢幕外。高度上限＝視窗扣掉導覽列 */
+  .stage-page .avatar-stage,
+  .stage-page .capture-stage{max-height:calc(100svh - var(--nav-h));}
+  /* 直拍來源（手機直向自拍鏡頭、直拍上傳的影片）：舞台改用來源本身的比例，
+     不再塞進 4:3／16:9 的橫框只剩中間一條。--src-ar 由 script.js 依影片尺寸設定 */
+  .stage-page .capture-stage.is-portrait-src{aspect-ratio:var(--src-ar, 3 / 4);}
+}
+@media (max-width:900px) and (orientation:portrait){
+  /* 直向時留一截給下方的辨識狀態，不讓直拍影片佔滿整個螢幕 */
+  .stage-page .capture-stage.is-portrait-src{max-height:min(calc(100svh - var(--nav-h)), 70svh);}
+}
+
 @media (max-width:480px){
   .brand .zh{display:none;}
   .nav{padding-top:16px;padding-bottom:16px;}
@@ -1541,6 +1578,13 @@ h2{
   .rail-head{flex-direction:column;align-items:flex-start;gap:var(--sp-3);}
   .segmented .chip-btn{padding:8px 10px;font-size:14px;}
   .rail .action-row{gap:var(--sp-3);}
+  /* 辨識流程三步固定一排（nowrap）：手機寬度下第三步會超出右邊內距，收緊間隔 */
+  .rail .steps-list{gap:6px;}
+  .rail .step-item{gap:6px;}
+}
+@media (max-width:400px){
+  .rail .step-item{font-size:14px;}
+  .rail .step-dot{width:22px;height:22px;font-size:12px;}
 }
 
 /* ---------- 手機（≤600px）：播放速率不要浮在人偶臉上 ----------

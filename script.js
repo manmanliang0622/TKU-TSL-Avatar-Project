@@ -588,9 +588,22 @@ function clearUploadedVideo() {
   if (uploadedVideoUrl) { URL.revokeObjectURL(uploadedVideoUrl); uploadedVideoUrl = null; }
 }
 
+// 版面用：來源是直拍（手機直向自拍鏡頭、直拍影片）時，手機版舞台改用影片本身的比例
+// （CSS .is-portrait-src）。只換舞台外框，不碰影片、骨架或辨識資料。
+function syncPreviewAspect() {
+  const w = previewVideo.videoWidth, h = previewVideo.videoHeight;
+  const portrait = !previewVideo.hidden && w > 0 && h > w;
+  previewBox.classList.toggle("is-portrait-src", portrait);
+  if (portrait) previewBox.style.setProperty("--src-ar", `${w} / ${h}`);
+  else previewBox.style.removeProperty("--src-ar");
+}
+// resize：攝影機串流在手機轉向時會換成另一個方向的尺寸
+["loadedmetadata", "resize", "emptied"].forEach(ev => previewVideo.addEventListener(ev, syncPreviewAspect));
+
 function showPreview(hasPreview) {
   previewVideo.hidden = !hasPreview;
   emptyPreview.hidden = hasPreview;
+  syncPreviewAspect();
 }
 
 // ── Camera ──
